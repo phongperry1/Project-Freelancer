@@ -1,0 +1,21 @@
+{
+  "name": "project-freelancer",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Online learning platform built with React, NestJS, Prisma and PostgreSQL",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm --prefix apps/api run start:dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "build:api": "npm --prefix apps/api run build",
+    "build:web": "npm --prefix apps/web run build",
+    "build": "npm run build:api && npm run build:web",
+    "test:api": "npm --prefix apps/api run test",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "prisma:generate": "npm --prefix apps/api run prisma:generate",
+    "prisma:migrate": "npm --prefix apps/api run prisma:migrate"
+  }
+}

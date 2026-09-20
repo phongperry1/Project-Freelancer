@@ -141,3 +141,9 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# Prisma Generated Client
+apps/api/src/generated/
+apps/api/generated/
+/generated/
+

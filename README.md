@@ -19,5 +19,4 @@ Online learning platform built with React, NestJS, Prisma and PostgreSQL.
 apps/
 ├── web/
 └── api/
-
-docs/
+```
