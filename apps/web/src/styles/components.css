@@ -1,0 +1,603 @@
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.tku-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: 1px solid transparent;
+  line-height: 1.4;
+}
+
+.tku-btn--primary {
+  background-color: var(--color-primary);
+  color: #ffffff;
+}
+
+.tku-btn--primary:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.3);
+}
+
+.tku-btn--secondary {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
+}
+
+.tku-btn--secondary:hover {
+  background-color: var(--color-bg-subtle);
+  border-color: var(--color-primary-border);
+}
+
+.tku-btn--outline {
+  background-color: transparent;
+  color: var(--color-text-body);
+  border-color: var(--color-border);
+}
+
+.tku-btn--outline:hover {
+  background-color: var(--color-bg-subtle);
+  color: var(--color-text-main);
+}
+
+.tku-btn--lg {
+  padding: 13px 26px;
+  font-size: 16px;
+  border-radius: var(--radius-lg);
+}
+
+.tku-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  color: var(--color-text-body);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tku-btn-icon:hover {
+  border-color: var(--color-primary-border);
+  color: var(--color-primary);
+  background-color: var(--color-primary-light);
+}
+
+/* ==========================================================================
+   BADGE
+   ========================================================================== */
+.tku-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.tku-badge--blue {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.tku-badge--light {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   NAVBAR
+   ========================================================================== */
+.tku-navbar-wrapper {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--color-border-subtle);
+  transition: all var(--transition-fast);
+}
+
+.tku-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 76px;
+}
+
+.tku-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+}
+
+.tku-brand__logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.tku-brand__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-brand__title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-main);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.tku-brand__subtitle {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+}
+
+.tku-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.tku-nav-item {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+  padding: 6px 2px;
+}
+
+.tku-nav-item:hover,
+.tku-nav-item.is-active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tku-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-mobile-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--color-text-main);
+  cursor: pointer;
+  padding: 6px;
+}
+
+.tku-mobile-drawer {
+  display: none;
+  padding: 16px 24px 24px;
+  border-top: 1px solid var(--color-border-subtle);
+  background-color: #ffffff;
+}
+
+.tku-mobile-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tku-mobile-nav-item {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--color-text-body);
+  text-decoration: none;
+  padding: 8px 0;
+}
+
+.tku-mobile-nav-item.is-active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.tku-mobile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+/* ==========================================================================
+   EMPTY STATE
+   ========================================================================== */
+.tku-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  background-color: #ffffff;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-2xl);
+  max-width: 860px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.tku-empty-state__icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 50%;
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+  margin-bottom: 20px;
+}
+
+.tku-empty-state__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--color-text-main);
+  margin: 0 0 8px;
+}
+
+.tku-empty-state__desc {
+  font-size: 15px;
+  color: var(--color-text-muted);
+  max-width: 440px;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.tku-empty-state__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background-color: #ffffff;
+  color: var(--color-text-body);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tku-empty-state__btn:hover {
+  background-color: var(--color-bg-subtle);
+  color: var(--color-primary);
+  border-color: var(--color-primary-border);
+}
+
+/* ==========================================================================
+   CHAT BOX (AI ASSISTANT)
+   ========================================================================== */
+.tku-ai-chat-box {
+  background-color: #ffffff;
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-ai-chat-box__header {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-ai-chat-box__status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--color-online);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.tku-ai-chat-box__title {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.tku-ai-chat-box__status-text {
+  font-size: 12px;
+  opacity: 0.9;
+  margin: 3px 0 0;
+}
+
+.tku-ai-chat-box__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 280px;
+  max-height: 380px;
+  overflow-y: auto;
+  background-color: #fbfcfe;
+}
+
+.tku-chat-bubble-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.tku-chat-bubble-row.is-user {
+  justify-content: flex-end;
+}
+
+.tku-chat-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-chat-bubble {
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  font-size: 14.5px;
+  line-height: 1.6;
+  max-width: 85%;
+}
+
+.tku-chat-bubble-row.is-user .tku-chat-bubble {
+  background-color: var(--color-primary-light);
+  color: var(--color-text-main);
+  border-top-right-radius: 4px;
+}
+
+.tku-chat-bubble-row.is-ai .tku-chat-bubble {
+  background-color: #ffffff;
+  color: var(--color-text-main);
+  border: 1px solid var(--color-border);
+  border-top-left-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+.tku-chat-bubble p {
+  margin: 0;
+}
+
+.tku-ai-chat-box__input-bar {
+  display: flex;
+  align-items: center;
+  padding: 14px 20px;
+  background-color: #ffffff;
+  border-top: 1px solid var(--color-border-subtle);
+  gap: 12px;
+}
+
+.tku-ai-chat-box__input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: var(--color-text-main);
+}
+
+.tku-ai-chat-box__input::placeholder {
+  color: var(--color-text-light);
+}
+
+.tku-ai-chat-box__send-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tku-ai-chat-box__send-btn:hover:not(:disabled) {
+  background-color: var(--color-primary-hover);
+  transform: scale(1.05);
+}
+
+.tku-ai-chat-box__send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.tku-footer {
+  background-color: var(--color-footer-bg);
+  color: var(--color-footer-text);
+  padding: 70px 0 30px;
+  margin-top: 80px;
+}
+
+.tku-footer__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.5fr;
+  gap: 40px;
+  margin-bottom: 50px;
+}
+
+.tku-footer__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.tku-footer__logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.tku-footer__title {
+  color: var(--color-footer-title);
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  letter-spacing: -0.01em;
+}
+
+.tku-footer__subtitle {
+  color: var(--color-text-light);
+  font-size: 11px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.tku-footer__desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-footer-text);
+  max-width: 340px;
+}
+
+.tku-footer__col-title {
+  color: var(--color-footer-title);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 18px;
+}
+
+.tku-footer__links,
+.tku-footer__contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-footer__link {
+  color: var(--color-footer-text);
+  text-decoration: none;
+  font-size: 14px;
+  transition: color var(--transition-fast);
+}
+
+.tku-footer__link:hover {
+  color: #ffffff;
+}
+
+.tku-footer__contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-footer-text);
+}
+
+.tku-footer__contact-icon {
+  color: var(--color-primary-border);
+  flex-shrink: 0;
+}
+
+.tku-footer__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 30px;
+  border-top: 1px solid var(--color-footer-border);
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.tku-footer__copyright {
+  margin: 0;
+}
+
+.tku-footer__legal {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-footer__legal a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+.tku-footer__legal a:hover {
+  color: #ffffff;
+}
+
+.tku-footer__legal .dot {
+  font-size: 10px;
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS FOR COMPONENTS
+   ========================================================================== */
+@media (max-width: 992px) {
+  .tku-nav-menu,
+  .tku-nav-actions .tku-btn {
+    display: none;
+  }
+
+  .tku-mobile-toggle {
+    display: block;
+  }
+
+  .tku-mobile-drawer {
+    display: block;
+  }
+
+  .tku-footer__grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-footer__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tku-footer__bottom {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
