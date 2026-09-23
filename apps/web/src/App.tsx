@@ -1,32 +1,34 @@
-import { useEffect, useState } from "react";
-import { getApiMessage } from "./services/api";
+import React, { useEffect } from 'react';
+import { Navbar } from './components/common/Navbar';
+import { Footer } from './components/common/Footer';
+import { HeroSection } from './components/landing/HeroSection';
+import { FeaturesSection } from './components/landing/FeaturesSection';
+import { CoursesSection } from './components/landing/CoursesSection';
+import { AiAssistantSection } from './components/landing/AiAssistantSection';
 
-function App() {
-  const [message, setMessage] = useState("Đang kết nối Backend...");
-  const [error, setError] = useState("");
-
+export const App: React.FC = () => {
   useEffect(() => {
-    getApiMessage()
-      .then((data) => {
-        setMessage(data);
-      })
-      .catch(() => {
-        setError("Không thể kết nối tới NestJS API.");
-      });
+    // Đảm bảo khi mới vào hoặc tải lại trang, luôn hiển thị ở vị trí đầu trang (Hero)
+    window.scrollTo(0, 0);
   }, []);
 
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", lineHeight: "1.6" }}>
-      <h1>Learning Platform</h1>
-      <p>Frontend: React 19 + Vite</p>
+    <div className="tku-app">
+      {/* Sticky Header Navigation */}
+      <Navbar />
 
-      {error ? (
-        <p style={{ color: "red" }}>{error}</p>
-      ) : (
-        <p>Backend response: <strong>{message}</strong></p>
-      )}
-    </main>
+      {/* Main Landing Page Content */}
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+        <CoursesSection />
+        <AiAssistantSection />
+      </main>
+
+      {/* Dark Navy Footer */}
+      <Footer />
+    </div>
   );
-}
+};
 
 export default App;
