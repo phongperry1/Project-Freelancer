@@ -1,16 +1,33 @@
 import React, { useState } from 'react';
-import { Bell, Menu, X } from 'lucide-react';
+import { Bell, Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
+import { useAuth } from '../../context/useAuth';
 
 export const Navbar: React.FC = () => {
+  const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('nav-home');
+
+  const handleLogout = () => {
+    logout();
+    setMobileMenuOpen(false);
+    window.location.href = '/';
+  };
+
+  const DEFAULT_AVATAR = '/assets/default-avatar.jpg';
+
+  const handleAvatarError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const target = e.currentTarget;
+    if (!target.src.endsWith(DEFAULT_AVATAR)) {
+      target.src = DEFAULT_AVATAR;
+    }
+  };
 
   return (
     <header className="tku-navbar-wrapper">
       <div className="tku-container tku-navbar">
-        {/* Brand Logo */}
-        <a href="#home" className="tku-brand">
+        {/* Brand Logo - Native link triggers full reload back to home */}
+        <a href="/" className="tku-brand">
           <img
             src="/assets/logo.png"
             alt="TKU Chemistry Center"
@@ -48,12 +65,42 @@ export const Navbar: React.FC = () => {
           >
             <Bell size={18} />
           </button>
-          <a href="#login" className="tku-btn tku-btn--outline">
-            Đăng nhập
-          </a>
-          <a href="#register" className="tku-btn tku-btn--primary">
-            Đăng ký
-          </a>
+
+          {isAuthenticated && user ? (
+            /* User Profile & Logout */
+            <div className="tku-user-profile">
+              <div className="tku-user-chip" title={user.email}>
+                <div className="tku-user-avatar">
+                  <img
+                    src={user.avatarUrl || DEFAULT_AVATAR}
+                    alt={user.fullName}
+                    className="tku-user-avatar-img"
+                    onError={handleAvatarError}
+                  />
+                </div>
+                <span className="tku-user-name">{user.fullName}</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="tku-logout-btn"
+                title="Đăng xuất khỏi hệ thống"
+              >
+                <LogOut size={16} />
+                <span>Đăng xuất</span>
+              </button>
+            </div>
+          ) : (
+            /* Guest Actions */
+            <>
+              <a href="/login" className="tku-btn tku-btn--outline">
+                Đăng nhập
+              </a>
+              <a href="/register" className="tku-btn tku-btn--primary">
+                Đăng ký
+              </a>
+            </>
+          )}
 
           {/* Mobile hamburger toggle */}
           <button
@@ -85,21 +132,56 @@ export const Navbar: React.FC = () => {
                 {item.label}
               </a>
             ))}
+
             <div className="tku-mobile-actions">
-              <a
-                href="#login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="tku-btn tku-btn--outline w-full"
-              >
-                Đăng nhập
-              </a>
-              <a
-                href="#register"
-                onClick={() => setMobileMenuOpen(false)}
-                className="tku-btn tku-btn--primary w-full"
-              >
-                Đăng ký
-              </a>
+              {isAuthenticated && user ? (
+                <>
+                  <div className="tku-user-chip w-full" style={{ justifyContent: 'flex-start' }}>
+                    <div className="tku-user-avatar">
+                      <img
+                        src={user.avatarUrl || DEFAULT_AVATAR}
+                        alt={user.fullName}
+                        className="tku-user-avatar-img"
+                        onError={handleAvatarError}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                      <span className="tku-user-name" style={{ maxWidth: '100%' }}>
+                        {user.fullName}
+                      </span>
+                      <span style={{ fontSize: '12px', color: '#64748b' }}>
+                        {user.email}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="tku-logout-btn w-full"
+                    style={{ justifyContent: 'center', padding: '10px' }}
+                  >
+                    <LogOut size={16} />
+                    <span>Đăng xuất</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <a
+                    href="/login"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="tku-btn tku-btn--outline w-full"
+                  >
+                    Đăng nhập
+                  </a>
+                  <a
+                    href="/register"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="tku-btn tku-btn--primary w-full"
+                  >
+                    Đăng ký
+                  </a>
+                </>
+              )}
             </div>
           </nav>
         </div>
@@ -107,3 +189,5 @@ export const Navbar: React.FC = () => {
     </header>
   );
 };
+
+export default Navbar;
