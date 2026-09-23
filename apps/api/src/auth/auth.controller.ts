@@ -5,9 +5,11 @@ import {
   ApiOperation,
   ApiResponse,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
 
 import { RegisterDto } from './dto/register.dto.js';
+import { LoginDto } from './dto/login.dto.js';
 import { AuthService } from './auth.service.js';
 
 @ApiTags('Auth')
@@ -31,14 +33,29 @@ export class AuthController {
     description: 'Dữ liệu đăng ký không hợp lệ.',
   })
   async register(@Body() registerDto: RegisterDto) {
-    const passwordHash = await this.authService.hashPassword(
-      registerDto.password,
-    );
+    return this.authService.register(registerDto);
+  }
 
-    return {
-      email: registerDto.email,
-      fullName: registerDto.fullName,
-      passwordHash,
-    };
+  @Post('login')
+  @ApiOperation({
+    summary: 'Đăng nhập tài khoản',
+    description:
+      'Xác thực email và mật khẩu, trả về JWT Access Token cùng thông tin tài khoản.',
+  })
+  @ApiBody({
+    type: LoginDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đăng nhập thành công.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Email hoặc mật khẩu không chính xác.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Dữ liệu đầu vào không hợp lệ.',
+  })
+  async login(@Body() loginDto: LoginDto) {
+    return this.authService.login(loginDto);
   }
 }

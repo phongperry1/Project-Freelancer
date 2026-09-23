@@ -1,34 +1,28 @@
-import React, { useEffect } from 'react';
-import { Navbar } from './components/common/Navbar';
-import { Footer } from './components/common/Footer';
-import { HeroSection } from './components/landing/HeroSection';
-import { FeaturesSection } from './components/landing/FeaturesSection';
-import { CoursesSection } from './components/landing/CoursesSection';
-import { AiAssistantSection } from './components/landing/AiAssistantSection';
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
+
+import { AuthProvider } from './context/AuthContext';
+
+const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 
 export const App: React.FC = () => {
-  useEffect(() => {
-    // Đảm bảo khi mới vào hoặc tải lại trang, luôn hiển thị ở vị trí đầu trang (Hero)
-    window.scrollTo(0, 0);
-  }, []);
-
   return (
-    <div className="tku-app">
-      {/* Sticky Header Navigation */}
-      <Navbar />
-
-      {/* Main Landing Page Content */}
-      <main>
-        <HeroSection />
-        <FeaturesSection />
-        <CoursesSection />
-        <AiAssistantSection />
-      </main>
-
-      {/* Dark Navy Footer */}
-      <Footer />
-    </div>
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<LoadingSpinner />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 };
 
 export default App;
+

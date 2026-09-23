@@ -19,33 +19,33 @@ export const HeroSection: React.FC = () => {
               Nền tảng học tập TKU <span className="text-primary">hiện đại</span> cho hành trình phát triển bản thân
             </h1>
 
-            {/* Subtitle */}
+            {/* Description */}
             <p className="tku-hero__description">
-              Một không gian học tập trực tuyến tinh gọn, trực quan và dễ sử dụng — nơi người học khám phá kiến thức, luyện tập và phát triển tư duy mỗi ngày.
+              Khám phá các khóa học chất lượng cao, bài giảng chuyên sâu cùng trợ lý AI thông minh luôn sẵn sàng hỗ trợ giải đáp mọi thắc mắc của bạn 24/7.
             </p>
 
-            {/* CTA Buttons */}
+            {/* Action Buttons */}
             <div className="tku-hero__cta-group">
-              <a href="#courses" className="tku-btn tku-btn--primary tku-btn--lg">
-                <span>Bắt đầu học ngay</span>
+              <a href="#courses" className="tku-btn tku-btn--primary">
+                <span>Khám phá khóa học</span>
                 <ArrowRight size={18} />
               </a>
-              <a href="#features" className="tku-btn tku-btn--secondary tku-btn--lg">
-                Khám phá nền tảng
+              <a href="#features" className="tku-btn tku-btn--outline">
+                Tìm hiểu thêm
               </a>
             </div>
           </div>
 
-          {/* Right Column: Hero Image (Student with laptop) */}
+          {/* Right Column: Visual Graphic */}
           <div className="tku-hero__visual">
             <div className="tku-hero__image-wrapper">
               <img
                 src="/assets/hero-ndk.jpg"
-                alt="Học Hóa cùng NDK - Hóa ra không khó - Nền tảng học tập TKU"
+                alt="Thầy NDK - Hóa Ra Không Khó"
                 className="tku-hero__image"
-                width={500}
-                height={500}
-                fetchPriority="high"
+                width={560}
+                height={560}
+                loading="eager"
                 decoding="async"
               />
             </div>
@@ -55,3 +55,5 @@ export const HeroSection: React.FC = () => {
     </section>
   );
 };
+
+export default HeroSection;
