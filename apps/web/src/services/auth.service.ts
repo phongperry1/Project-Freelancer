@@ -2,6 +2,9 @@ import type {
   AuthResponse,
   LoginCredentials,
   RegisterCredentials,
+  OtpResponse,
+  VerifyOtpPayload,
+  VerifyOtpResponse,
   User,
   ApiErrorResponse,
 } from '../types/auth.types';
@@ -12,8 +15,35 @@ const API_BASE_URL =
 const TOKEN_KEY = 'tku_access_token';
 const USER_KEY = 'tku_user';
 
+const handleAuthSession = (data: AuthResponse): void => {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem(TOKEN_KEY, data.accessToken);
+    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+  }
+};
+
+const extractErrorMessage = async (
+  response: Response,
+  fallbackMessage: string,
+): Promise<string> => {
+  try {
+    const errorData: ApiErrorResponse = await response.json();
+    if (Array.isArray(errorData.message) && errorData.message.length > 0) {
+      return errorData.message[0];
+    }
+    if (typeof errorData.message === 'string' && errorData.message.trim()) {
+      return errorData.message;
+    }
+  } catch {
+    return fallbackMessage;
+  }
+  return fallbackMessage;
+};
+
 export const authService = {
-  async register(credentials: RegisterCredentials): Promise<User> {
+  async sendRegisterOtp(
+    credentials: RegisterCredentials,
+  ): Promise<OtpResponse> {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
@@ -24,22 +54,71 @@ export const authService = {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Đăng ký không thành công. Vui lòng thử lại.';
-        try {
-          const errorData: ApiErrorResponse = await response.json();
-          if (Array.isArray(errorData.message)) {
-            errorMessage = errorData.message[0];
-          } else if (typeof errorData.message === 'string') {
-            errorMessage = errorData.message;
-          }
-        } catch {
-          // Dùng errorMessage mặc định nếu không parse được JSON
-        }
-        throw new Error(errorMessage);
+        const message = await extractErrorMessage(
+          response,
+          'Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.',
+        );
+        throw new Error(message);
       }
 
-      const user: User = await response.json();
-      return user;
+      const data: OtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async verifyOtp(payload: VerifyOtpPayload): Promise<VerifyOtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Mã xác thực không hợp lệ hoặc đã hết hạn.',
+        );
+        throw new Error(message);
+      }
+
+      const data: VerifyOtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async resendOtp(email: string): Promise<OtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Không thể gửi lại mã OTP. Vui lòng thử lại sau.',
+        );
+        throw new Error(message);
+      }
+
+      const data: OtpResponse = await response.json();
+      return data;
     } catch (err: unknown) {
       if (err instanceof Error) {
         throw err;
@@ -59,28 +138,15 @@ export const authService = {
       });
 
       if (!response.ok) {
-        let errorMessage = 'Đăng nhập không thành công. Vui lòng thử lại.';
-        try {
-          const errorData: ApiErrorResponse = await response.json();
-          if (Array.isArray(errorData.message)) {
-            errorMessage = errorData.message[0];
-          } else if (typeof errorData.message === 'string') {
-            errorMessage = errorData.message;
-          }
-        } catch {
-          // Dùng errorMessage mặc định nếu không parse được JSON
-        }
-        throw new Error(errorMessage);
+        const message = await extractErrorMessage(
+          response,
+          'Đăng nhập không thành công. Vui lòng thử lại.',
+        );
+        throw new Error(message);
       }
 
       const data: AuthResponse = await response.json();
-
-      // Lưu trữ phiên đăng nhập vào localStorage
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TOKEN_KEY, data.accessToken);
-        localStorage.setItem(USER_KEY, JSON.stringify(data.user));
-      }
-
+      handleAuthSession(data);
       return data;
     } catch (err: unknown) {
       if (err instanceof Error) {

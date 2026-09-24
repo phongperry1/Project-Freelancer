@@ -1,100 +1,356 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { authService } from '../../../services/auth.service';
+import { toast } from '../../../context/useToast';
+
+type RegisterStep = 'form' | 'otp';
 
 export const RegisterForm: React.FC = () => {
+  const [step, setStep] = useState<RegisterStep>('form');
+
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [pendingEmail, setPendingEmail] = useState('');
+  const [cooldown, setCooldown] = useState<number>(0);
+  const [isResending, setIsResending] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
+
+  const isCooldownActive = cooldown > 0;
+
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
-      }
+      if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-    setInfoMessage('');
+  useEffect(() => {
+    if (!isCooldownActive) return;
 
-    if (!fullName.trim() || !email.trim() || !password.trim() || !confirmPassword.trim()) {
-      setErrorMessage('Vui lòng điền đầy đủ tất cả các trường.');
+    const timer = setInterval(() => {
+      setCooldown((prev) => (prev <= 1 ? 0 : prev - 1));
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isCooldownActive]);
+
+  useEffect(() => {
+    if (step === 'otp') {
+      window.scrollTo(0, 0);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 150);
+    }
+  }, [step]);
+
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isLoading) return;
+
+    const cleanFullName = fullName.trim();
+    const cleanEmail = email.trim();
+
+    if (!cleanFullName) {
+      toast.error('Vui lòng nhập họ và tên.');
+      return;
+    }
+
+    if (cleanFullName.length < 2) {
+      toast.error('Họ và tên phải có tối thiểu 2 ký tự.');
+      return;
+    }
+
+    if (!cleanEmail) {
+      toast.error('Vui lòng nhập email.');
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(cleanEmail)) {
+      toast.error('Email không đúng định dạng. Vui lòng kiểm tra lại.');
+      return;
+    }
+
+    if (!password) {
+      toast.error('Vui lòng nhập mật khẩu.');
       return;
     }
 
     if (password.length < 6) {
-      setErrorMessage('Mật khẩu phải có tối thiểu 6 ký tự.');
+      toast.error('Mật khẩu phải có tối thiểu 6 ký tự.');
       return;
     }
 
     if (password !== confirmPassword) {
-      setErrorMessage('Mật khẩu và xác nhận mật khẩu không trùng khớp.');
+      toast.error('Mật khẩu và xác nhận mật khẩu không trùng khớp.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      await authService.register({
-        fullName: fullName.trim(),
-        email: email.trim(),
+      const res = await authService.sendRegisterOtp({
+        fullName: cleanFullName,
+        email: cleanEmail,
         password,
       });
 
-      setSuccessMessage(
-        'Đăng ký tài khoản thành công! Đang chuyển hướng sang trang đăng nhập...',
-      );
+      setPendingEmail(cleanEmail);
+      setOtpDigits(['', '', '', '', '', '']);
+      setCooldown(res.resendCooldownSeconds ?? 60);
+      setStep('otp');
 
-      // Chuyển hướng sang trang đăng nhập sau 1s
-      timerRef.current = setTimeout(() => {
-        window.location.href = '/login';
-      }, 1000);
+      toast.success('Mã xác thực OTP đã được gửi đến email của bạn.');
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setErrorMessage(err.message);
+        toast.error(err.message);
       } else {
-        setErrorMessage('Đăng ký không thành công. Vui lòng thử lại sau.');
+        toast.error('Đăng ký không thành công. Vui lòng thử lại sau.');
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleGoogleRegister = () => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setInfoMessage('Tính năng đăng ký với Google đang được hoàn thiện.');
+  const handleOtpDigitChange = (index: number, value: string) => {
+    const cleanDigit = value.replace(/\D/g, '');
+    if (!cleanDigit && value !== '') return;
+
+    const newDigits = [...otpDigits];
+    newDigits[index] = cleanDigit.slice(-1);
+    setOtpDigits(newDigits);
+
+    if (cleanDigit && index < 5) {
+      otpInputRefs.current[index + 1]?.focus();
+    }
+
+    if (cleanDigit && index === 5) {
+      const fullCode = newDigits.join('');
+      if (fullCode.length === 6) {
+        void executeVerification(fullCode);
+      }
+    }
   };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpInputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text/plain').replace(/\D/g, '').slice(0, 6);
+    if (!pastedData) return;
+
+    const digits = pastedData.split('');
+    const newDigits = ['', '', '', '', '', ''];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = digits[i] || '';
+    }
+    setOtpDigits(newDigits);
+
+    const focusIdx = Math.min(digits.length, 5);
+    otpInputRefs.current[focusIdx]?.focus();
+
+    if (pastedData.length === 6) {
+      void executeVerification(pastedData);
+    }
+  };
+
+  const executeVerification = async (code: string) => {
+    if (isLoading || code.length !== 6) return;
+    setIsLoading(true);
+
+    try {
+      await authService.verifyOtp({
+        email: pendingEmail,
+        otp: code,
+      });
+
+      toast.success('Xác thực email thành công! Đang chuyển hướng sang đăng nhập...');
+
+      timerRef.current = setTimeout(() => {
+        window.location.href = `/login?registered=1&email=${encodeURIComponent(
+          pendingEmail,
+        )}`;
+      }, 700);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('Mã OTP không chính xác hoặc đã hết hạn.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const otpCode = otpDigits.join('');
+    if (otpCode.length < 6) {
+      toast.error('Vui lòng nhập đầy đủ 6 chữ số của mã xác thực.');
+      return;
+    }
+    void executeVerification(otpCode);
+  };
+
+  const handleResendOtp = async () => {
+    if (cooldown > 0) {
+      toast.warning(`Vui lòng đợi ${cooldown}s trước khi yêu cầu gửi lại mã.`);
+      return;
+    }
+
+    if (isResending) return;
+    setIsResending(true);
+
+    try {
+      const res = await authService.resendOtp(pendingEmail);
+      setCooldown(res.resendCooldownSeconds ?? 60);
+      setOtpDigits(['', '', '', '', '', '']);
+      toast.success('Đã gửi lại mã OTP mới vào email của bạn.');
+      otpInputRefs.current[0]?.focus();
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error('Không thể gửi lại mã OTP. Vui lòng thử lại sau.');
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const handleBackToForm = () => {
+    setStep('form');
+  };
+
+  const handleGoogleRegister = () => {
+    toast.info('Tính năng đăng ký với Google đang được hoàn thiện.');
+  };
+
+  const togglePassword = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const toggleConfirmPassword = () => {
+    setShowConfirmPassword((prev) => !prev);
+  };
+
+  if (step === 'otp') {
+    return (
+      <div className="tku-auth-form-wrapper tku-auth-form-wrapper--register">
+        <button
+          type="button"
+          onClick={handleBackToForm}
+          className="tku-otp-back-btn"
+          title="Quay lại thay đổi thông tin"
+        >
+          <ArrowLeft size={16} />
+          <span>Quay lại chỉnh sửa</span>
+        </button>
+
+        <div className="tku-otp-header">
+          <h2 className="tku-auth-form__title">Xác thực tài khoản</h2>
+          <p className="tku-auth-form__subtitle">
+            Mã xác thực gồm 6 chữ số đã được gửi đến email{' '}
+            <span className="tku-otp-email-highlight">{pendingEmail}</span>. Vui
+            lòng nhập mã để hoàn tất đăng ký.
+          </p>
+        </div>
+
+        <form onSubmit={handleVerifySubmit} className="tku-auth-form">
+          <div className="tku-otp-inputs">
+            {otpDigits.map((digit, idx) => (
+              <input
+                key={idx}
+                ref={(el) => {
+                  otpInputRefs.current[idx] = el;
+                }}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                autoComplete="one-time-code"
+                value={digit}
+                onChange={(e) => handleOtpDigitChange(idx, e.target.value)}
+                onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                onPaste={handleOtpPaste}
+                className={`tku-otp-digit ${digit ? 'is-filled' : ''}`}
+                aria-label={`Chữ số OTP thứ ${idx + 1}`}
+                required
+              />
+            ))}
+          </div>
+
+          <div className="tku-otp-resend-wrapper">
+            <span>Chưa nhận được mã?</span>
+            {cooldown > 0 ? (
+              <span>
+                Gửi lại mã sau <strong>{cooldown}s</strong>
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={isResending}
+                className="tku-otp-resend-btn"
+              >
+                {isResending ? 'Đang gửi...' : 'Gửi lại mã OTP'}
+              </button>
+            )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading || otpDigits.join('').length < 6}
+            className="tku-btn tku-btn--primary tku-auth-submit-btn"
+          >
+            {isLoading ? 'Đang xác thực...' : 'Hoàn tất đăng ký'}
+          </button>
+        </form>
+
+        <div className="tku-auth-footer">
+          <p className="tku-auth-switch">
+            Đã có tài khoản?{' '}
+            <a href="/login" className="tku-auth-switch-link">
+              Đăng nhập ngay
+            </a>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="tku-auth-form-wrapper tku-auth-form-wrapper--register">
-      {/* Header */}
       <div className="tku-auth-form__header">
-        <h2 className="tku-auth-form__title">Tạo tài khoản TKU</h2>
+        <h2 className="tku-auth-form__title">Tạo tài khoản học tập</h2>
         <p className="tku-auth-form__subtitle">
-          Đăng ký để bắt đầu hành trình học tập tại TKU. Bạn sẽ xác thực email sau khi tạo tài khoản.
+          Trở thành học sinh TKU để khám phá lộ trình Hóa học bài bản.
         </p>
       </div>
 
-      {/* Social Register: Google */}
       <button
         type="button"
         className="tku-google-btn"
         onClick={handleGoogleRegister}
       >
-        <svg className="tku-google-icon" viewBox="0 0 24 24" width="20" height="20">
+        <svg
+          className="tku-google-icon"
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+        >
           <path
             fill="#4285F4"
             d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -115,27 +371,13 @@ export const RegisterForm: React.FC = () => {
         <span>Đăng ký với Google</span>
       </button>
 
-      {/* Divider */}
       <div className="tku-auth-divider">
         <span className="tku-auth-divider__line" />
         <span className="tku-auth-divider__text">hoặc đăng ký bằng tài khoản</span>
         <span className="tku-auth-divider__line" />
       </div>
 
-      {/* Alerts */}
-      {errorMessage && (
-        <div className="tku-auth-error-alert">{errorMessage}</div>
-      )}
-      {successMessage && (
-        <div className="tku-auth-success-alert">{successMessage}</div>
-      )}
-      {infoMessage && (
-        <div className="tku-auth-info-alert">{infoMessage}</div>
-      )}
-
-      {/* Main Register Form */}
-      <form onSubmit={handleSubmit} className="tku-auth-form">
-        {/* Full Name */}
+      <form onSubmit={handleRegisterSubmit} className="tku-auth-form">
         <div className="tku-form-group">
           <label htmlFor="fullName" className="tku-form-label">
             Họ và tên
@@ -155,7 +397,6 @@ export const RegisterForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Email */}
         <div className="tku-form-group">
           <label htmlFor="email" className="tku-form-label">
             Email
@@ -167,7 +408,7 @@ export const RegisterForm: React.FC = () => {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="tenban@example.com"
+              placeholder="student@tku.edu.vn"
               className="tku-form-input"
               autoComplete="email"
               required
@@ -175,7 +416,6 @@ export const RegisterForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Password */}
         <div className="tku-form-group">
           <label htmlFor="password" className="tku-form-label">
             Mật khẩu
@@ -187,14 +427,14 @@ export const RegisterForm: React.FC = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Tạo mật khẩu"
+              placeholder="Tạo mật khẩu (tối thiểu 6 ký tự)"
               className="tku-form-input tku-form-input--pwd"
               autoComplete="new-password"
               required
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
+              onClick={togglePassword}
               className="tku-pwd-toggle-btn"
               aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
@@ -203,7 +443,6 @@ export const RegisterForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Confirm Password */}
         <div className="tku-form-group">
           <label htmlFor="confirmPassword" className="tku-form-label">
             Xác nhận mật khẩu
@@ -222,7 +461,7 @@ export const RegisterForm: React.FC = () => {
             />
             <button
               type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              onClick={toggleConfirmPassword}
               className="tku-pwd-toggle-btn"
               aria-label={showConfirmPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
             >
@@ -231,17 +470,15 @@ export const RegisterForm: React.FC = () => {
           </div>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={isLoading}
           className="tku-btn tku-btn--primary tku-auth-submit-btn"
         >
-          {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
+          {isLoading ? 'Đang gửi mã xác thực...' : 'Đăng ký'}
         </button>
       </form>
 
-      {/* Footer Links */}
       <div className="tku-auth-footer">
         <p className="tku-auth-switch">
           Đã có tài khoản?{' '}

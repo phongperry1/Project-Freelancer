@@ -12,12 +12,9 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="tku-auth-page">
-      {/* Background Ambient Glow */}
       <div className="tku-auth-page__ambient" />
 
-      {/* Main Auth Card */}
       <div className="tku-auth-card">
-        {/* Close Button back to Home - Native anchor triggers full reload */}
         <a
           href="/"
           className="tku-auth-close-btn"
@@ -27,10 +24,7 @@ export const LoginPage: React.FC = () => {
           <X size={20} />
         </a>
 
-        {/* Left Column: Visual Brand Banner */}
         <AuthBanner />
-
-        {/* Right Column: Interactive Login Form */}
         <LoginForm />
       </div>
     </div>

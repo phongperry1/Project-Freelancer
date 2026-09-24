@@ -1,16 +1,14 @@
-import React from 'react';
+import React, { memo } from 'react';
 
-export const AuthBanner: React.FC = () => {
+export const AuthBanner: React.FC = memo(function AuthBanner() {
   return (
     <div className="tku-auth-banner">
-      {/* Decorative Background Circles */}
       <div className="tku-auth-banner__decor">
         <div className="tku-auth-banner__circle tku-auth-banner__circle--1" />
         <div className="tku-auth-banner__circle tku-auth-banner__circle--2" />
         <div className="tku-auth-banner__circle tku-auth-banner__circle--3" />
       </div>
 
-      {/* Top Brand Logo - Native anchor triggers full reload back to home */}
       <a href="/" className="tku-auth-banner__brand" title="Quay về trang chủ">
         <img
           src="/assets/logo.png"
@@ -28,7 +26,6 @@ export const AuthBanner: React.FC = () => {
         </div>
       </a>
 
-      {/* Main Slogan & Description */}
       <div className="tku-auth-banner__content">
         <h1 className="tku-auth-banner__slogan">
           Học sâu hơn.
@@ -40,7 +37,6 @@ export const AuthBanner: React.FC = () => {
         </p>
       </div>
 
-      {/* Bottom Features List */}
       <div className="tku-auth-banner__footer">
         <span>Bài giảng</span>
         <span className="dot">•</span>
@@ -52,6 +48,6 @@ export const AuthBanner: React.FC = () => {
       </div>
     </div>
   );
-};
+});
 
 export default AuthBanner;

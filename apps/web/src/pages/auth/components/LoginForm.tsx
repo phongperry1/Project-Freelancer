@@ -1,20 +1,40 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../../context/useAuth';
+import { toast } from '../../../context/useToast';
 
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('email') ?? '';
+    }
+    return '';
+  });
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('registered') === '1') {
+        toast.success(
+          'Đăng ký tài khoản thành công! Vui lòng nhập mật khẩu để đăng nhập.',
+        );
+        params.delete('registered');
+        const newQuery = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}${newQuery}`,
+        );
+      }
+    }
+
     return () => {
       if (timerRef.current) {
         clearTimeout(timerRef.current);
@@ -24,12 +44,9 @@ export const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage('');
-    setSuccessMessage('');
-    setInfoMessage('');
 
     if (!email.trim() || !password.trim()) {
-      setErrorMessage('Vui lòng nhập đầy đủ email và mật khẩu.');
+      toast.error('Vui lòng nhập đầy đủ email và mật khẩu.');
       return;
     }
 
@@ -41,19 +58,20 @@ export const LoginForm: React.FC = () => {
         password,
       });
 
-      setSuccessMessage(
+      toast.success(
         `Đăng nhập thành công! Chào mừng ${res.user.fullName} quay trở lại.`,
       );
 
-      // Chuyển hướng về trang chủ sau 800ms
       timerRef.current = setTimeout(() => {
         window.location.href = '/';
-      }, 800);
+      }, 700);
     } catch (err: unknown) {
       if (err instanceof Error) {
-        setErrorMessage(err.message);
+        toast.error(err.message);
       } else {
-        setErrorMessage('Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.');
+        toast.error(
+          'Đăng nhập không thành công. Vui lòng kiểm tra lại thông tin.',
+        );
       }
     } finally {
       setIsLoading(false);
@@ -61,14 +79,20 @@ export const LoginForm: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
-    setErrorMessage('');
-    setSuccessMessage('');
-    setInfoMessage('Tính năng đăng nhập với Google đang được hoàn thiện.');
+    toast.info('Tính năng đăng nhập với Google đang được hoàn thiện.');
+  };
+
+  const handleForgotPassword = (e: React.MouseEvent) => {
+    e.preventDefault();
+    toast.info('Vui lòng liên hệ quản trị viên để lấy lại mật khẩu.');
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prev) => !prev);
   };
 
   return (
     <div className="tku-auth-form-wrapper">
-      {/* Header */}
       <div className="tku-auth-form__header">
         <h2 className="tku-auth-form__title">Chào mừng bạn trở lại</h2>
         <p className="tku-auth-form__subtitle">
@@ -76,7 +100,6 @@ export const LoginForm: React.FC = () => {
         </p>
       </div>
 
-      {/* Social Login: Google */}
       <button
         type="button"
         className="tku-google-btn"
@@ -103,27 +126,13 @@ export const LoginForm: React.FC = () => {
         <span>Tiếp tục với Google</span>
       </button>
 
-      {/* Divider */}
       <div className="tku-auth-divider">
         <span className="tku-auth-divider__line" />
         <span className="tku-auth-divider__text">hoặc đăng nhập bằng tài khoản</span>
         <span className="tku-auth-divider__line" />
       </div>
 
-      {/* Alerts */}
-      {errorMessage && (
-        <div className="tku-auth-error-alert">{errorMessage}</div>
-      )}
-      {successMessage && (
-        <div className="tku-auth-success-alert">{successMessage}</div>
-      )}
-      {infoMessage && (
-        <div className="tku-auth-info-alert">{infoMessage}</div>
-      )}
-
-      {/* Main Login Form */}
       <form onSubmit={handleSubmit} className="tku-auth-form">
-        {/* Email Field */}
         <div className="tku-form-group">
           <label htmlFor="email" className="tku-form-label">
             Email
@@ -136,20 +145,23 @@ export const LoginForm: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="student@tku.edu.vn"
-              className="tku-form-input"
-              autoComplete="email"
               required
+              autoComplete="email"
+              className="tku-form-input"
             />
           </div>
         </div>
 
-        {/* Password Field */}
         <div className="tku-form-group">
           <div className="tku-form-label-row">
             <label htmlFor="password" className="tku-form-label">
               Mật khẩu
             </label>
-            <a href="#forgot" className="tku-forgot-link">
+            <a
+              href="#forgot-password"
+              className="tku-forgot-link"
+              onClick={handleForgotPassword}
+            >
               Quên mật khẩu?
             </a>
           </div>
@@ -160,33 +172,31 @@ export const LoginForm: React.FC = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Nhập mật khẩu"
-              className="tku-form-input tku-form-input--pwd"
-              autoComplete="current-password"
+              placeholder="••••••••"
               required
+              autoComplete="current-password"
+              className="tku-form-input tku-form-input--pwd"
             />
             <button
               type="button"
-              onClick={() => setShowPassword(!showPassword)}
               className="tku-pwd-toggle-btn"
-              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+              onClick={togglePasswordVisibility}
+              aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiển thị mật khẩu'}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
-          disabled={isLoading}
           className="tku-btn tku-btn--primary tku-auth-submit-btn"
+          disabled={isLoading}
         >
-          {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          {isLoading ? 'Đang xác thực...' : 'Đăng nhập'}
         </button>
       </form>
 
-      {/* Footer Links */}
       <div className="tku-auth-footer">
         <p className="tku-auth-switch">
           Chưa có tài khoản?{' '}
@@ -194,11 +204,10 @@ export const LoginForm: React.FC = () => {
             Đăng ký ngay
           </a>
         </p>
-
         <p className="tku-auth-legal">
-          Bằng việc tiếp tục, bạn đồng ý với{' '}
+          Bằng việc đăng nhập, bạn đồng ý với{' '}
           <a href="#terms">Điều khoản sử dụng</a> và{' '}
-          <a href="#privacy">Chính sách bảo mật</a>.
+          <a href="#privacy">Chính sách bảo mật</a> của TKU.
         </p>
       </div>
     </div>
