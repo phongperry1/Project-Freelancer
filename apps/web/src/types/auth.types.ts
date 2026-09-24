@@ -27,6 +27,24 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface OtpResponse {
+  message: string;
+  email: string;
+  expiresInSeconds: number;
+  resendCooldownSeconds: number;
+}
+
+export interface VerifyOtpPayload {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyOtpResponse {
+  message: string;
+  email: string;
+  fullName: string;
+}
+
 export interface ApiErrorResponse {
   statusCode: number;
   message: string | string[];

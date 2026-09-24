@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Bell, Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
 import { useAuth } from '../../context/useAuth';
+import { toast } from '../../context/useToast';
 
 export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
@@ -11,7 +12,7 @@ export const Navbar: React.FC = () => {
   const handleLogout = () => {
     logout();
     setMobileMenuOpen(false);
-    window.location.href = '/';
+    toast.info('Bạn đã đăng xuất tài khoản thành công.');
   };
 
   const DEFAULT_AVATAR = '/assets/default-avatar.jpg';
@@ -26,7 +27,6 @@ export const Navbar: React.FC = () => {
   return (
     <header className="tku-navbar-wrapper">
       <div className="tku-container tku-navbar">
-        {/* Brand Logo - Native link triggers full reload back to home */}
         <a href="/" className="tku-brand">
           <img
             src="/assets/logo.png"
@@ -41,7 +41,6 @@ export const Navbar: React.FC = () => {
           </div>
         </a>
 
-        {/* Desktop Navigation Links */}
         <nav className="tku-nav-menu" aria-label="Điều hướng chính">
           {MAIN_NAV_ITEMS.map((item) => (
             <a
@@ -55,19 +54,18 @@ export const Navbar: React.FC = () => {
           ))}
         </nav>
 
-        {/* Right Action Buttons */}
         <div className="tku-nav-actions">
           <button
             type="button"
             className="tku-btn-icon"
             aria-label="Thông báo"
             title="Thông báo"
+            onClick={() => toast.info('Hiện chưa có thông báo mới.')}
           >
             <Bell size={18} />
           </button>
 
           {isAuthenticated && user ? (
-            /* User Profile & Logout */
             <div className="tku-user-profile">
               <div className="tku-user-chip" title={user.email}>
                 <div className="tku-user-avatar">
@@ -91,7 +89,6 @@ export const Navbar: React.FC = () => {
               </button>
             </div>
           ) : (
-            /* Guest Actions */
             <>
               <a href="/login" className="tku-btn tku-btn--outline">
                 Đăng nhập
@@ -102,7 +99,6 @@ export const Navbar: React.FC = () => {
             </>
           )}
 
-          {/* Mobile hamburger toggle */}
           <button
             type="button"
             className="tku-mobile-toggle"
@@ -115,7 +111,6 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="tku-mobile-drawer">
           <nav className="tku-mobile-nav">

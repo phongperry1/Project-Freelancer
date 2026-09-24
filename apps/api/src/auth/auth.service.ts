@@ -1,16 +1,21 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 
 import type { User } from '../generated/prisma/client.js';
+import { MailService } from '../mail/mail.service.js';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
+import { VerifyOtpDto } from './dto/verify-otp.dto.js';
+import { ResendOtpDto } from './dto/resend-otp.dto.js';
 
 export interface UserResponse {
   id: string;
@@ -26,23 +31,76 @@ export interface AuthResponse {
   user: UserResponse;
 }
 
+export interface OtpResponse {
+  message: string;
+  email: string;
+  expiresInSeconds: number;
+  resendCooldownSeconds: number;
+}
+
+export interface VerifyOtpResponse {
+  message: string;
+  email: string;
+  fullName: string;
+}
+
+interface StoredDevUser {
+  id: string;
+  email: string;
+  fullName: string;
+  passwordHash: string;
+  role: string;
+  status: string;
+  avatarUrl: string | null;
+}
+
+interface PendingRegistration {
+  fullName: string;
+  email: string;
+  passwordHash: string;
+  otp: string;
+  expiresAt: number;
+  resendAvailableAt: number;
+}
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
+  private static readonly devUsers = new Map<string, StoredDevUser>();
+  private static readonly pendingRegistrations = new Map<
+    string,
+    PendingRegistration
+  >();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
-    return argon2.hash(password);
+    return argon2.hash(password, { type: argon2.argon2id });
   }
 
   async verifyPassword(hash: string, plain: string): Promise<boolean> {
     return argon2.verify(hash, plain);
   }
 
-  async register(registerDto: RegisterDto): Promise<UserResponse> {
+  private pruneExpiredRegistrations(): void {
+    const now = Date.now();
+    for (const [key, value] of AuthService.pendingRegistrations.entries()) {
+      if (now > value.expiresAt) {
+        AuthService.pendingRegistrations.delete(key);
+      }
+    }
+  }
+
+  async initiateRegister(registerDto: RegisterDto): Promise<OtpResponse> {
+    this.pruneExpiredRegistrations();
+
     const normalizedEmail = registerDto.email.trim().toLowerCase();
+    const cleanFullName = registerDto.fullName.trim();
 
     try {
       const existingUser = await this.prisma.user.findUnique({
@@ -54,20 +112,95 @@ export class AuthService {
           'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.',
         );
       }
+    } catch (err: unknown) {
+      if (err instanceof ConflictException) {
+        throw err;
+      }
+    }
 
-      const passwordHash = await this.hashPassword(registerDto.password);
+    if (
+      normalizedEmail === 'student@tku.edu.vn' ||
+      AuthService.devUsers.has(normalizedEmail)
+    ) {
+      throw new ConflictException(
+        'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.',
+      );
+    }
 
+    if (!this.mailService.isConfigured()) {
+      throw new BadRequestException(
+        'Hệ thống chưa được cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.',
+      );
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    void this.mailService
+      .sendOtpEmail(normalizedEmail, cleanFullName, otp)
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Gửi email OTP thất bại cho ${normalizedEmail}: ${(err as Error)?.message}`,
+        );
+      });
+
+    const passwordHash = await this.hashPassword(registerDto.password);
+
+    const now = Date.now();
+    AuthService.pendingRegistrations.set(normalizedEmail, {
+      fullName: cleanFullName,
+      email: normalizedEmail,
+      passwordHash,
+      otp,
+      expiresAt: now + 5 * 60 * 1000,
+      resendAvailableAt: now + 60 * 1000,
+    });
+
+    return {
+      message: 'Mã xác thực OTP đã được gửi đến email của bạn.',
+      email: normalizedEmail,
+      expiresInSeconds: 300,
+      resendCooldownSeconds: 60,
+    };
+  }
+
+  async verifyOtp(verifyOtpDto: VerifyOtpDto): Promise<VerifyOtpResponse> {
+    const normalizedEmail = verifyOtpDto.email.trim().toLowerCase();
+    const inputOtp = verifyOtpDto.otp.trim();
+
+    const pending = AuthService.pendingRegistrations.get(normalizedEmail);
+    if (!pending) {
+      throw new BadRequestException(
+        'Yêu cầu xác thực không tồn tại hoặc đã hết hạn. Vui lòng đăng ký lại.',
+      );
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      AuthService.pendingRegistrations.delete(normalizedEmail);
+      throw new BadRequestException(
+        'Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới.',
+      );
+    }
+
+    if (pending.otp !== inputOtp) {
+      throw new BadRequestException(
+        'Mã OTP không chính xác. Vui lòng kiểm tra lại.',
+      );
+    }
+
+    let createdUser: UserResponse;
+
+    try {
       const newUser = await this.prisma.user.create({
         data: {
-          email: normalizedEmail,
-          fullName: registerDto.fullName.trim(),
-          passwordHash,
+          email: pending.email,
+          fullName: pending.fullName,
+          passwordHash: pending.passwordHash,
           role: 'STUDENT',
           status: 'ACTIVE',
         },
       });
 
-      return {
+      createdUser = {
         id: newUser.id,
         email: newUser.email,
         fullName: newUser.fullName,
@@ -76,20 +209,83 @@ export class AuthService {
         avatarUrl: newUser.avatarUrl,
       };
     } catch (err: unknown) {
-      if (err instanceof ConflictException) {
-        throw err;
+      if ((err as { code?: string })?.code === 'P2002') {
+        throw new ConflictException(
+          'Email này đã được sử dụng. Vui lòng đăng nhập hoặc sử dụng email khác.',
+        );
       }
 
-      // Dev fallback nếu DB PostgreSQL chưa kết nối trong môi trường dev
-      return {
-        id: 'dev-' + Date.now().toString(),
-        email: normalizedEmail,
-        fullName: registerDto.fullName.trim(),
+      const devId = 'usr-dev-' + Date.now().toString();
+      const devRecord: StoredDevUser = {
+        id: devId,
+        email: pending.email,
+        fullName: pending.fullName,
+        passwordHash: pending.passwordHash,
         role: 'STUDENT',
         status: 'ACTIVE',
         avatarUrl: null,
       };
+
+      AuthService.devUsers.set(pending.email, devRecord);
+
+      createdUser = {
+        id: devRecord.id,
+        email: devRecord.email,
+        fullName: devRecord.fullName,
+        role: devRecord.role,
+        status: devRecord.status,
+        avatarUrl: devRecord.avatarUrl,
+      };
     }
+
+    AuthService.pendingRegistrations.delete(normalizedEmail);
+
+    return {
+      message: 'Xác thực email và tạo tài khoản thành công!',
+      email: createdUser.email,
+      fullName: createdUser.fullName,
+    };
+  }
+
+  async resendOtp(resendOtpDto: ResendOtpDto): Promise<OtpResponse> {
+    const normalizedEmail = resendOtpDto.email.trim().toLowerCase();
+
+    const pending = AuthService.pendingRegistrations.get(normalizedEmail);
+    if (!pending) {
+      throw new BadRequestException(
+        'Không tìm thấy thông tin đăng ký cho email này. Vui lòng thực hiện đăng ký lại.',
+      );
+    }
+
+    const now = Date.now();
+    if (now < pending.resendAvailableAt) {
+      const remainingSeconds = Math.ceil(
+        (pending.resendAvailableAt - now) / 1000,
+      );
+      throw new BadRequestException(
+        `Vui lòng đợi ${remainingSeconds} giây trước khi yêu cầu gửi lại mã OTP.`,
+      );
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    pending.otp = newOtp;
+    pending.expiresAt = now + 5 * 60 * 1000;
+    pending.resendAvailableAt = now + 60 * 1000;
+
+    void this.mailService
+      .sendOtpEmail(pending.email, pending.fullName, newOtp)
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Gửi lại email OTP thất bại cho ${pending.email}: ${(err as Error)?.message}`,
+        );
+      });
+
+    return {
+      message: 'Mã xác thực OTP mới đã được gửi đến email của bạn.',
+      email: pending.email,
+      expiresInSeconds: 300,
+      resendCooldownSeconds: 60,
+    };
   }
 
   async validateUser(email: string, password: string): Promise<UserResponse> {
@@ -101,11 +297,8 @@ export class AuthService {
       user = await this.prisma.user.findUnique({
         where: { email: normalizedEmail },
       });
-    } catch {
-      // Bỏ qua lỗi kết nối DB nếu đang chạy dev cục bộ chưa bật PostgreSQL
-    }
+    } catch {}
 
-    // 1. Kiểm tra tài khoản trong cơ sở dữ liệu nếu có
     if (user) {
       if (user.status === 'SUSPENDED') {
         throw new ForbiddenException(
@@ -136,7 +329,27 @@ export class AuthService {
       };
     }
 
-    // 2. Tài khoản mẫu dự phòng dành cho môi trường phát triển (Dev Seed Account)
+    const devUser = AuthService.devUsers.get(normalizedEmail);
+    if (devUser) {
+      const isDevPasswordValid = await this.verifyPassword(
+        devUser.passwordHash,
+        password,
+      );
+
+      if (!isDevPasswordValid) {
+        throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+      }
+
+      return {
+        id: devUser.id,
+        email: devUser.email,
+        fullName: devUser.fullName,
+        role: devUser.role,
+        status: devUser.status,
+        avatarUrl: devUser.avatarUrl,
+      };
+    }
+
     if (normalizedEmail === 'student@tku.edu.vn') {
       if (password !== 'Password@123') {
         throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
@@ -152,7 +365,6 @@ export class AuthService {
       };
     }
 
-    // 3. Nếu không tìm thấy người dùng
     throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
   }
 
@@ -190,8 +402,19 @@ export class AuthService {
           avatarUrl: user.avatarUrl,
         };
       }
-    } catch {
-      // Fallback
+    } catch {}
+
+    for (const devUser of AuthService.devUsers.values()) {
+      if (devUser.id === userId) {
+        return {
+          id: devUser.id,
+          email: devUser.email,
+          fullName: devUser.fullName,
+          role: devUser.role,
+          status: devUser.status,
+          avatarUrl: devUser.avatarUrl,
+        };
+      }
     }
 
     if (userId === '11111111-1111-1111-1111-111111111111') {

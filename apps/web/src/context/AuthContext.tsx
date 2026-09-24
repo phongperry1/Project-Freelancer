@@ -3,15 +3,17 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import type { LoginCredentials, AuthResponse, User } from '../types/auth.types';
+import type {
+  LoginCredentials,
+  AuthResponse,
+  User,
+} from '../types/auth.types';
 import { authService } from '../services/auth.service';
 import { AuthContext, type AuthContextType } from './authContextDef';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // Khởi tạo state lười (lazy initializer) để đồng bộ ngay lập tức từ localStorage
-  // Tránh việc gọi setState đồng bộ trong useEffect gây re-render cascading
   const [user, setUser] = useState<User | null>(() => authService.getStoredUser());
   const [token, setToken] = useState<string | null>(() => authService.getStoredToken());
   const [isLoading] = useState<boolean>(false);
