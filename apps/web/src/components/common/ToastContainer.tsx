@@ -45,11 +45,10 @@ const ToastCard = memo(function ToastCard({
 }) {
   const [isLeaving, setIsLeaving] = useState(false);
   const [progress, setProgress] = useState(100);
-  const remainingTimeRef = useRef(toast.duration);
   const startTimeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const animFrameRef = useRef<number | null>(null);
-  const isHoveredRef = useRef(false);
+  const dismissTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleDismiss = useCallback(() => {
     if (timerRef.current) {
@@ -62,22 +61,29 @@ const ToastCard = memo(function ToastCard({
     }
 
     setIsLeaving(true);
-    setTimeout(() => {
+    dismissTimerRef.current = setTimeout(() => {
       onRemove(toast.id);
     }, 260);
   }, [onRemove, toast.id]);
 
-  const startTimer = useCallback(() => {
+  useEffect(() => {
+    return () => {
+      if (dismissTimerRef.current) {
+        clearTimeout(dismissTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     if (toast.duration <= 0) return;
 
     startTimeRef.current = Date.now();
-    const duration = remainingTimeRef.current;
+    const duration = toast.duration;
 
     const updateProgress = () => {
-      if (isHoveredRef.current) return;
       const elapsed = Date.now() - startTimeRef.current;
       const newRemaining = Math.max(0, duration - elapsed);
-      const pct = (newRemaining / toast.duration) * 100;
+      const pct = (newRemaining / duration) * 100;
       setProgress(pct);
 
       if (newRemaining > 0) {
@@ -90,40 +96,16 @@ const ToastCard = memo(function ToastCard({
     timerRef.current = setTimeout(() => {
       handleDismiss();
     }, duration);
-  }, [handleDismiss, toast.duration]);
 
-  const pauseTimer = useCallback(() => {
-    isHoveredRef.current = true;
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    const elapsed = Date.now() - startTimeRef.current;
-    remainingTimeRef.current = Math.max(0, remainingTimeRef.current - elapsed);
-  }, []);
-
-  const resumeTimer = useCallback(() => {
-    isHoveredRef.current = false;
-    startTimer();
-  }, [startTimer]);
-
-  useEffect(() => {
-    startTimer();
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     };
-  }, [startTimer]);
+  }, [handleDismiss, toast.duration]);
 
   return (
     <div
       className={`tku-toast tku-toast--${toast.type} ${isLeaving ? 'tku-toast--leaving' : ''}`}
-      onMouseEnter={pauseTimer}
-      onMouseLeave={resumeTimer}
       role="alert"
       aria-live="assertive"
     >

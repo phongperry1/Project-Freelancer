@@ -32,6 +32,17 @@ export const LoginForm: React.FC = () => {
           '',
           `${window.location.pathname}${newQuery}`,
         );
+      } else if (params.get('reset') === '1') {
+        toast.success(
+          'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.',
+        );
+        params.delete('reset');
+        const newQuery = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}${newQuery}`,
+        );
       }
     }
 
@@ -80,11 +91,6 @@ export const LoginForm: React.FC = () => {
 
   const handleGoogleLogin = () => {
     toast.info('Tính năng đăng nhập với Google đang được hoàn thiện.');
-  };
-
-  const handleForgotPassword = (e: React.MouseEvent) => {
-    e.preventDefault();
-    toast.info('Vui lòng liên hệ quản trị viên để lấy lại mật khẩu.');
   };
 
   const togglePasswordVisibility = () => {
@@ -158,9 +164,8 @@ export const LoginForm: React.FC = () => {
               Mật khẩu
             </label>
             <a
-              href="#forgot-password"
+              href="/forgot-password"
               className="tku-forgot-link"
-              onClick={handleForgotPassword}
             >
               Quên mật khẩu?
             </a>
