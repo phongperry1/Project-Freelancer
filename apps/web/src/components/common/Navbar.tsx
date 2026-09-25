@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
 import { useAuth } from '../../context/useAuth';
 import { toast } from '../../context/useToast';
 
 export const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeNav, setActiveNav] = useState('nav-home');
@@ -13,6 +15,7 @@ export const Navbar: React.FC = () => {
     logout();
     setMobileMenuOpen(false);
     toast.info('Bạn đã đăng xuất tài khoản thành công.');
+    navigate('/login');
   };
 
   const DEFAULT_AVATAR = '/assets/default-avatar.jpg';

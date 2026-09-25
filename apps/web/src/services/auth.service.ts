@@ -5,6 +5,10 @@ import type {
   OtpResponse,
   VerifyOtpPayload,
   VerifyOtpResponse,
+  VerifyResetOtpPayload,
+  VerifyResetOtpResponse,
+  ResetPasswordPayload,
+  ResetPasswordResponse,
   User,
   ApiErrorResponse,
 } from '../types/auth.types';
@@ -118,6 +122,122 @@ export const authService = {
       }
 
       const data: OtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async forgotPassword(email: string): Promise<OtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Không thể xử lý yêu cầu khôi phục mật khẩu. Vui lòng kiểm tra lại email.',
+        );
+        throw new Error(message);
+      }
+
+      const data: OtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async verifyResetOtp(
+    payload: VerifyResetOtpPayload,
+  ): Promise<VerifyResetOtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-reset-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Mã xác thực không chính xác hoặc đã hết hạn.',
+        );
+        throw new Error(message);
+      }
+
+      const data: VerifyResetOtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async resendResetOtp(email: string): Promise<OtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-reset-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Không thể gửi lại mã OTP. Vui lòng thử lại sau.',
+        );
+        throw new Error(message);
+      }
+
+      const data: OtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async resetPassword(
+    payload: ResetPasswordPayload,
+  ): Promise<ResetPasswordResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Đặt lại mật khẩu không thành công. Vui lòng thử lại.',
+        );
+        throw new Error(message);
+      }
+
+      const data: ResetPasswordResponse = await response.json();
       return data;
     } catch (err: unknown) {
       if (err instanceof Error) {

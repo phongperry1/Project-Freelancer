@@ -45,8 +45,35 @@ export interface VerifyOtpResponse {
   fullName: string;
 }
 
+export interface ForgotPasswordPayload {
+  email: string;
+}
+
+export interface VerifyResetOtpPayload {
+  email: string;
+  otp: string;
+}
+
+export interface VerifyResetOtpResponse {
+  message: string;
+  email: string;
+  resetToken: string;
+}
+
+export interface ResetPasswordPayload {
+  email: string;
+  resetToken: string;
+  newPassword: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  email: string;
+}
+
 export interface ApiErrorResponse {
   statusCode: number;
   message: string | string[];
   error?: string;
 }
+

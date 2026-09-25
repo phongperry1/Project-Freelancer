@@ -132,17 +132,21 @@ export const RegisterForm: React.FC = () => {
       otpInputRefs.current[index + 1]?.focus();
     }
 
-    if (cleanDigit && index === 5) {
-      const fullCode = newDigits.join('');
-      if (fullCode.length === 6) {
-        void executeVerification(fullCode);
-      }
+    const fullCode = newDigits.join('');
+    if (fullCode.length === 6) {
+      void executeVerification(fullCode);
     }
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      e.preventDefault();
+      otpInputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      e.preventDefault();
+      otpInputRefs.current[index + 1]?.focus();
     }
   };
 
@@ -184,11 +188,16 @@ export const RegisterForm: React.FC = () => {
         )}`;
       }, 700);
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        toast.error(err.message);
-      } else {
-        toast.error('Mã OTP không chính xác hoặc đã hết hạn.');
-      }
+      setOtpDigits(['', '', '', '', '', '']);
+      setTimeout(() => {
+        otpInputRefs.current[0]?.focus();
+      }, 50);
+
+      const errorMessage =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Mã OTP không chính xác hoặc đã hết hạn. Vui lòng thử lại.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -197,11 +206,9 @@ export const RegisterForm: React.FC = () => {
   const handleVerifySubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const otpCode = otpDigits.join('');
-    if (otpCode.length < 6) {
-      toast.error('Vui lòng nhập đầy đủ 6 chữ số của mã xác thực.');
-      return;
+    if (otpCode.length === 6) {
+      void executeVerification(otpCode);
     }
-    void executeVerification(otpCode);
   };
 
   const handleResendOtp = async () => {
@@ -291,6 +298,9 @@ export const RegisterForm: React.FC = () => {
               />
             ))}
           </div>
+          {isLoading && (
+            <p className="tku-otp-verifying-text">Đang xác thực mã OTP...</p>
+          )}
 
           <div className="tku-otp-resend-wrapper">
             <span>Chưa nhận được mã?</span>
@@ -309,14 +319,6 @@ export const RegisterForm: React.FC = () => {
               </button>
             )}
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading || otpDigits.join('').length < 6}
-            className="tku-btn tku-btn--primary tku-auth-submit-btn"
-          >
-            {isLoading ? 'Đang xác thực...' : 'Hoàn tất đăng ký'}
-          </button>
         </form>
 
         <div className="tku-auth-footer">

@@ -13,11 +13,17 @@ import { RegisterDto } from './dto/register.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { ResendOtpDto } from './dto/resend-otp.dto.js';
 import { LoginDto } from './dto/login.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
+import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import {
   AuthService,
   type AuthResponse,
   type OtpResponse,
   type VerifyOtpResponse,
+  type VerifyResetOtpResponse,
+  type ResetPasswordResponse,
 } from './auth.service.js';
 
 @ApiTags('Auth')
@@ -115,5 +121,97 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bước 1: Yêu cầu khôi phục mật khẩu & gửi OTP',
+    description:
+      'Kiểm tra email người dùng, tạo mã OTP 6 chữ số và gửi qua email để bắt đầu khôi phục mật khẩu.',
+  })
+  @ApiBody({
+    type: ForgotPasswordDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Mã xác thực OTP đã được gửi đến email thành công.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Email không hợp lệ hoặc lỗi cấu hình hệ thống.',
+  })
+  async forgotPassword(
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<OtpResponse> {
+    return this.authService.initiateForgotPassword(forgotPasswordDto);
+  }
+
+  @Post('verify-reset-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bước 2: Xác minh mã OTP đặt lại mật khẩu',
+    description:
+      'Xác thực mã OTP 6 chữ số gửi qua email. Nếu hợp lệ, trả về resetToken tạm thời để cho phép đặt mật khẩu mới.',
+  })
+  @ApiBody({
+    type: VerifyResetOtpDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Xác thực OTP thành công.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Mã OTP không chính xác hoặc đã hết hạn.',
+  })
+  async verifyResetOtp(
+    @Body() verifyResetOtpDto: VerifyResetOtpDto,
+  ): Promise<VerifyResetOtpResponse> {
+    return this.authService.verifyResetOtp(verifyResetOtpDto);
+  }
+
+  @Post('resend-reset-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Gửi lại mã OTP đặt lại mật khẩu',
+    description:
+      'Tạo mã OTP mới và gửi lại vào email với thời gian chờ cooldown 60s.',
+  })
+  @ApiBody({
+    type: ResendResetOtpDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đã gửi lại mã OTP mới.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Yêu cầu không hợp lệ hoặc đang trong thời gian chờ cooldown.',
+  })
+  async resendResetOtp(
+    @Body() resendResetOtpDto: ResendResetOtpDto,
+  ): Promise<OtpResponse> {
+    return this.authService.resendResetOtp(resendResetOtpDto);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bước 3: Tạo mật khẩu mới',
+    description:
+      'Cập nhật mật khẩu mới cho tài khoản dựa trên resetToken đã được xác thực.',
+  })
+  @ApiBody({
+    type: ResetPasswordDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đặt lại mật khẩu thành công.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Mật khẩu mới không hợp lệ hoặc resetToken không chính xác/hết hạn.',
+  })
+  async resetPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<ResetPasswordResponse> {
+    return this.authService.resetPassword(resetPasswordDto);
   }
 }
