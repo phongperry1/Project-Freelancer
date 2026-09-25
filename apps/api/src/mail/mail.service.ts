@@ -203,4 +203,118 @@ Tư Duy • Kiến Thức • Ước Mơ`;
       );
     }
   }
+
+  async sendPasswordResetOtpEmail(
+    to: string,
+    fullName: string,
+    otp: string,
+  ): Promise<boolean> {
+    const transporter = this.initTransporter();
+
+    if (!transporter) {
+      const errorMsg =
+        'Hệ thống chưa thể gửi mã xác thực vì chưa cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.';
+      this.logger.error(errorMsg);
+      throw new BadRequestException(errorMsg);
+    }
+
+    const mailUser = this.currentUser || '';
+    const fromAddress =
+      this.configService.get<string>('MAIL_FROM') ||
+      this.configService.get<string>('SMTP_FROM') ||
+      `"TKU Chemistry Center" <${mailUser}>`;
+
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khôi phục mật khẩu TKU</title>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; color: #1e293b; }
+    .container { max-width: 540px; margin: 30px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; }
+    .header { background: linear-gradient(135deg, #1d68f2 0%, #1754c7 100%); color: #ffffff; padding: 28px 24px; text-align: center; }
+    .brand-title { font-size: 24px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+    .brand-sub { font-size: 11px; letter-spacing: 0.1em; opacity: 0.9; margin-top: 4px; font-weight: 600; text-transform: uppercase; }
+    .content { padding: 32px 28px; line-height: 1.6; }
+    .greeting { font-size: 17px; font-weight: 700; color: #0f172a; margin-bottom: 12px; }
+    .desc { font-size: 14.5px; color: #475569; margin-bottom: 24px; }
+    .otp-wrapper { text-align: center; margin: 28px 0; }
+    .otp-code { display: inline-block; font-size: 32px; font-weight: 800; letter-spacing: 8px; color: #1d68f2; background-color: #eff6ff; padding: 14px 28px; border-radius: 10px; border: 2px dashed #93c5fd; }
+    .note { font-size: 13px; color: #64748b; background-color: #f8fafc; border-left: 4px solid #1d68f2; padding: 12px 16px; border-radius: 4px; margin-top: 24px; }
+    .warning { font-size: 12.5px; color: #b91c1c; margin-top: 14px; }
+    .footer { text-align: center; padding: 20px; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand-title">TKU CHEMISTRY CENTER</div>
+      <div class="brand-sub">Tư Duy • Kiến Thức • Ước Mơ</div>
+    </div>
+    <div class="content">
+      <div class="greeting">Xin chào ${fullName},</div>
+      <div class="desc">
+        Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản <strong>TKU</strong> của bạn. Vui lòng nhập mã xác thực (OTP) dưới đây để tiếp tục quá trình khôi phục:
+      </div>
+      <div class="otp-wrapper">
+        <span class="otp-code">${otp}</span>
+      </div>
+      <div class="note">
+        ⏱️ Mã xác thực này có hiệu lực trong vòng <strong>5 phút</strong>.<br>
+        🔒 Tuyệt đối không chia sẻ mã này cho bất kỳ ai để đảm bảo an toàn cho tài khoản của bạn.
+      </div>
+      <div class="warning">
+        Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email hoặc đổi mật khẩu để bảo vệ tài khoản.
+      </div>
+    </div>
+    <div class="footer">
+      Đây là email tự động từ hệ thống TKU, vui lòng không trả lời thư này.<br>
+      © ${new Date().getFullYear()} TKU Chemistry Center. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    const textContent = `Xin chào ${fullName},
+
+Chúng tôi đã nhận được yêu cầu đặt lại mật khẩu cho tài khoản TKU của bạn.
+Mã xác thực (OTP) đặt lại mật khẩu của bạn là: ${otp}
+
+Mã xác thực này có hiệu lực trong vòng 5 phút. Nếu bạn không yêu cầu, vui lòng bỏ qua thư này.
+
+Trân trọng,
+TKU Chemistry Center
+Tư Duy • Kiến Thức • Ước Mơ`;
+
+    try {
+      await transporter.sendMail({
+        from: fromAddress,
+        sender: mailUser,
+        replyTo: mailUser,
+        to,
+        subject: `Mã xác thực đặt lại mật khẩu TKU của bạn: ${otp}`,
+        text: textContent,
+        html: htmlContent,
+        priority: 'high',
+        headers: {
+          'X-Priority': '1',
+          'Importance': 'high',
+        },
+      });
+      this.logger.log(`Đã gửi email OTP đặt lại mật khẩu thành công tới: ${to}`);
+      return true;
+    } catch (err: unknown) {
+      const errMsg = (err as Error)?.message || 'Lỗi gửi mail qua Google';
+      this.logger.error(
+        `Gửi email OTP đặt lại mật khẩu thất bại qua Google Mail tới [${to}]: ${errMsg}`,
+      );
+      throw new BadRequestException(
+        `Không thể gửi mã xác thực tới email ${to} qua Google Mail: ${errMsg}. Vui lòng kiểm tra lại tài khoản hoặc Mật khẩu ứng dụng Google.`,
+      );
+    }
+  }
 }
+

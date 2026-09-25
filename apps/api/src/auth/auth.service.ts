@@ -1,9 +1,11 @@
+import { randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -16,6 +18,10 @@ import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { VerifyOtpDto } from './dto/verify-otp.dto.js';
 import { ResendOtpDto } from './dto/resend-otp.dto.js';
+import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
+import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
+import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 
 export interface UserResponse {
   id: string;
@@ -44,6 +50,17 @@ export interface VerifyOtpResponse {
   fullName: string;
 }
 
+export interface VerifyResetOtpResponse {
+  message: string;
+  email: string;
+  resetToken: string;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
+  email: string;
+}
+
 interface StoredDevUser {
   id: string;
   email: string;
@@ -63,6 +80,16 @@ interface PendingRegistration {
   resendAvailableAt: number;
 }
 
+interface PendingPasswordReset {
+  email: string;
+  fullName: string;
+  otp: string;
+  expiresAt: number;
+  resendAvailableAt: number;
+  resetToken?: string;
+  isVerified: boolean;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -71,6 +98,10 @@ export class AuthService {
   private static readonly pendingRegistrations = new Map<
     string,
     PendingRegistration
+  >();
+  private static readonly pendingPasswordResets = new Map<
+    string,
+    PendingPasswordReset
   >();
 
   constructor(
@@ -429,5 +460,274 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Không tìm thấy thông tin người dùng.');
+  }
+
+  private pruneExpiredResets(): void {
+    const now = Date.now();
+    for (const [key, value] of AuthService.pendingPasswordResets.entries()) {
+      if (now > value.expiresAt) {
+        AuthService.pendingPasswordResets.delete(key);
+      }
+    }
+  }
+
+  private async findUserByEmail(email: string): Promise<{
+    id: string;
+    email: string;
+    fullName: string;
+    status: string;
+  } | null> {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+      if (user) {
+        return {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          status: user.status,
+        };
+      }
+    } catch {}
+
+    const devUser = AuthService.devUsers.get(normalizedEmail);
+    if (devUser) {
+      return {
+        id: devUser.id,
+        email: devUser.email,
+        fullName: devUser.fullName,
+        status: devUser.status,
+      };
+    }
+
+    if (normalizedEmail === 'student@tku.edu.vn') {
+      return {
+        id: '11111111-1111-1111-1111-111111111111',
+        email: 'student@tku.edu.vn',
+        fullName: 'Học sinh TKU (Demo)',
+        status: 'ACTIVE',
+      };
+    }
+
+    return null;
+  }
+
+  async initiateForgotPassword(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<OtpResponse> {
+    this.pruneExpiredResets();
+
+    const normalizedEmail = forgotPasswordDto.email.trim().toLowerCase();
+    const user = await this.findUserByEmail(normalizedEmail);
+
+    if (!user) {
+      throw new NotFoundException(
+        'Email này chưa được đăng ký trong hệ thống. Vui lòng kiểm tra lại hoặc đăng ký tài khoản mới.',
+      );
+    }
+
+    if (user.status === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
+      );
+    }
+
+    if (user.status === 'INACTIVE') {
+      throw new BadRequestException(
+        'Tài khoản này chưa được kích hoạt. Vui lòng hoàn tất kích hoạt tài khoản trước.',
+      );
+    }
+
+    if (!this.mailService.isConfigured()) {
+      throw new BadRequestException(
+        'Hệ thống chưa được cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.',
+      );
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    void this.mailService
+      .sendPasswordResetOtpEmail(normalizedEmail, user.fullName, otp)
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Gửi email OTP đặt lại mật khẩu thất bại cho ${normalizedEmail}: ${(err as Error)?.message}`,
+        );
+      });
+
+    const now = Date.now();
+    AuthService.pendingPasswordResets.set(normalizedEmail, {
+      email: normalizedEmail,
+      fullName: user.fullName,
+      otp,
+      expiresAt: now + 5 * 60 * 1000,
+      resendAvailableAt: now + 60 * 1000,
+      isVerified: false,
+    });
+
+    return {
+      message: 'Mã xác thực OTP đã được gửi đến email của bạn.',
+      email: normalizedEmail,
+      expiresInSeconds: 300,
+      resendCooldownSeconds: 60,
+    };
+  }
+
+  async verifyResetOtp(
+    verifyResetOtpDto: VerifyResetOtpDto,
+  ): Promise<VerifyResetOtpResponse> {
+    const normalizedEmail = verifyResetOtpDto.email.trim().toLowerCase();
+    const inputOtp = verifyResetOtpDto.otp.trim();
+
+    const pending = AuthService.pendingPasswordResets.get(normalizedEmail);
+    if (!pending) {
+      throw new BadRequestException(
+        'Yêu cầu khôi phục mật khẩu không tồn tại hoặc đã hết hạn. Vui lòng thực hiện lại.',
+      );
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      AuthService.pendingPasswordResets.delete(normalizedEmail);
+      throw new BadRequestException(
+        'Mã OTP đã hết hạn. Vui lòng yêu cầu gửi lại mã mới.',
+      );
+    }
+
+    if (pending.otp !== inputOtp) {
+      throw new BadRequestException(
+        'Mã OTP không chính xác. Vui lòng kiểm tra lại.',
+      );
+    }
+
+    const resetToken = randomUUID();
+    pending.isVerified = true;
+    pending.resetToken = resetToken;
+    pending.expiresAt = Date.now() + 10 * 60 * 1000;
+
+    return {
+      message: 'Xác thực OTP thành công. Vui lòng tạo mật khẩu mới.',
+      email: normalizedEmail,
+      resetToken,
+    };
+  }
+
+  async resendResetOtp(
+    resendResetOtpDto: ResendResetOtpDto,
+  ): Promise<OtpResponse> {
+    const normalizedEmail = resendResetOtpDto.email.trim().toLowerCase();
+
+    const pending = AuthService.pendingPasswordResets.get(normalizedEmail);
+    if (!pending) {
+      throw new BadRequestException(
+        'Không tìm thấy yêu cầu khôi phục mật khẩu cho email này. Vui lòng thực hiện lại từ đầu.',
+      );
+    }
+
+    const now = Date.now();
+    if (now < pending.resendAvailableAt) {
+      const remainingSeconds = Math.ceil(
+        (pending.resendAvailableAt - now) / 1000,
+      );
+      throw new BadRequestException(
+        `Vui lòng đợi ${remainingSeconds} giây trước khi yêu cầu gửi lại mã OTP.`,
+      );
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    pending.otp = newOtp;
+    pending.expiresAt = now + 5 * 60 * 1000;
+    pending.resendAvailableAt = now + 60 * 1000;
+    pending.isVerified = false;
+    pending.resetToken = undefined;
+
+    void this.mailService
+      .sendPasswordResetOtpEmail(pending.email, pending.fullName, newOtp)
+      .catch((err: unknown) => {
+        this.logger.error(
+          `Gửi lại email OTP đặt lại mật khẩu thất bại cho ${pending.email}: ${(err as Error)?.message}`,
+        );
+      });
+
+    return {
+      message: 'Mã xác thực OTP mới đã được gửi đến email của bạn.',
+      email: pending.email,
+      expiresInSeconds: 300,
+      resendCooldownSeconds: 60,
+    };
+  }
+
+  async resetPassword(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<ResetPasswordResponse> {
+    const normalizedEmail = resetPasswordDto.email.trim().toLowerCase();
+    const { resetToken, newPassword } = resetPasswordDto;
+
+    const pending = AuthService.pendingPasswordResets.get(normalizedEmail);
+    if (!pending) {
+      throw new BadRequestException(
+        'Yêu cầu đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng thực hiện lại.',
+      );
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      AuthService.pendingPasswordResets.delete(normalizedEmail);
+      throw new BadRequestException(
+        'Phiên đặt lại mật khẩu đã hết hạn. Vui lòng thực hiện lại từ đầu.',
+      );
+    }
+
+    if (
+      !pending.isVerified ||
+      !pending.resetToken ||
+      pending.resetToken !== resetToken
+    ) {
+      throw new UnauthorizedException(
+        'Mã xác thực phiên đặt lại mật khẩu không hợp lệ. Vui lòng xác thực lại OTP.',
+      );
+    }
+
+    if (!newPassword || newPassword.length < 6) {
+      throw new BadRequestException('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+    }
+
+    const passwordHash = await this.hashPassword(newPassword);
+
+    try {
+      await this.prisma.user.update({
+        where: { email: normalizedEmail },
+        data: { passwordHash },
+      });
+    } catch (err: unknown) {
+      this.logger.warn(
+        `Không thể cập nhật mật khẩu trong Prisma: ${(err as Error)?.message}`,
+      );
+    }
+
+    const devUser = AuthService.devUsers.get(normalizedEmail);
+    if (devUser) {
+      devUser.passwordHash = passwordHash;
+    }
+
+    if (normalizedEmail === 'student@tku.edu.vn') {
+      AuthService.devUsers.set(normalizedEmail, {
+        id: '11111111-1111-1111-1111-111111111111',
+        email: 'student@tku.edu.vn',
+        fullName: 'Học sinh TKU (Demo)',
+        passwordHash,
+        role: 'STUDENT',
+        status: 'ACTIVE',
+        avatarUrl: null,
+      });
+    }
+
+    AuthService.pendingPasswordResets.delete(normalizedEmail);
+
+    return {
+      message:
+        'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.',
+      email: normalizedEmail,
+    };
   }
 }
