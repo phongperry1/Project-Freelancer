@@ -17,6 +17,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
 import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { GoogleAuthDto } from './dto/google-auth.dto.js';
 import {
   AuthService,
   type AuthResponse,
@@ -121,6 +122,32 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Đăng nhập hoặc đăng ký bằng tài khoản Google',
+    description:
+      'Xác thực Google ID Token, tự động đồng bộ avatar và thông tin nếu email đã tồn tại hoặc tạo mới tài khoản nếu chưa tồn tại.',
+  })
+  @ApiBody({
+    type: GoogleAuthDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đăng nhập Google thành công, trả về Access Token và thông tin người dùng.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Mã xác thực Google không hợp lệ hoặc đã hết hạn.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Dữ liệu xác thực không hợp lệ.',
+  })
+  async loginWithGoogle(
+    @Body() googleAuthDto: GoogleAuthDto,
+  ): Promise<AuthResponse> {
+    return this.authService.loginWithGoogle(googleAuthDto);
   }
 
   @Post('forgot-password')
