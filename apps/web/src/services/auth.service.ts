@@ -9,6 +9,7 @@ import type {
   VerifyResetOtpResponse,
   ResetPasswordPayload,
   ResetPasswordResponse,
+  GoogleAuthPayload,
   User,
   ApiErrorResponse,
 } from '../types/auth.types';
@@ -261,6 +262,35 @@ export const authService = {
         const message = await extractErrorMessage(
           response,
           'Đăng nhập không thành công. Vui lòng thử lại.',
+        );
+        throw new Error(message);
+      }
+
+      const data: AuthResponse = await response.json();
+      handleAuthSession(data);
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async loginWithGoogle(payload: GoogleAuthPayload): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/google`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Đăng nhập bằng Google không thành công. Vui lòng thử lại.',
         );
         throw new Error(message);
       }

@@ -22,6 +22,7 @@ export const Navbar: React.FC = () => {
 
   const handleAvatarError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const target = e.currentTarget;
+    target.onerror = null;
     if (!target.src.endsWith(DEFAULT_AVATAR)) {
       target.src = DEFAULT_AVATAR;
     }
@@ -76,6 +77,7 @@ export const Navbar: React.FC = () => {
                     src={user.avatarUrl || DEFAULT_AVATAR}
                     alt={user.fullName}
                     className="tku-user-avatar-img"
+                    referrerPolicy="no-referrer"
                     onError={handleAvatarError}
                   />
                 </div>
@@ -140,6 +142,7 @@ export const Navbar: React.FC = () => {
                         src={user.avatarUrl || DEFAULT_AVATAR}
                         alt={user.fullName}
                         className="tku-user-avatar-img"
+                        referrerPolicy="no-referrer"
                         onError={handleAvatarError}
                       />
                     </div>

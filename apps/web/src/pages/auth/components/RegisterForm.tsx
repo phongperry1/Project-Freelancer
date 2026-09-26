@@ -2,11 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { authService } from '../../../services/auth.service';
 import { toast } from '../../../context/useToast';
+import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
+import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
 
 type RegisterStep = 'form' | 'otp';
 
 export const RegisterForm: React.FC = () => {
   const [step, setStep] = useState<RegisterStep>('form');
+  const {
+    signInWithGoogle,
+    signInWithDemoAccount,
+    isGoogleLoading,
+    isDevModalOpen,
+    setIsDevModalOpen,
+  } = useGoogleAuth();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -241,10 +250,6 @@ export const RegisterForm: React.FC = () => {
     setStep('form');
   };
 
-  const handleGoogleRegister = () => {
-    toast.info('Tính năng đăng ký với Google đang được hoàn thiện.');
-  };
-
   const togglePassword = () => {
     setShowPassword((prev) => !prev);
   };
@@ -345,7 +350,8 @@ export const RegisterForm: React.FC = () => {
       <button
         type="button"
         className="tku-google-btn"
-        onClick={handleGoogleRegister}
+        onClick={signInWithGoogle}
+        disabled={isLoading || isGoogleLoading}
       >
         <svg
           className="tku-google-icon"
@@ -370,7 +376,9 @@ export const RegisterForm: React.FC = () => {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>Đăng ký với Google</span>
+        <span>
+          {isGoogleLoading ? 'Đang kết nối Google...' : 'Đăng ký với Google'}
+        </span>
       </button>
 
       <div className="tku-auth-divider">
@@ -495,6 +503,13 @@ export const RegisterForm: React.FC = () => {
           <a href="#privacy">Chính sách bảo mật</a>.
         </p>
       </div>
+
+      <GoogleDevModal
+        isOpen={isDevModalOpen}
+        onClose={() => setIsDevModalOpen(false)}
+        onSelectAccount={signInWithDemoAccount}
+        isLoading={isGoogleLoading}
+      />
     </div>
   );
 };

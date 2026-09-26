@@ -2,9 +2,18 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
+import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
+import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
 
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
+  const {
+    signInWithGoogle,
+    signInWithDemoAccount,
+    isGoogleLoading,
+    isDevModalOpen,
+    setIsDevModalOpen,
+  } = useGoogleAuth();
 
   const [email, setEmail] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -73,9 +82,16 @@ export const LoginForm: React.FC = () => {
         `Đăng nhập thành công! Chào mừng ${res.user.fullName} quay trở lại.`,
       );
 
+      const redirectParam =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect')
+          : null;
+      const targetUrl =
+        redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+
       timerRef.current = setTimeout(() => {
-        window.location.href = '/';
-      }, 700);
+        window.location.href = targetUrl;
+      }, 600);
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message);
@@ -87,10 +103,6 @@ export const LoginForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleGoogleLogin = () => {
-    toast.info('Tính năng đăng nhập với Google đang được hoàn thiện.');
   };
 
   const togglePasswordVisibility = () => {
@@ -109,7 +121,8 @@ export const LoginForm: React.FC = () => {
       <button
         type="button"
         className="tku-google-btn"
-        onClick={handleGoogleLogin}
+        onClick={signInWithGoogle}
+        disabled={isLoading || isGoogleLoading}
       >
         <svg className="tku-google-icon" viewBox="0 0 24 24" width="20" height="20">
           <path
@@ -129,7 +142,9 @@ export const LoginForm: React.FC = () => {
             d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
           />
         </svg>
-        <span>Tiếp tục với Google</span>
+        <span>
+          {isGoogleLoading ? 'Đang kết nối Google...' : 'Tiếp tục với Google'}
+        </span>
       </button>
 
       <div className="tku-auth-divider">
@@ -215,6 +230,13 @@ export const LoginForm: React.FC = () => {
           <a href="#privacy">Chính sách bảo mật</a> của TKU.
         </p>
       </div>
+
+      <GoogleDevModal
+        isOpen={isDevModalOpen}
+        onClose={() => setIsDevModalOpen(false)}
+        onSelectAccount={signInWithDemoAccount}
+        isLoading={isGoogleLoading}
+      />
     </div>
   );
 };
