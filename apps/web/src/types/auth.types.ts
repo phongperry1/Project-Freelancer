@@ -22,6 +22,11 @@ export interface RegisterCredentials {
   fullName: string;
 }
 
+export interface GoogleAuthPayload {
+  credential: string;
+  demoEmail?: string;
+}
+
 export interface AuthResponse {
   accessToken: string;
   user: User;

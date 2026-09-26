@@ -2,6 +2,7 @@ import { createContext } from 'react';
 import type {
   User,
   LoginCredentials,
+  GoogleAuthPayload,
   AuthResponse,
 } from '../types/auth.types';
 
@@ -11,6 +12,7 @@ export interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  loginWithGoogle: (payload: GoogleAuthPayload) => Promise<AuthResponse>;
   logout: () => void;
 }
 

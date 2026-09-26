@@ -5,6 +5,7 @@ import React, {
 } from 'react';
 import type {
   LoginCredentials,
+  GoogleAuthPayload,
   AuthResponse,
   User,
 } from '../types/auth.types';
@@ -28,6 +29,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
 
+  const loginWithGoogle = useCallback(
+    async (payload: GoogleAuthPayload): Promise<AuthResponse> => {
+      const result = await authService.loginWithGoogle(payload);
+      setToken(result.accessToken);
+      setUser(result.user);
+      return result;
+    },
+    [],
+  );
+
   const logout = useCallback(() => {
     authService.logout();
     setToken(null);
@@ -41,9 +52,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isAuthenticated: Boolean(token && user),
       isLoading,
       login,
+      loginWithGoogle,
       logout,
     }),
-    [user, token, isLoading, login, logout],
+    [user, token, isLoading, login, loginWithGoogle, logout],
   );
 
   return (

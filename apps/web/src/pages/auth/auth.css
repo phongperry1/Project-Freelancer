@@ -566,3 +566,260 @@
     font-size: 20px;
   }
 }
+
+/* ==========================================================================
+   Google Auth & Dev Modal Styles
+   ========================================================================== */
+.tku-google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.tku-gmodal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: tkuFadeIn 0.2s ease-out;
+}
+
+.tku-gmodal-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 16px;
+  max-width: 490px;
+  width: 100%;
+  padding: 28px 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: tkuSlideUp 0.25s ease-out;
+}
+
+.tku-gmodal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-gmodal-close:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.tku-gmodal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tku-gmodal-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.tku-gmodal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+}
+
+.tku-gmodal-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tku-gmodal-section {
+  margin-bottom: 18px;
+}
+
+.tku-gmodal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.tku-gmodal-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-gmodal-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.tku-gmodal-preset-btn:hover {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.tku-gmodal-preset-btn:hover .tku-gmodal-preset-arrow {
+  transform: translateX(3px);
+  color: #2563eb;
+}
+
+.tku-gmodal-preset-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-gmodal-preset-avatar--new {
+  background-color: #ecfdf5;
+}
+
+.tku-gmodal-preset-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-gmodal-preset-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tku-gmodal-preset-email {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tku-gmodal-preset-arrow {
+  color: #94a3b8;
+  transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tku-gmodal-form {
+  margin-top: 14px;
+}
+
+.tku-gmodal-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tku-gmodal-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tku-gmodal-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tku-gmodal-submit-btn {
+  padding: 10px 16px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.tku-gmodal-submit-btn:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.tku-gmodal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tku-gmodal-footer-tip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding: 10px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.tku-gmodal-tip-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #3b82f6;
+}
+
+.tku-gmodal-footer-tip code {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+@keyframes tkuFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tkuSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

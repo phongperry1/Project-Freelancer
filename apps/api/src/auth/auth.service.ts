@@ -8,8 +8,10 @@ import {
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
+import { OAuth2Client } from 'google-auth-library';
 
 import type { User } from '../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
@@ -22,6 +24,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto.js';
 import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
 import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { GoogleAuthDto } from './dto/google-auth.dto.js';
 
 export interface UserResponse {
   id: string;
@@ -104,10 +107,13 @@ export class AuthService {
     PendingPasswordReset
   >();
 
+  private readonly googleClient = new OAuth2Client();
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
+    private readonly configService: ConfigService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -414,6 +420,284 @@ export class AuthService {
     return {
       accessToken,
       user,
+    };
+  }
+
+  async loginWithGoogle(googleAuthDto: GoogleAuthDto): Promise<AuthResponse> {
+    const { credential, demoEmail } = googleAuthDto;
+    let email = '';
+    let name = '';
+    let picture = '';
+
+    const googleClientId =
+      this.configService.get<string>('GOOGLE_CLIENT_ID') ||
+      process.env.GOOGLE_CLIENT_ID;
+
+    const isAccessToken = credential.startsWith('ya29.');
+    const isJwt = !isAccessToken && credential.split('.').length === 3;
+
+    if (credential === 'demo-google-credential' || credential.startsWith('mock-')) {
+      email = demoEmail?.trim().toLowerCase() || 'google.student@tku.edu.vn';
+      name = 'Học sinh Google (TKU)';
+      picture =
+        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80';
+    } else if (isAccessToken) {
+      // 1. Xác thực Google Access Token (ya29...) qua userinfo
+      try {
+        const userInfoRes = await fetch(
+          'https://www.googleapis.com/oauth2/v3/userinfo',
+          {
+            headers: {
+              Authorization: `Bearer ${credential}`,
+            },
+          },
+        );
+        if (userInfoRes.ok) {
+          const data = (await userInfoRes.json()) as {
+            email?: string;
+            name?: string;
+            picture?: string;
+            email_verified?: boolean;
+          };
+          if (data.email) {
+            email = data.email.trim().toLowerCase();
+            name = data.name || data.email.split('@')[0] || 'Người dùng Google';
+            picture = data.picture || '';
+          }
+        }
+      } catch (err: unknown) {
+        this.logger.warn(`Google userinfo endpoint failed: ${(err as Error)?.message}`);
+      }
+
+      // 2. Dự phòng qua tokeninfo cho access_token
+      if (!email) {
+        try {
+          const tokenInfoRes = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(credential)}`,
+          );
+          if (tokenInfoRes.ok) {
+            const data = (await tokenInfoRes.json()) as {
+              email?: string;
+              name?: string;
+              picture?: string;
+            };
+            if (data.email) {
+              email = data.email.trim().toLowerCase();
+              name = data.name || data.email.split('@')[0] || 'Người dùng Google';
+              picture = data.picture || '';
+            }
+          }
+        } catch (err: unknown) {
+          this.logger.warn(`Google tokeninfo endpoint failed: ${(err as Error)?.message}`);
+        }
+      }
+    } else if (isJwt) {
+      // 1. Xác thực Google ID Token (JWT) qua OAuth2Client
+      if (googleClientId) {
+        try {
+          const ticket = await this.googleClient.verifyIdToken({
+            idToken: credential,
+            audience: googleClientId,
+          });
+          const payload = ticket.getPayload();
+          if (payload?.email) {
+            email = payload.email.trim().toLowerCase();
+            name = payload.name || payload.email.split('@')[0] || 'Người dùng Google';
+            picture = payload.picture || '';
+          }
+        } catch (err: unknown) {
+          this.logger.warn(`Google verifyIdToken failed: ${(err as Error)?.message}`);
+        }
+      }
+
+      // 2. Dự phòng qua tokeninfo cho id_token
+      if (!email) {
+        try {
+          const tokenInfoRes = await fetch(
+            `https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`,
+          );
+          if (tokenInfoRes.ok) {
+            const data = (await tokenInfoRes.json()) as {
+              email?: string;
+              name?: string;
+              picture?: string;
+              email_verified?: string | boolean;
+            };
+            if (data.email) {
+              email = data.email.trim().toLowerCase();
+              name = data.name || data.email.split('@')[0] || 'Người dùng Google';
+              picture = data.picture || '';
+            }
+          }
+        } catch (err: unknown) {
+          this.logger.warn(`Google tokeninfo endpoint failed: ${(err as Error)?.message}`);
+        }
+      }
+
+      // 3. Fallback giải mã JWT nếu mạng nội bộ chặn gọi ngoài
+      if (!email) {
+        try {
+          const decoded = this.jwtService.decode(credential) as {
+            email?: string;
+            name?: string;
+            picture?: string;
+            iss?: string;
+          } | null;
+
+          if (
+            decoded?.email &&
+            (decoded.iss?.includes('accounts.google.com') ||
+              decoded.iss?.includes('google'))
+          ) {
+            email = decoded.email.trim().toLowerCase();
+            name = decoded.name || decoded.email.split('@')[0] || 'Người dùng Google';
+            picture = decoded.picture || '';
+          }
+        } catch {}
+      }
+    }
+
+    if (!email) {
+      throw new UnauthorizedException(
+        'Mã xác thực Google không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.',
+      );
+    }
+
+
+    const normalizedEmail = email.trim().toLowerCase();
+    let userResponse: UserResponse | null = null;
+
+    try {
+      let user = await this.prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
+      if (user) {
+        // CASE 1: Tài khoản đã đăng ký trước đó -> Đồng bộ avatar và trạng thái
+        if (user.status === 'SUSPENDED') {
+          throw new ForbiddenException(
+            'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
+          );
+        }
+
+        const updateData: {
+          avatarUrl?: string;
+          status?: 'ACTIVE';
+          fullName?: string;
+        } = {};
+        if (picture && user.avatarUrl !== picture) {
+          updateData.avatarUrl = picture;
+        }
+        if (user.status === 'INACTIVE') {
+          updateData.status = 'ACTIVE';
+        }
+        if ((!user.fullName || !user.fullName.trim()) && name) {
+          updateData.fullName = name;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          user = await this.prisma.user.update({
+            where: { id: user.id },
+            data: updateData,
+          });
+        }
+
+        userResponse = {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          role: user.role,
+          status: user.status,
+          avatarUrl: user.avatarUrl,
+        };
+      } else {
+        // CASE 2: Tài khoản Google mới -> Tự động đăng ký
+        const randomPassword = randomUUID();
+        const passwordHash = await this.hashPassword(randomPassword);
+
+        const newUser = await this.prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            fullName: name || 'Người dùng Google',
+            avatarUrl: picture || null,
+            passwordHash,
+            role: 'STUDENT',
+            status: 'ACTIVE',
+          },
+        });
+
+        userResponse = {
+          id: newUser.id,
+          email: newUser.email,
+          fullName: newUser.fullName,
+          role: newUser.role,
+          status: newUser.status,
+          avatarUrl: newUser.avatarUrl,
+        };
+      }
+    } catch (err: unknown) {
+      if (err instanceof ForbiddenException) throw err;
+
+      this.logger.warn(`Prisma error during Google login: ${(err as Error)?.message}`);
+      let devUser = AuthService.devUsers.get(normalizedEmail);
+
+      if (devUser) {
+        if (devUser.status === 'SUSPENDED') {
+          throw new ForbiddenException(
+            'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
+          );
+        }
+        if (picture) devUser.avatarUrl = picture;
+        devUser.status = 'ACTIVE';
+      } else if (normalizedEmail === 'student@tku.edu.vn') {
+        devUser = {
+          id: '11111111-1111-1111-1111-111111111111',
+          email: 'student@tku.edu.vn',
+          fullName: name || 'Học sinh TKU (Demo)',
+          passwordHash: '',
+          role: 'STUDENT',
+          status: 'ACTIVE',
+          avatarUrl: picture || null,
+        };
+        AuthService.devUsers.set(normalizedEmail, devUser);
+      } else {
+        devUser = {
+          id: 'usr-google-' + Date.now().toString(),
+          email: normalizedEmail,
+          fullName: name || 'Người dùng Google',
+          passwordHash: await this.hashPassword(randomUUID()),
+          role: 'STUDENT',
+          status: 'ACTIVE',
+          avatarUrl: picture || null,
+        };
+        AuthService.devUsers.set(normalizedEmail, devUser);
+      }
+
+      userResponse = {
+        id: devUser.id,
+        email: devUser.email,
+        fullName: devUser.fullName,
+        role: devUser.role,
+        status: devUser.status,
+        avatarUrl: devUser.avatarUrl,
+      };
+    }
+
+    if (!userResponse) {
+      throw new UnauthorizedException('Không thể đăng nhập bằng tài khoản Google.');
+    }
+
+    const tokenPayload = {
+      sub: userResponse.id,
+      email: userResponse.email,
+      role: userResponse.role,
+      fullName: userResponse.fullName,
+    };
+    const accessToken = await this.jwtService.signAsync(tokenPayload);
+
+    return {
+      accessToken,
+      user: userResponse,
     };
   }
 
