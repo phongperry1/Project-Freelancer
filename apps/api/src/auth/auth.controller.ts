@@ -1,4 +1,12 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -18,6 +26,8 @@ import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
 import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { GoogleAuthDto } from './dto/google-auth.dto.js';
+import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
+import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 import {
   AuthService,
   type AuthResponse,
@@ -240,5 +250,69 @@ export class AuthController {
     @Body() resetPasswordDto: ResetPasswordDto,
   ): Promise<ResetPasswordResponse> {
     return this.authService.resetPassword(resetPasswordDto);
+  }
+
+  @Post('verify-device-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Xác thực OTP thiết bị mới và cấp token phiên',
+  })
+  @ApiBody({
+    type: VerifyDeviceOtpDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Xác thực thiết bị thành công, đăng nhập thành công.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Mã OTP không chính xác hoặc đã hết hạn.',
+  })
+  async verifyDeviceOtp(
+    @Body() verifyDeviceOtpDto: VerifyDeviceOtpDto,
+  ): Promise<AuthResponse> {
+    return this.authService.verifyDeviceOtp(verifyDeviceOtpDto);
+  }
+
+  @Post('resend-device-otp')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Gửi lại OTP xác thực thiết bị mới',
+  })
+  @ApiBody({
+    type: ResendDeviceOtpDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đã gửi lại mã OTP xác thực thiết bị.',
+  })
+  @ApiBadRequestResponse({
+    description: 'Yêu cầu không hợp lệ hoặc đang trong thời gian chờ cooldown.',
+  })
+  async resendDeviceOtp(
+    @Body() resendDeviceOtpDto: ResendDeviceOtpDto,
+  ): Promise<OtpResponse> {
+    return this.authService.resendDeviceOtp(resendDeviceOtpDto);
+  }
+
+  @Get('check-session')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Kiểm tra trạng thái phiên đăng nhập của thiết bị hiện tại',
+  })
+  async checkSession(
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ valid: boolean; code?: string; message?: string }> {
+    return this.authService.checkSession(authorization);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Đăng xuất khỏi thiết bị hiện tại',
+  })
+  async logout(
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string }> {
+    return this.authService.logout(authorization);
   }
 }
