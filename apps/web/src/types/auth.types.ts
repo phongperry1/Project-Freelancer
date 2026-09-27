@@ -14,6 +14,9 @@ export interface User {
 export interface LoginCredentials {
   email: string;
   password: string;
+  deviceId?: string;
+  deviceName?: string;
+  ipAddress?: string;
 }
 
 export interface RegisterCredentials {
@@ -25,11 +28,40 @@ export interface RegisterCredentials {
 export interface GoogleAuthPayload {
   credential: string;
   demoEmail?: string;
+  deviceId?: string;
+  deviceName?: string;
+  ipAddress?: string;
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  user: User;
+  accessToken?: string;
+  user?: User;
+  requireDeviceVerification?: boolean;
+  deviceId?: string;
+  deviceName?: string;
+  email?: string;
+  message?: string;
+}
+
+export interface VerifyDeviceOtpPayload {
+  email: string;
+  deviceId: string;
+  otp: string;
+  deviceName?: string;
+  ipAddress?: string;
+}
+
+export interface ResendDeviceOtpPayload {
+  email: string;
+  deviceId: string;
+  deviceName?: string;
+  ipAddress?: string;
+}
+
+export interface CheckSessionResponse {
+  valid: boolean;
+  code?: string;
+  message?: string;
 }
 
 export interface OtpResponse {
@@ -81,4 +113,3 @@ export interface ApiErrorResponse {
   message: string | string[];
   error?: string;
 }
-

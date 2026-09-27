@@ -609,4 +609,265 @@
   border-width: 0;
 }
 
+/* ==========================================================================
+   AUTHENTICATION & SECURITY MODALS (VANILLA CSS)
+   ========================================================================== */
+.tku-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: tkuModalFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tku-modal-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 20px;
+  max-width: 480px;
+  width: 100%;
+  padding: 36px 30px 32px;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  animation: tkuModalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@keyframes tkuModalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tkuModalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tku-modal-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.tku-modal-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-modal-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  margin-bottom: 20px;
+  border: 1px solid #bfdbfe;
+  box-shadow: 0 10px 20px -5px rgba(29, 104, 242, 0.2);
+}
+
+.tku-modal-icon-badge--danger {
+  background: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%);
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+  box-shadow: 0 10px 20px -5px rgba(225, 29, 72, 0.2);
+}
+
+.tku-modal-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.tku-modal-desc {
+  font-size: 14.5px;
+  color: #475569;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+
+.tku-modal-email-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 9999px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+
+.tku-modal-device-info {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-modal-device-label {
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.tku-modal-device-val {
+  color: #0f172a;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 6-box OTP Inputs */
+.tku-otp-inputs-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  width: 100%;
+}
+
+.tku-otp-box {
+  width: 48px;
+  height: 58px;
+  border-radius: 12px;
+  border: 1.5px solid #cbd5e1;
+  background-color: #ffffff;
+  color: #0f172a;
+  font-size: 24px;
+  font-weight: 800;
+  text-align: center;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  outline: none;
+  box-sizing: border-box;
+}
+
+.tku-otp-box:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 4px rgba(29, 104, 242, 0.18);
+  transform: translateY(-2px);
+}
+
+/* Action button inside modal */
+.tku-modal-submit-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1d68f2 0%, #1555c8 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 16px -2px rgba(29, 104, 242, 0.3);
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+  box-sizing: border-box;
+}
+
+.tku-modal-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1555c8 0%, #0d44a6 100%);
+  box-shadow: 0 10px 20px -2px rgba(29, 104, 242, 0.4);
+  transform: translateY(-1px);
+}
+
+.tku-modal-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.tku-modal-submit-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.tku-modal-resend-row {
+  font-size: 13.5px;
+  color: #64748b;
+}
+
+.tku-modal-resend-btn {
+  border: none;
+  background: transparent;
+  color: #1d68f2;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  text-decoration: underline;
+  transition: color 0.15s ease;
+}
+
+.tku-modal-resend-btn:hover:not(:disabled) {
+  color: #1555c8;
+}
+
+.tku-modal-resend-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* Warning Callout Box for Session Terminated */
+.tku-modal-warning-box {
+  background-color: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+  text-align: left;
+  display: flex;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #92400e;
+  line-height: 1.5;
+}
+
+.tku-spin {
+  animation: tku-spin 0.8s linear infinite;
+}
+
+
 

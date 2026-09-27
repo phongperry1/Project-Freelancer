@@ -4,6 +4,9 @@ import type {
   LoginCredentials,
   GoogleAuthPayload,
   AuthResponse,
+  VerifyDeviceOtpPayload,
+  ResendDeviceOtpPayload,
+  OtpResponse,
 } from '../types/auth.types';
 
 export interface AuthContextType {
@@ -13,7 +16,12 @@ export interface AuthContextType {
   isLoading: boolean;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
   loginWithGoogle: (payload: GoogleAuthPayload) => Promise<AuthResponse>;
+  verifyDeviceOtp: (payload: VerifyDeviceOtpPayload) => Promise<AuthResponse>;
+  resendDeviceOtp: (payload: ResendDeviceOtpPayload) => Promise<OtpResponse>;
   logout: () => void;
+  isSessionTerminated: boolean;
+  sessionTerminatedReason: string;
+  closeSessionTerminatedModal: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

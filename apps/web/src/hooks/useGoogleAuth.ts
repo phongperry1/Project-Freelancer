@@ -38,7 +38,11 @@ declare global {
   }
 }
 
-export function useGoogleAuth() {
+import type { AuthResponse } from '../types/auth.types';
+
+export function useGoogleAuth(
+  onDeviceVerificationNeeded?: (res: AuthResponse) => void,
+) {
   const { loginWithGoogle } = useAuth();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
@@ -47,6 +51,11 @@ export function useGoogleAuth() {
   const googleClientId = (
     import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
   ).trim();
+
+  const onDeviceVerificationNeededRef = useRef(onDeviceVerificationNeeded);
+  useEffect(() => {
+    onDeviceVerificationNeededRef.current = onDeviceVerificationNeeded;
+  }, [onDeviceVerificationNeeded]);
 
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -67,8 +76,19 @@ export function useGoogleAuth() {
           demoEmail,
         });
 
+        if (res.requireDeviceVerification) {
+          toast.info(
+            res.message ||
+              'Phát hiện đăng nhập thiết bị mới. Vui lòng xác thực mã OTP gửi về email.',
+          );
+          if (onDeviceVerificationNeededRef.current) {
+            onDeviceVerificationNeededRef.current(res);
+          }
+          return;
+        }
+
         toast.success(
-          `Đăng nhập Google thành công! Chào mừng ${res.user.fullName}.`,
+          `Đăng nhập Google thành công! Chào mừng ${res.user?.fullName || ''}.`,
         );
 
         const redirectParam =

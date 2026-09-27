@@ -1,19 +1,36 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
 import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
 import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
+import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
+import type { AuthResponse } from '../../../types/auth.types';
 
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
+
+  const [deviceVerificationData, setDeviceVerificationData] = useState<{
+    email: string;
+    deviceId: string;
+    deviceName: string;
+  } | null>(null);
+
+  const handleDeviceVerificationNeeded = useCallback((res: AuthResponse) => {
+    setDeviceVerificationData({
+      email: res.email || '',
+      deviceId: res.deviceId || '',
+      deviceName: res.deviceName || 'Thiết bị mới',
+    });
+  }, []);
+
   const {
     signInWithGoogle,
     signInWithDemoAccount,
     isGoogleLoading,
     isDevModalOpen,
     setIsDevModalOpen,
-  } = useGoogleAuth();
+  } = useGoogleAuth(handleDeviceVerificationNeeded);
 
   const [email, setEmail] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -78,8 +95,21 @@ export const LoginForm: React.FC = () => {
         password,
       });
 
+      if (res.requireDeviceVerification) {
+        toast.info(
+          res.message ||
+            'Phát hiện thiết bị mới. Vui lòng nhập mã OTP đã gửi qua email để tiếp tục.',
+        );
+        setDeviceVerificationData({
+          email: res.email || email.trim(),
+          deviceId: res.deviceId || '',
+          deviceName: res.deviceName || 'Thiết bị mới',
+        });
+        return;
+      }
+
       toast.success(
-        `Đăng nhập thành công! Chào mừng ${res.user.fullName} quay trở lại.`,
+        `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
       );
 
       const redirectParam =
@@ -91,7 +121,7 @@ export const LoginForm: React.FC = () => {
 
       timerRef.current = setTimeout(() => {
         window.location.href = targetUrl;
-      }, 600);
+      }, 500);
     } catch (err: unknown) {
       if (err instanceof Error) {
         toast.error(err.message);
@@ -103,6 +133,24 @@ export const LoginForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDeviceOtpSuccess = (res: AuthResponse) => {
+    setDeviceVerificationData(null);
+    toast.success(
+      `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
+    );
+
+    const redirectParam =
+      typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).get('redirect')
+        : null;
+    const targetUrl =
+      redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+
+    timerRef.current = setTimeout(() => {
+      window.location.href = targetUrl;
+    }, 500);
   };
 
   const togglePasswordVisibility = () => {
@@ -178,10 +226,7 @@ export const LoginForm: React.FC = () => {
             <label htmlFor="password" className="tku-form-label">
               Mật khẩu
             </label>
-            <a
-              href="/forgot-password"
-              className="tku-forgot-link"
-            >
+            <a href="/forgot-password" className="tku-forgot-password-link">
               Quên mật khẩu?
             </a>
           </div>
@@ -195,7 +240,7 @@ export const LoginForm: React.FC = () => {
               placeholder="••••••••"
               required
               autoComplete="current-password"
-              className="tku-form-input tku-form-input--pwd"
+              className="tku-form-input"
             />
             <button
               type="button"
@@ -237,6 +282,17 @@ export const LoginForm: React.FC = () => {
         onSelectAccount={signInWithDemoAccount}
         isLoading={isGoogleLoading}
       />
+
+      {deviceVerificationData && (
+        <DeviceOtpModal
+          isOpen={Boolean(deviceVerificationData)}
+          email={deviceVerificationData.email}
+          deviceId={deviceVerificationData.deviceId}
+          deviceName={deviceVerificationData.deviceName}
+          onSuccess={handleDeviceOtpSuccess}
+          onClose={() => setDeviceVerificationData(null)}
+        />
+      )}
     </div>
   );
 };

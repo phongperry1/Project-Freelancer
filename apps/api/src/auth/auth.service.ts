@@ -25,6 +25,8 @@ import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto.js';
 import { ResendResetOtpDto } from './dto/resend-reset-otp.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { GoogleAuthDto } from './dto/google-auth.dto.js';
+import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
+import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 
 export interface UserResponse {
   id: string;
@@ -36,8 +38,13 @@ export interface UserResponse {
 }
 
 export interface AuthResponse {
-  accessToken: string;
-  user: UserResponse;
+  accessToken?: string;
+  user?: UserResponse;
+  requireDeviceVerification?: boolean;
+  deviceId?: string;
+  deviceName?: string;
+  email?: string;
+  message?: string;
 }
 
 export interface OtpResponse {
@@ -93,6 +100,18 @@ interface PendingPasswordReset {
   isVerified: boolean;
 }
 
+interface PendingDeviceVerification {
+  userId: string;
+  email: string;
+  fullName: string;
+  deviceId: string;
+  deviceName: string;
+  ipAddress?: string;
+  otp: string;
+  expiresAt: number;
+  resendAvailableAt: number;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -105,6 +124,10 @@ export class AuthService {
   private static readonly pendingPasswordResets = new Map<
     string,
     PendingPasswordReset
+  >();
+  private static readonly pendingDeviceVerifications = new Map<
+    string,
+    PendingDeviceVerification
   >();
 
   private readonly googleClient = new OAuth2Client();
@@ -129,6 +152,15 @@ export class AuthService {
     for (const [key, value] of AuthService.pendingRegistrations.entries()) {
       if (now > value.expiresAt) {
         AuthService.pendingRegistrations.delete(key);
+      }
+    }
+  }
+
+  private pruneExpiredDeviceVerifications(): void {
+    const now = Date.now();
+    for (const [key, value] of AuthService.pendingDeviceVerifications.entries()) {
+      if (now > value.expiresAt) {
+        AuthService.pendingDeviceVerifications.delete(key);
       }
     }
   }
@@ -407,20 +439,12 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<AuthResponse> {
     const user = await this.validateUser(loginDto.email, loginDto.password);
-
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      fullName: user.fullName,
-    };
-
-    const accessToken = await this.jwtService.signAsync(payload);
-
-    return {
-      accessToken,
+    return this.handleDeviceAndSession(
       user,
-    };
+      loginDto.deviceId,
+      loginDto.deviceName,
+      loginDto.ipAddress,
+    );
   }
 
   async loginWithGoogle(googleAuthDto: GoogleAuthDto): Promise<AuthResponse> {
@@ -687,18 +711,12 @@ export class AuthService {
       throw new UnauthorizedException('Không thể đăng nhập bằng tài khoản Google.');
     }
 
-    const tokenPayload = {
-      sub: userResponse.id,
-      email: userResponse.email,
-      role: userResponse.role,
-      fullName: userResponse.fullName,
-    };
-    const accessToken = await this.jwtService.signAsync(tokenPayload);
-
-    return {
-      accessToken,
-      user: userResponse,
-    };
+    return this.handleDeviceAndSession(
+      userResponse,
+      googleAuthDto.deviceId,
+      googleAuthDto.deviceName,
+      googleAuthDto.ipAddress,
+    );
   }
 
   async getProfile(userId: string): Promise<UserResponse> {
@@ -1013,5 +1031,377 @@ export class AuthService {
         'Đặt lại mật khẩu thành công! Vui lòng đăng nhập với mật khẩu mới.',
       email: normalizedEmail,
     };
+  }
+
+  private async handleDeviceAndSession(
+    user: UserResponse,
+    deviceId?: string,
+    deviceName?: string,
+    ipAddress?: string,
+  ): Promise<AuthResponse> {
+    this.pruneExpiredDeviceVerifications();
+
+    const resolvedDeviceId =
+      deviceId?.trim() || `device-${user.id.slice(0, 8)}`;
+    const resolvedDeviceName = deviceName?.trim() || 'Thiết bị không xác định';
+
+    let existingDevices: {
+      id: string;
+      deviceId: string;
+      isTrusted: boolean;
+      sessionToken: string | null;
+    }[] = [];
+
+    try {
+      existingDevices = await this.prisma.userDevice.findMany({
+        where: { userId: user.id },
+      });
+    } catch (err: unknown) {
+      this.logger.warn(
+        `Prisma userDevice query failed: ${(err as Error)?.message}`,
+      );
+    }
+
+    // CASE 1: Chưa có thiết bị nào (Lần đăng nhập đầu tiên sau khi đăng ký)
+    // Tự động tin cậy thiết bị đầu tiên này mà không cần OTP thêm.
+    if (existingDevices.length === 0) {
+      const sessionToken = randomUUID();
+      try {
+        await this.prisma.userDevice.create({
+          data: {
+            userId: user.id,
+            deviceId: resolvedDeviceId,
+            deviceName: resolvedDeviceName,
+            ipAddress: ipAddress || null,
+            isTrusted: true,
+            sessionToken,
+            lastLoginAt: new Date(),
+          },
+        });
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Không thể tạo thiết bị đầu tiên: ${(err as Error)?.message}`,
+        );
+      }
+
+      const tokenPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName,
+        sessionId: sessionToken,
+      };
+      const accessToken = await this.jwtService.signAsync(tokenPayload);
+
+      return {
+        accessToken,
+        user,
+      };
+    }
+
+    // CASE 2: Đã có danh sách thiết bị. Kiểm tra xem thiết bị này đã từng được tin cậy chưa.
+    const currentDevice = existingDevices.find(
+      (d) => d.deviceId === resolvedDeviceId,
+    );
+
+    if (currentDevice && currentDevice.isTrusted) {
+      // Thiết bị quen thuộc đã được tin cậy -> Đăng nhập ngay & thực thi Single Active Session
+      const sessionToken = randomUUID();
+      try {
+        await this.prisma.$transaction([
+          // Kick out tất cả các phiên đăng nhập khác của user này
+          this.prisma.userDevice.updateMany({
+            where: { userId: user.id, sessionToken: { not: null } },
+            data: { sessionToken: null },
+          }),
+          // Gán sessionToken mới cho thiết bị hiện tại
+          this.prisma.userDevice.update({
+            where: { id: currentDevice.id },
+            data: {
+              sessionToken,
+              lastLoginAt: new Date(),
+              deviceName: resolvedDeviceName,
+              ipAddress: ipAddress || null,
+            },
+          }),
+        ]);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Không thể cập nhật session thiết bị: ${(err as Error)?.message}`,
+        );
+      }
+
+      const tokenPayload = {
+        sub: user.id,
+        email: user.email,
+        role: user.role,
+        fullName: user.fullName,
+        sessionId: sessionToken,
+      };
+      const accessToken = await this.jwtService.signAsync(tokenPayload);
+
+      return {
+        accessToken,
+        user,
+      };
+    }
+
+    // CASE 3: Thiết bị mới chưa được tin cậy -> Bắt buộc xác thực OTP qua Gmail
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const key = `${user.email.toLowerCase()}_${resolvedDeviceId}`;
+
+    AuthService.pendingDeviceVerifications.set(key, {
+      userId: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      deviceId: resolvedDeviceId,
+      deviceName: resolvedDeviceName,
+      ipAddress,
+      otp,
+      expiresAt: Date.now() + 5 * 60 * 1000,
+      resendAvailableAt: Date.now() + 60 * 1000,
+    });
+
+    try {
+      await this.mailService.sendNewDeviceOtpEmail(
+        user.email,
+        user.fullName,
+        otp,
+        resolvedDeviceName,
+        ipAddress || 'Không xác định',
+      );
+    } catch (mailErr: unknown) {
+      this.logger.error(
+        `Lỗi gửi email cảnh báo thiết bị mới: ${(mailErr as Error)?.message}`,
+      );
+    }
+
+    return {
+      requireDeviceVerification: true,
+      email: user.email,
+      deviceId: resolvedDeviceId,
+      deviceName: resolvedDeviceName,
+      message:
+        'Phát hiện đăng nhập trên thiết bị mới. Chúng tôi đã gửi mã xác thực OTP về email của bạn để bảo mật.',
+    };
+  }
+
+  async verifyDeviceOtp(
+    verifyDeviceOtpDto: VerifyDeviceOtpDto,
+  ): Promise<AuthResponse> {
+    const normalizedEmail = verifyDeviceOtpDto.email.trim().toLowerCase();
+    const key = `${normalizedEmail}_${verifyDeviceOtpDto.deviceId}`;
+    const pending = AuthService.pendingDeviceVerifications.get(key);
+
+    if (!pending) {
+      throw new BadRequestException(
+        'Mã xác thực không hợp lệ hoặc phiên xác thực đã hết hạn. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    if (Date.now() > pending.expiresAt) {
+      AuthService.pendingDeviceVerifications.delete(key);
+      throw new BadRequestException(
+        'Mã xác thực OTP đã hết hạn (quá 5 phút). Vui lòng yêu cầu gửi lại mã mới.',
+      );
+    }
+
+    if (pending.otp !== verifyDeviceOtpDto.otp.trim()) {
+      throw new BadRequestException('Mã OTP xác thực không chính xác.');
+    }
+
+    // OTP chính xác! Tin cậy thiết bị này và áp dụng Single Active Session
+    const sessionToken = randomUUID();
+
+    try {
+      await this.prisma.$transaction([
+        // Kick out tất cả phiên trước đó
+        this.prisma.userDevice.updateMany({
+          where: { userId: pending.userId, sessionToken: { not: null } },
+          data: { sessionToken: null },
+        }),
+        // Upsert thiết bị mới là trusted
+        this.prisma.userDevice.upsert({
+          where: {
+            userId_deviceId: {
+              userId: pending.userId,
+              deviceId: pending.deviceId,
+            },
+          },
+          update: {
+            isTrusted: true,
+            sessionToken,
+            lastLoginAt: new Date(),
+            deviceName: pending.deviceName,
+            ipAddress: pending.ipAddress || null,
+          },
+          create: {
+            userId: pending.userId,
+            deviceId: pending.deviceId,
+            deviceName: pending.deviceName,
+            ipAddress: pending.ipAddress || null,
+            isTrusted: true,
+            sessionToken,
+            lastLoginAt: new Date(),
+          },
+        }),
+      ]);
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi lưu thiết bị xác thực: ${(err as Error)?.message}`);
+    }
+
+    AuthService.pendingDeviceVerifications.delete(key);
+
+    const user = await this.getProfile(pending.userId).catch(() => ({
+      id: pending.userId,
+      email: pending.email,
+      fullName: pending.fullName,
+      role: 'STUDENT',
+      status: 'ACTIVE',
+      avatarUrl: null,
+    }));
+
+    const tokenPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      sessionId: sessionToken,
+    };
+    const accessToken = await this.jwtService.signAsync(tokenPayload);
+
+    return {
+      accessToken,
+      user,
+      message: 'Xác thực thiết bị thành công! Đã đăng nhập.',
+    };
+  }
+
+  async resendDeviceOtp(
+    resendDeviceOtpDto: ResendDeviceOtpDto,
+  ): Promise<OtpResponse> {
+    const normalizedEmail = resendDeviceOtpDto.email.trim().toLowerCase();
+    const key = `${normalizedEmail}_${resendDeviceOtpDto.deviceId}`;
+    const pending = AuthService.pendingDeviceVerifications.get(key);
+
+    if (!pending) {
+      throw new BadRequestException(
+        'Không tìm thấy phiên xác thực thiết bị. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    const now = Date.now();
+    if (now < pending.resendAvailableAt) {
+      const waitSeconds = Math.ceil((pending.resendAvailableAt - now) / 1000);
+      throw new BadRequestException(
+        `Vui lòng đợi ${waitSeconds} giây trước khi yêu cầu gửi lại mã.`,
+      );
+    }
+
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
+    pending.otp = newOtp;
+    pending.expiresAt = now + 5 * 60 * 1000;
+    pending.resendAvailableAt = now + 60 * 1000;
+    if (resendDeviceOtpDto.deviceName)
+      pending.deviceName = resendDeviceOtpDto.deviceName;
+    if (resendDeviceOtpDto.ipAddress)
+      pending.ipAddress = resendDeviceOtpDto.ipAddress;
+
+    await this.mailService.sendNewDeviceOtpEmail(
+      pending.email,
+      pending.fullName,
+      newOtp,
+      pending.deviceName,
+      pending.ipAddress || 'Không xác định',
+    );
+
+    return {
+      message: 'Mã xác thực OTP mới đã được gửi đến email của bạn.',
+      email: pending.email,
+      expiresInSeconds: 300,
+      resendCooldownSeconds: 60,
+    };
+  }
+
+  async checkSession(
+    tokenHeader?: string,
+  ): Promise<{ valid: boolean; code?: string; message?: string }> {
+    if (!tokenHeader) {
+      return {
+        valid: false,
+        code: 'UNAUTHORIZED',
+        message: 'Thiếu token xác thực.',
+      };
+    }
+
+    const token = tokenHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      return {
+        valid: false,
+        code: 'UNAUTHORIZED',
+        message: 'Token không hợp lệ.',
+      };
+    }
+
+    let payload: { sub?: string; sessionId?: string } | null = null;
+    try {
+      payload = await this.jwtService.verifyAsync(token);
+    } catch {
+      return {
+        valid: false,
+        code: 'TOKEN_EXPIRED',
+        message: 'Phiên đăng nhập đã hết hạn.',
+      };
+    }
+
+    if (!payload?.sub || !payload?.sessionId) {
+      return { valid: true };
+    }
+
+    try {
+      const device = await this.prisma.userDevice.findUnique({
+        where: {
+          sessionToken: payload.sessionId,
+        },
+      });
+
+      if (!device || device.userId !== payload.sub) {
+        return {
+          valid: false,
+          code: 'SESSION_TERMINATED',
+          message:
+            'Tài khoản của bạn vừa đăng nhập ở một thiết bị hoặc trình duyệt khác. Phiên này đã bị ngắt kết nối để bảo mật.',
+        };
+      }
+
+      return { valid: true };
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi checkSession: ${(err as Error)?.message}`);
+      return { valid: true };
+    }
+  }
+
+  async logout(tokenHeader?: string): Promise<{ message: string }> {
+    if (!tokenHeader) {
+      return { message: 'Đăng xuất thành công.' };
+    }
+
+    const token = tokenHeader.replace(/^Bearer\s+/i, '').trim();
+    try {
+      const payload = this.jwtService.decode(token) as {
+        sub?: string;
+        sessionId?: string;
+      } | null;
+      if (payload?.sub && payload?.sessionId) {
+        await this.prisma.userDevice.updateMany({
+          where: { userId: payload.sub, sessionToken: payload.sessionId },
+          data: { sessionToken: null },
+        });
+      }
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi logout device: ${(err as Error)?.message}`);
+    }
+
+    return { message: 'Đăng xuất thành công.' };
   }
 }

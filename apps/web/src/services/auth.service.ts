@@ -10,9 +10,13 @@ import type {
   ResetPasswordPayload,
   ResetPasswordResponse,
   GoogleAuthPayload,
+  VerifyDeviceOtpPayload,
+  ResendDeviceOtpPayload,
+  CheckSessionResponse,
   User,
   ApiErrorResponse,
 } from '../types/auth.types';
+import { getOrCreateDeviceId, getDeviceName } from '../utils/device';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
@@ -21,7 +25,7 @@ const TOKEN_KEY = 'tku_access_token';
 const USER_KEY = 'tku_user';
 
 const handleAuthSession = (data: AuthResponse): void => {
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && data.accessToken && data.user) {
     localStorage.setItem(TOKEN_KEY, data.accessToken);
     localStorage.setItem(USER_KEY, JSON.stringify(data.user));
   }
@@ -250,12 +254,18 @@ export const authService = {
 
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
+      const payload: LoginCredentials = {
+        ...credentials,
+        deviceId: credentials.deviceId || getOrCreateDeviceId(),
+        deviceName: credentials.deviceName || getDeviceName(),
+      };
+
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
@@ -267,7 +277,9 @@ export const authService = {
       }
 
       const data: AuthResponse = await response.json();
-      handleAuthSession(data);
+      if (data.accessToken && data.user) {
+        handleAuthSession(data);
+      }
       return data;
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -279,12 +291,18 @@ export const authService = {
 
   async loginWithGoogle(payload: GoogleAuthPayload): Promise<AuthResponse> {
     try {
+      const fullPayload: GoogleAuthPayload = {
+        ...payload,
+        deviceId: payload.deviceId || getOrCreateDeviceId(),
+        deviceName: payload.deviceName || getDeviceName(),
+      };
+
       const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(fullPayload),
       });
 
       if (!response.ok) {
@@ -296,7 +314,9 @@ export const authService = {
       }
 
       const data: AuthResponse = await response.json();
-      handleAuthSession(data);
+      if (data.accessToken && data.user) {
+        handleAuthSession(data);
+      }
       return data;
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -306,7 +326,111 @@ export const authService = {
     }
   },
 
+  async verifyDeviceOtp(
+    payload: VerifyDeviceOtpPayload,
+  ): Promise<AuthResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/verify-device-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Mã xác thực thiết bị không hợp lệ hoặc đã hết hạn.',
+        );
+        throw new Error(message);
+      }
+
+      const data: AuthResponse = await response.json();
+      if (data.accessToken && data.user) {
+        handleAuthSession(data);
+      }
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async resendDeviceOtp(
+    payload: ResendDeviceOtpPayload,
+  ): Promise<OtpResponse> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/resend-device-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const message = await extractErrorMessage(
+          response,
+          'Không thể gửi lại mã OTP thiết bị. Vui lòng thử lại sau.',
+        );
+        throw new Error(message);
+      }
+
+      const data: OtpResponse = await response.json();
+      return data;
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      throw new Error('Không thể kết nối đến máy chủ API.', { cause: err });
+    }
+  },
+
+  async checkSession(): Promise<CheckSessionResponse> {
+    const token = this.getStoredToken();
+    if (!token) {
+      return { valid: false, code: 'UNAUTHORIZED' };
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/check-session`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        return { valid: false, code: 'SESSION_TERMINATED' };
+      }
+
+      const data: CheckSessionResponse = await response.json();
+      return data;
+    } catch {
+      // Nếu lỗi mạng, coi như tạm thời hợp lệ để không ngắt người dùng vô cớ
+      return { valid: true };
+    }
+  },
+
   logout(): void {
+    const token = this.getStoredToken();
+    if (token) {
+      try {
+        void fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }).catch(() => {});
+      } catch (err) {
+        // Bỏ qua lỗi kết nối khi gửi yêu cầu logout
+        void err;
+      }
+    }
+
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
