@@ -1,0 +1,929 @@
+
+.tku-auth-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #dbeafe;
+  padding: 24px;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.tku-auth-page__ambient {
+  position: fixed;
+  inset: -12px;
+  background-image: url('/assets/auth-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: blur(3px);
+  transform: scale(1.02);
+  will-change: transform;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.tku-auth-page__ambient::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(219, 234, 254, 0.22) 60%,
+    rgba(186, 230, 253, 0.38) 100%
+  );
+}
+
+.tku-auth-card {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  max-width: 980px;
+  width: 100%;
+  min-height: 580px;
+  background-color: #ffffff;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.16), 0 10px 25px -5px rgba(15, 23, 42, 0.08);
+  position: relative;
+  z-index: 10;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+}
+
+.tku-auth-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 30;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f1f5f9;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border: none;
+}
+
+.tku-auth-close-btn:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  transform: rotate(90deg);
+}
+.tku-auth-banner {
+  background: linear-gradient(155deg, #5398f8 0%, #3e85f5 48%, #2771ec 100%);
+  color: #ffffff;
+  padding: 40px 38px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.tku-auth-banner__decor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Subtle clean geometric orbit rings */
+.tku-auth-banner__orbit {
+  position: absolute;
+  border-radius: 50%;
+  top: -70px;
+  right: -70px;
+  pointer-events: none;
+}
+
+.tku-auth-banner__orbit--1 {
+  width: 320px;
+  height: 320px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.tku-auth-banner__orbit--2 {
+  width: 460px;
+  height: 460px;
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+}
+
+.tku-auth-banner__orbit--3 {
+  width: 600px;
+  height: 600px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Brand header */
+.tku-auth-banner__brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #ffffff;
+  position: relative;
+  z-index: 2;
+  width: fit-content;
+}
+
+.tku-auth-banner__logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  transition: transform 0.2s ease;
+}
+
+.tku-auth-banner__brand:hover .tku-auth-banner__logo-box {
+  transform: translateY(-2px);
+}
+
+.tku-auth-banner__logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+}
+
+.tku-auth-banner__brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-auth-banner__brand-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.tku-auth-banner__brand-subtitle {
+  font-size: 9.5px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.9);
+  letter-spacing: 0.06em;
+  margin-top: 3px;
+}
+
+/* Content */
+.tku-auth-banner__content {
+  position: relative;
+  z-index: 2;
+  margin: 20px 0 16px;
+}
+
+.tku-auth-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  backdrop-filter: blur(6px);
+}
+
+.tku-auth-banner__badge-icon {
+  color: #ffffff;
+  opacity: 0.9;
+}
+
+.tku-auth-banner__slogan {
+  font-size: 31px;
+  font-weight: 800;
+  line-height: 1.22;
+  color: #ffffff;
+  margin: 0 0 10px;
+  letter-spacing: -0.025em;
+}
+
+.tku-auth-banner__desc {
+  font-size: 13px;
+  line-height: 1.58;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0 0 18px;
+}
+
+/* Feature cards - Unified Academic White Glass */
+.tku-auth-banner__features {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tku-auth-banner__feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.tku-auth-banner__feature:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateX(2px);
+}
+
+.tku-auth-banner__feature-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-auth-banner__feature-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tku-auth-banner__feature-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.tku-auth-banner__feature-sub {
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+
+.tku-auth-form-wrapper {
+  padding: 44px 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background-color: #ffffff;
+}
+
+.tku-auth-form__header {
+  margin-bottom: 22px;
+}
+
+.tku-auth-form__title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 6px;
+  letter-spacing: -0.02em;
+}
+
+.tku-auth-form__subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+}
+.tku-google-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.tku-google-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.tku-google-icon {
+  flex-shrink: 0;
+}
+.tku-auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.tku-auth-divider__line {
+  flex: 1;
+  height: 1px;
+  background-color: #e2e8f0;
+}
+
+.tku-auth-divider__text {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tku-auth-card--register {
+  max-width: 1020px;
+}
+
+.tku-auth-form-wrapper--register {
+  padding: 34px 44px;
+}
+
+.tku-auth-form-wrapper--register .tku-form-group {
+  margin-bottom: 12px;
+}
+
+.tku-auth-form-wrapper--register .tku-auth-divider {
+  margin: 16px 0;
+}
+.tku-auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.tku-form-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tku-form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tku-forgot-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.tku-forgot-link:hover {
+  text-decoration: underline;
+}
+
+.tku-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tku-input-icon {
+  position: absolute;
+  left: 14px;
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-form-input {
+  width: 100%;
+  padding: 11px 14px 11px 42px;
+  border: 1px solid #e2e8f0;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: #0f172a;
+  outline: none;
+  background-color: #ffffff;
+  transition: all var(--transition-fast);
+}
+
+.tku-form-input:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.15);
+}
+
+.tku-form-input--pwd {
+  padding-right: 42px;
+}
+
+.tku-pwd-toggle-btn {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  transition: color var(--transition-fast);
+}
+
+.tku-pwd-toggle-btn:hover {
+  color: #475569;
+}
+.tku-auth-submit-btn {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: var(--radius-md);
+  margin-top: 4px;
+}
+.tku-auth-footer {
+  margin-top: 20px;
+}
+
+.tku-auth-switch {
+  text-align: center;
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0 0 14px;
+}
+
+.tku-auth-switch-link {
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.tku-auth-switch-link:hover {
+  text-decoration: underline;
+}
+
+.tku-auth-legal {
+  text-align: center;
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.tku-auth-legal a {
+  color: #64748b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.tku-auth-legal a:hover {
+  text-decoration: underline;
+}
+.tku-otp-header {
+  margin-bottom: 20px;
+}
+
+.tku-otp-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 16px;
+  transition: opacity var(--transition-fast);
+}
+
+.tku-otp-back-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+.tku-otp-email-highlight {
+  color: var(--color-text-main);
+  font-weight: 700;
+}
+
+.tku-otp-inputs {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 24px 0 20px;
+}
+
+.tku-otp-digit {
+  width: 48px;
+  height: 52px;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--color-text-main);
+  background-color: #f8fafc;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: all var(--transition-fast);
+}
+
+.tku-otp-digit:focus {
+  background-color: #ffffff;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-light);
+  transform: translateY(-2px);
+}
+
+.tku-otp-digit.is-filled {
+  border-color: var(--color-primary);
+  background-color: #ffffff;
+}
+
+.tku-otp-resend-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: #64748b;
+  margin-bottom: 22px;
+  padding: 0 2px;
+}
+
+.tku-otp-resend-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+  transition: opacity var(--transition-fast);
+}
+
+.tku-otp-resend-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.tku-otp-resend-btn:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.tku-auth-step-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  margin-bottom: 8px;
+  display: inline-block;
+}
+
+.tku-auth-note-bottom {
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  margin-top: 20px;
+  line-height: 1.45;
+}
+
+.tku-auth-change-email-btn {
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  margin-top: 12px;
+  display: block;
+  width: 100%;
+  text-align: center;
+  transition: all var(--transition-fast);
+}
+
+.tku-auth-change-email-btn:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
+.tku-auth-back-link-wrapper {
+  text-align: center;
+  margin-top: 18px;
+}
+
+.tku-auth-back-link {
+  color: var(--color-primary);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.tku-auth-back-link:hover {
+  text-decoration: underline;
+}
+
+.tku-otp-verifying-text {
+  text-align: center;
+  font-size: 13px;
+  color: var(--color-primary);
+  font-weight: 600;
+  margin: -6px 0 16px;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 840px) {
+  .tku-auth-card {
+    grid-template-columns: 1fr;
+    max-width: 480px;
+  }
+
+  .tku-auth-banner {
+    display: none;
+  }
+
+  .tku-auth-form-wrapper {
+    padding: 36px 28px;
+  }
+
+  .tku-otp-digit {
+    width: 42px;
+    height: 48px;
+    font-size: 20px;
+  }
+}
+
+/* ==========================================================================
+   Google Auth & Dev Modal Styles
+   ========================================================================== */
+.tku-google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.tku-gmodal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: tkuFadeIn 0.2s ease-out;
+}
+
+.tku-gmodal-card {
+  position: relative;
+  background-color: #ffffff;
+  border-radius: 16px;
+  max-width: 490px;
+  width: 100%;
+  padding: 28px 24px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: tkuSlideUp 0.25s ease-out;
+}
+
+.tku-gmodal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-gmodal-close:hover {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+.tku-gmodal-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tku-gmodal-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 12px;
+}
+
+.tku-gmodal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+}
+
+.tku-gmodal-desc {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tku-gmodal-section {
+  margin-bottom: 18px;
+}
+
+.tku-gmodal-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.tku-gmodal-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-gmodal-preset-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.tku-gmodal-preset-btn:hover {
+  background-color: #ffffff;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08);
+}
+
+.tku-gmodal-preset-btn:hover .tku-gmodal-preset-arrow {
+  transform: translateX(3px);
+  color: #2563eb;
+}
+
+.tku-gmodal-preset-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-gmodal-preset-avatar--new {
+  background-color: #ecfdf5;
+}
+
+.tku-gmodal-preset-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-gmodal-preset-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tku-gmodal-preset-email {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tku-gmodal-preset-arrow {
+  color: #94a3b8;
+  transition: transform 0.2s ease, color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tku-gmodal-form {
+  margin-top: 14px;
+}
+
+.tku-gmodal-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.tku-gmodal-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tku-gmodal-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tku-gmodal-submit-btn {
+  padding: 10px 16px;
+  background-color: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease;
+}
+
+.tku-gmodal-submit-btn:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.tku-gmodal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tku-gmodal-footer-tip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  margin-top: 20px;
+  padding: 10px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #f1f5f9;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.tku-gmodal-tip-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #3b82f6;
+}
+
+.tku-gmodal-footer-tip code {
+  background-color: #e2e8f0;
+  color: #0f172a;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+@keyframes tkuFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tkuSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}

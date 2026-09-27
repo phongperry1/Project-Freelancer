@@ -1,32 +1,33 @@
-import { useEffect, useState } from "react";
-import { getApiMessage } from "./services/api";
+import React, { Suspense, lazy } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { LoadingSpinner } from './components/common/LoadingSpinner';
 
-function App() {
-  const [message, setMessage] = useState("Đang kết nối Backend...");
-  const [error, setError] = useState("");
+import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastProvider';
 
-  useEffect(() => {
-    getApiMessage()
-      .then((data) => {
-        setMessage(data);
-      })
-      .catch(() => {
-        setError("Không thể kết nối tới NestJS API.");
-      });
-  }, []);
+const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 
+export const App: React.FC = () => {
   return (
-    <main style={{ fontFamily: "sans-serif", padding: "2rem", lineHeight: "1.6" }}>
-      <h1>Learning Platform</h1>
-      <p>Frontend: React 19 + Vite</p>
-
-      {error ? (
-        <p style={{ color: "red" }}>{error}</p>
-      ) : (
-        <p>Backend response: <strong>{message}</strong></p>
-      )}
-    </main>
+    <ToastProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </AuthProvider>
+    </ToastProvider>
   );
-}
+};
 
 export default App;
+

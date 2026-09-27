@@ -16,6 +16,7 @@
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "prisma:generate": "npm --prefix apps/api run prisma:generate",
-    "prisma:migrate": "npm --prefix apps/api run prisma:migrate"
+    "prisma:migrate": "npm --prefix apps/api run prisma:migrate",
+    "prisma:studio": "npm --prefix apps/api run prisma:studio"
   }
 }
