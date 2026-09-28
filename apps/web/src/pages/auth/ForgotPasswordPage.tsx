@@ -6,7 +6,7 @@ import './auth.css';
 
 export const ForgotPasswordPage: React.FC = () => {
   useEffect(() => {
-    document.title = 'Quên mật khẩu | TKU - Nền tảng học tập Hóa học';
+    document.title = 'Quên mật khẩu | TKU - Nền tảng học tập hiện đại';
     window.scrollTo(0, 0);
   }, []);
 

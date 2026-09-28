@@ -53,23 +53,41 @@ export function useGoogleAuth(
   ).trim();
 
   const onDeviceVerificationNeededRef = useRef(onDeviceVerificationNeeded);
+  const isMountedRef = useRef(true);
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
     onDeviceVerificationNeededRef.current = onDeviceVerificationNeeded;
   }, [onDeviceVerificationNeeded]);
 
-  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
+      isMountedRef.current = false;
       if (redirectTimerRef.current) {
         clearTimeout(redirectTimerRef.current);
+        redirectTimerRef.current = null;
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
   }, []);
 
+  const clearPolling = useCallback(() => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  }, []);
+
   const handleGoogleSuccess = useCallback(
     async (credential: string, demoEmail?: string) => {
-      setIsGoogleLoading(true);
+      if (isMountedRef.current) {
+        setIsGoogleLoading(true);
+      }
       try {
         const res = await loginWithGoogle({
           credential,
@@ -108,7 +126,9 @@ export function useGoogleAuth(
           toast.error('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
         }
       } finally {
-        setIsGoogleLoading(false);
+        if (isMountedRef.current) {
+          setIsGoogleLoading(false);
+        }
       }
     },
     [loginWithGoogle],
@@ -122,7 +142,9 @@ export function useGoogleAuth(
         scope: 'email profile openid',
         callback: (response: TokenResponse) => {
           if (response.error) {
-            setIsGoogleLoading(false);
+            if (isMountedRef.current) {
+              setIsGoogleLoading(false);
+            }
             if (response.error !== 'user_closed_popup') {
               toast.error('Đăng nhập Google bị hủy hoặc gặp sự cố.');
             }
@@ -131,11 +153,15 @@ export function useGoogleAuth(
           if (response.access_token) {
             void handleGoogleSuccess(response.access_token);
           } else {
-            setIsGoogleLoading(false);
+            if (isMountedRef.current) {
+              setIsGoogleLoading(false);
+            }
           }
         },
         error_callback: (err: unknown) => {
-          setIsGoogleLoading(false);
+          if (isMountedRef.current) {
+            setIsGoogleLoading(false);
+          }
           console.error('Google OAuth error:', err);
           toast.error('Không thể mở cửa sổ đăng nhập Google.');
         },
@@ -153,8 +179,11 @@ export function useGoogleAuth(
       return;
     }
 
-    if (document.getElementById('google-gsi-client')) {
-      const existing = document.getElementById('google-gsi-client') as HTMLScriptElement;
+    const existing =
+      (document.getElementById('google-gsi-client') as HTMLScriptElement | null) ||
+      (document.querySelector('script[src*="accounts.google.com/gsi/client"]') as HTMLScriptElement | null);
+
+    if (existing) {
       existing.addEventListener('load', initClient);
       return () => {
         existing.removeEventListener('load', initClient);
@@ -176,29 +205,64 @@ export function useGoogleAuth(
     };
   }, [googleClientId, initClient]);
 
-  const signInWithGoogle = useCallback(() => {
+  const signInWithGoogle = useCallback(async () => {
     if (!googleClientId) {
       setIsDevModalOpen(true);
       return;
     }
+
+    clearPolling();
+
+    setIsGoogleLoading(true);
 
     if (!tokenClientRef.current && window.google?.accounts?.oauth2) {
       initClient();
     }
 
     if (tokenClientRef.current) {
-      setIsGoogleLoading(true);
       try {
         tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
       } catch (err) {
-        setIsGoogleLoading(false);
+        if (isMountedRef.current) {
+          setIsGoogleLoading(false);
+        }
         console.error('Error requesting token:', err);
         toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
       }
-    } else {
-      toast.info('Đang kết nối dịch vụ Google, vui lòng thử lại sau 1-2 giây...');
+      return;
     }
-  }, [googleClientId, initClient]);
+
+    let attempts = 0;
+    const maxAttempts = 30;
+    pollingIntervalRef.current = setInterval(() => {
+      attempts++;
+      if (window.google?.accounts?.oauth2) {
+        clearPolling();
+        initClient();
+        if (tokenClientRef.current) {
+          try {
+            tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
+          } catch (err) {
+            if (isMountedRef.current) {
+              setIsGoogleLoading(false);
+            }
+            console.error('Error requesting token:', err);
+            toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
+          }
+        } else {
+          if (isMountedRef.current) {
+            setIsGoogleLoading(false);
+          }
+        }
+      } else if (attempts >= maxAttempts) {
+        clearPolling();
+        if (isMountedRef.current) {
+          setIsGoogleLoading(false);
+        }
+        toast.error('Không thể kết nối với dịch vụ Google. Vui lòng kiểm tra kết nối mạng hoặc thử lại.');
+      }
+    }, 100);
+  }, [googleClientId, initClient, clearPolling]);
 
   const signInWithDemoAccount = useCallback(
     (email?: string) => {

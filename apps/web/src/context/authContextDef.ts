@@ -22,6 +22,7 @@ export interface AuthContextType {
   isSessionTerminated: boolean;
   sessionTerminatedReason: string;
   closeSessionTerminatedModal: () => void;
+  handleSessionTerminatedBack: () => void;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

@@ -15,7 +15,8 @@ import type {
 } from '../types/auth.types';
 import { authService } from '../services/auth.service';
 import { AuthContext, type AuthContextType } from './authContextDef';
-import { SessionTerminatedModal } from '../components/auth/SessionTerminatedModal';
+import { SessionTerminatedPage } from '../pages/auth/SessionTerminatedPage';
+import deviceDetectedIllustration from '../assets/images/device-detected.png';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -31,6 +32,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     useState<boolean>(false);
   const [sessionTerminatedReason, setSessionTerminatedReason] =
     useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const img = new Image();
+      img.src = deviceDetectedIllustration;
+    }
+  }, []);
 
   const login = useCallback(
     async (credentials: LoginCredentials): Promise<AuthResponse> => {
@@ -82,7 +90,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const closeSessionTerminatedModal = useCallback(() => {
-    // Chỉ khi người dùng bấm nút Đăng xuất trên pop-up thì mới thực hiện đăng xuất
     authService.logout();
     setToken(null);
     setUser(null);
@@ -92,14 +99,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, []);
 
-  // Giám sát phiên đăng nhập duy nhất (Single Active Session)
+  const handleSessionTerminatedBack = useCallback(() => {
+    authService.logout();
+    setToken(null);
+    setUser(null);
+    setIsSessionTerminated(false);
+    if (typeof window !== 'undefined') {
+      window.location.href = '/';
+    }
+  }, []);
+
   useEffect(() => {
     if (!token || isSessionTerminated) return;
 
     let isMounted = true;
+    let isChecking = false;
+    let lastCheckTime = 0;
 
-    const performSessionCheck = async () => {
-      // Tối ưu: Chỉ gửi request khi tab đang được active/hiển thị
+    const performSessionCheck = async (force = false) => {
+      if (isChecking) return;
+
+      const now = Date.now();
+      if (!force && now - lastCheckTime < 2500) {
+        return;
+      }
+
       if (
         typeof document !== 'undefined' &&
         document.visibilityState !== 'visible'
@@ -108,11 +132,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       try {
+        isChecking = true;
+        lastCheckTime = now;
         const res = await authService.checkSession();
         if (!isMounted) return;
 
         if (res && res.valid === false && res.code === 'SESSION_TERMINATED') {
-          // Thiết bị khác đã đăng nhập -> Hiển thị pop-up, chưa tự động đăng xuất
           setSessionTerminatedReason(
             res.message ||
               'Tài khoản của bạn vừa đăng nhập ở một thiết bị hoặc trình duyệt khác. Vui lòng xác nhận đăng xuất khỏi thiết bị này.',
@@ -120,26 +145,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setIsSessionTerminated(true);
         }
       } catch (err) {
-        // Bỏ qua lỗi kết nối mạng tạm thời khi kiểm tra phiên nền
         void err;
+      } finally {
+        isChecking = false;
       }
     };
 
-    // Kiểm tra định kỳ mỗi 8 giây
-    const intervalId = setInterval(performSessionCheck, 8000);
+    const intervalId = setInterval(() => {
+      void performSessionCheck();
+    }, 3500);
 
-    // Kiểm tra ngay lập tức khi người dùng quay lại tab trình duyệt
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        performSessionCheck();
+    const handleVisibilityOrFocus = () => {
+      if (
+        typeof document !== 'undefined' &&
+        document.visibilityState === 'visible'
+      ) {
+        void performSessionCheck(true);
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'tku_token') {
+        const storedToken = localStorage.getItem('tku_token');
+        if (!storedToken) {
+          setToken(null);
+          setUser(null);
+        } else if (storedToken !== token) {
+          setToken(storedToken);
+          setUser(authService.getStoredUser());
+        }
+      } else if (e.key === 'tku_device_id') {
+        void performSessionCheck(true);
+      }
+    };
+
+    const handleUserInteraction = () => {
+      void performSessionCheck();
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('click', handleUserInteraction, { passive: true });
 
     return () => {
       isMounted = false;
       clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('click', handleUserInteraction);
     };
   }, [token, isSessionTerminated]);
 
@@ -157,6 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isSessionTerminated,
       sessionTerminatedReason,
       closeSessionTerminatedModal,
+      handleSessionTerminatedBack,
     }),
     [
       user,
@@ -170,17 +226,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       isSessionTerminated,
       sessionTerminatedReason,
       closeSessionTerminatedModal,
+      handleSessionTerminatedBack,
     ],
   );
+
+  if (isSessionTerminated) {
+    return (
+      <AuthContext.Provider value={contextValue}>
+        <SessionTerminatedPage
+          onLogout={closeSessionTerminatedModal}
+          onBack={handleSessionTerminatedBack}
+        />
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={contextValue}>
       {children}
-      <SessionTerminatedModal
-        isOpen={isSessionTerminated}
-        message={sessionTerminatedReason}
-        onConfirm={closeSessionTerminatedModal}
-      />
     </AuthContext.Provider>
   );
 };

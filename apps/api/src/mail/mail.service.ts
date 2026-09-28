@@ -56,16 +56,24 @@ export class MailService implements OnModuleInit {
         secure: true,
         pool: true,
         maxConnections: 5,
-        maxMessages: 100,
+        maxMessages: Infinity,
+        family: 4,
+        connectionTimeout: 8000,
+        greetingTimeout: 5000,
+        socketTimeout: 15000,
+        tls: {
+          rejectUnauthorized: true,
+          servername: 'smtp.gmail.com',
+        },
         auth: {
           user,
           pass: cleanPass,
         },
-      });
+      } as nodemailer.TransportOptions);
 
       this.currentUser = user;
       this.currentPass = cleanPass;
-      this.logger.log(`Google Mail Transporter (Pool) đã kết nối với tài khoản: ${user}`);
+      this.logger.log(`Google Mail Transporter (Pool IPv4) đã kết nối với tài khoản: ${user}`);
       return this.transporter;
     } catch (err: unknown) {
       this.logger.error(
@@ -182,13 +190,15 @@ Tư Duy • Kiến Thức • Ước Mơ`;
         sender: mailUser,
         replyTo: mailUser,
         to,
-        subject: `Mã xác thực tài khoản TKU của bạn: ${otp}`,
+        subject: `[TKU] ${otp} là mã xác thực đăng ký tài khoản của bạn`,
         text: textContent,
         html: htmlContent,
         priority: 'high',
         headers: {
-          'X-Priority': '1',
-          'Importance': 'high',
+          'X-Priority': '1 (Highest)',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'High',
+          'X-Mailer': 'TKU-Learning-Platform',
         },
       });
       this.logger.log(`Đã gửi email OTP thực tế thành công tới: ${to}`);
@@ -295,13 +305,15 @@ Tư Duy • Kiến Thức • Ước Mơ`;
         sender: mailUser,
         replyTo: mailUser,
         to,
-        subject: `Mã xác thực đặt lại mật khẩu TKU của bạn: ${otp}`,
+        subject: `[TKU] ${otp} là mã xác thực đặt lại mật khẩu của bạn`,
         text: textContent,
         html: htmlContent,
         priority: 'high',
         headers: {
-          'X-Priority': '1',
-          'Importance': 'high',
+          'X-Priority': '1 (Highest)',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'High',
+          'X-Mailer': 'TKU-Learning-Platform',
         },
       });
       this.logger.log(`Đã gửi email OTP đặt lại mật khẩu thành công tới: ${to}`);
@@ -418,23 +430,21 @@ Nếu không phải bạn, hãy đổi mật khẩu tài khoản ngay!
 Trân trọng,
 TKU Chemistry Center`;
 
-    this.logger.log(
-      `🔑 [DEV TEST] Mã OTP xác thực thiết bị mới cho ${to}: [ ${otp} ]`,
-    );
-
     try {
       await transporter.sendMail({
         from: fromAddress,
         sender: mailUser,
         replyTo: mailUser,
         to,
-        subject: `[Bảo Mật TKU] Mã xác thực thiết bị mới của bạn: ${otp}`,
+        subject: `[Bảo Mật TKU] ${otp} là mã xác thực thiết bị mới của bạn`,
         text: textContent,
         html: htmlContent,
         priority: 'high',
         headers: {
-          'X-Priority': '1',
-          'Importance': 'high',
+          'X-Priority': '1 (Highest)',
+          'X-MSMail-Priority': 'High',
+          'Importance': 'High',
+          'X-Mailer': 'TKU-Learning-Platform',
         },
       });
       this.logger.log(`Đã gửi email OTP xác thực thiết bị mới thành công tới: ${to}`);

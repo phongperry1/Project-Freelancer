@@ -9,16 +9,14 @@ import './landing.css';
 
 export const LandingPage: React.FC = () => {
   useEffect(() => {
-    document.title = 'TKU - Nền tảng học tập Hóa học hàng đầu';
+    document.title = 'TKU - Nền tảng học tập hiện đại';
     window.scrollTo(0, 0);
   }, []);
 
   return (
     <div className="tku-app">
-      {/* Sticky Header Navigation */}
       <Navbar />
 
-      {/* Main Landing Page Content */}
       <main>
         <HeroSection />
         <FeaturesSection />
@@ -26,7 +24,6 @@ export const LandingPage: React.FC = () => {
         <AiAssistantSection />
       </main>
 
-      {/* Dark Navy Footer */}
       <Footer />
     </div>
   );
