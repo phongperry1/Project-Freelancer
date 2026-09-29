@@ -9,6 +9,7 @@ const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
+import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 export const App: React.FC = () => {
   return (
@@ -21,6 +22,7 @@ export const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/session-terminated" element={<SessionTerminatedPage />} />
             </Routes>
           </Suspense>
         </BrowserRouter>

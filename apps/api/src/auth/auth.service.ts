@@ -1162,19 +1162,19 @@ export class AuthService {
       resendAvailableAt: Date.now() + 60 * 1000,
     });
 
-    try {
-      await this.mailService.sendNewDeviceOtpEmail(
+    void this.mailService
+      .sendNewDeviceOtpEmail(
         user.email,
         user.fullName,
         otp,
         resolvedDeviceName,
         ipAddress || 'Không xác định',
-      );
-    } catch (mailErr: unknown) {
-      this.logger.error(
-        `Lỗi gửi email cảnh báo thiết bị mới: ${(mailErr as Error)?.message}`,
-      );
-    }
+      )
+      .catch((mailErr: unknown) => {
+        this.logger.error(
+          `Lỗi gửi email cảnh báo thiết bị mới: ${(mailErr as Error)?.message}`,
+        );
+      });
 
     return {
       requireDeviceVerification: true,
@@ -1307,13 +1307,19 @@ export class AuthService {
     if (resendDeviceOtpDto.ipAddress)
       pending.ipAddress = resendDeviceOtpDto.ipAddress;
 
-    await this.mailService.sendNewDeviceOtpEmail(
-      pending.email,
-      pending.fullName,
-      newOtp,
-      pending.deviceName,
-      pending.ipAddress || 'Không xác định',
-    );
+    void this.mailService
+      .sendNewDeviceOtpEmail(
+        pending.email,
+        pending.fullName,
+        newOtp,
+        pending.deviceName,
+        pending.ipAddress || 'Không xác định',
+      )
+      .catch((mailErr: unknown) => {
+        this.logger.error(
+          `Lỗi gửi lại email cảnh báo thiết bị mới: ${(mailErr as Error)?.message}`,
+        );
+      });
 
     return {
       message: 'Mã xác thực OTP mới đã được gửi đến email của bạn.',

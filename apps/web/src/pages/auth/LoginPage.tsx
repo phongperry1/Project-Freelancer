@@ -6,7 +6,7 @@ import './auth.css';
 
 export const LoginPage: React.FC = () => {
   useEffect(() => {
-    document.title = 'Đăng nhập | TKU - Nền tảng học tập Hóa học';
+    document.title = 'Đăng nhập | TKU - Nền tảng học tập hiện đại';
     window.scrollTo(0, 0);
   }, []);
 
