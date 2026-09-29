@@ -93,16 +93,16 @@ export class MailService implements OnModuleInit {
       try {
         await transporter.verify();
         this.logger.log(
-          `Google Mail SMTP đã xác thực thành công cho [${this.currentUser}]. Hệ thống sẵn sàng gửi email OTP thực tế!`,
+          `Google Mail SMTP đã xác thực thành công cho [${this.currentUser}].`,
         );
       } catch (err: unknown) {
         this.logger.warn(
-          `Cảnh báo kết nối Google Mail SMTP: ${(err as Error).message}. Vui lòng kiểm tra lại MAIL_USER và MAIL_PASS (Mật khẩu ứng dụng 16 ký tự của Google) trong apps/api/.env`,
+          `Cảnh báo kết nối Google Mail SMTP: ${(err as Error).message}.`,
         );
       }
     } else {
       this.logger.warn(
-        'Chưa cấu hình MAIL_USER hoặc MAIL_PASS trong apps/api/.env. Vui lòng cung cấp Mật khẩu ứng dụng Google để gửi email thực tế.',
+        'Chưa cấu hình MAIL_USER hoặc MAIL_PASS để gửi email.',
       );
     }
   }
@@ -111,10 +111,8 @@ export class MailService implements OnModuleInit {
     const transporter = this.initTransporter();
 
     if (!transporter) {
-      const errorMsg =
-        'Hệ thống chưa thể gửi mã xác thực vì chưa cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS (Mật khẩu ứng dụng 16 ký tự của Google) trong file apps/api/.env.';
-      this.logger.error(errorMsg);
-      throw new BadRequestException(errorMsg);
+      this.logger.error('Hệ thống chưa cấu hình tài khoản gửi mail.');
+      throw new BadRequestException('Dịch vụ gửi email tạm thời không khả dụng. Vui lòng thử lại sau.');
     }
 
     const mailUser = this.currentUser || '';
@@ -201,15 +199,15 @@ Tư Duy • Kiến Thức • Ước Mơ`;
           'X-Mailer': 'TKU-Learning-Platform',
         },
       });
-      this.logger.log(`Đã gửi email OTP thực tế thành công tới: ${to}`);
+      this.logger.log(`Đã gửi email OTP thành công tới: ${to}`);
       return true;
     } catch (err: unknown) {
       const errMsg = (err as Error)?.message || 'Lỗi gửi mail qua Google';
       this.logger.error(
-        `Gửi email thực tế thất bại qua Google Mail tới [${to}]: ${errMsg}`,
+        `Gửi email OTP thất bại tới [${to}]: ${errMsg}`,
       );
       throw new BadRequestException(
-        `Không thể gửi mã xác thực tới email ${to} qua Google Mail: ${errMsg}. Vui lòng kiểm tra lại tài khoản hoặc Mật khẩu ứng dụng Google.`,
+        'Không thể gửi mã xác thực tới email của bạn vào lúc này. Vui lòng thử lại sau.',
       );
     }
   }
@@ -222,10 +220,8 @@ Tư Duy • Kiến Thức • Ước Mơ`;
     const transporter = this.initTransporter();
 
     if (!transporter) {
-      const errorMsg =
-        'Hệ thống chưa thể gửi mã xác thực vì chưa cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.';
-      this.logger.error(errorMsg);
-      throw new BadRequestException(errorMsg);
+      this.logger.error('Hệ thống chưa cấu hình tài khoản gửi mail.');
+      throw new BadRequestException('Dịch vụ gửi email tạm thời không khả dụng. Vui lòng thử lại sau.');
     }
 
     const mailUser = this.currentUser || '';
@@ -316,15 +312,15 @@ Tư Duy • Kiến Thức • Ước Mơ`;
           'X-Mailer': 'TKU-Learning-Platform',
         },
       });
-      this.logger.log(`Đã gửi email OTP đặt lại mật khẩu thành công tới: ${to}`);
+      this.logger.log(`Đã gửi email OTP đặt lại mật khẩu tới: ${to}`);
       return true;
     } catch (err: unknown) {
       const errMsg = (err as Error)?.message || 'Lỗi gửi mail qua Google';
       this.logger.error(
-        `Gửi email OTP đặt lại mật khẩu thất bại qua Google Mail tới [${to}]: ${errMsg}`,
+        `Gửi email OTP đặt lại mật khẩu thất bại tới [${to}]: ${errMsg}`,
       );
       throw new BadRequestException(
-        `Không thể gửi mã xác thực tới email ${to} qua Google Mail: ${errMsg}. Vui lòng kiểm tra lại tài khoản hoặc Mật khẩu ứng dụng Google.`,
+        'Không thể gửi mã xác thực đặt lại mật khẩu vào lúc này. Vui lòng thử lại sau.',
       );
     }
   }
@@ -339,10 +335,8 @@ Tư Duy • Kiến Thức • Ước Mơ`;
     const transporter = this.initTransporter();
 
     if (!transporter) {
-      const errorMsg =
-        'Hệ thống chưa thể gửi mã xác thực thiết bị vì chưa cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.';
-      this.logger.error(errorMsg);
-      throw new BadRequestException(errorMsg);
+      this.logger.error('Hệ thống chưa cấu hình tài khoản gửi mail.');
+      throw new BadRequestException('Dịch vụ gửi email tạm thời không khả dụng. Vui lòng thử lại sau.');
     }
 
     const mailUser = this.currentUser || '';
@@ -447,15 +441,15 @@ TKU Chemistry Center`;
           'X-Mailer': 'TKU-Learning-Platform',
         },
       });
-      this.logger.log(`Đã gửi email OTP xác thực thiết bị mới thành công tới: ${to}`);
+      this.logger.log(`Đã gửi email OTP xác thực thiết bị mới tới: ${to}`);
       return true;
     } catch (err: unknown) {
       const errMsg = (err as Error)?.message || 'Lỗi gửi mail qua Google';
       this.logger.error(
-        `Gửi email OTP xác thực thiết bị thất bại qua Google Mail tới [${to}]: ${errMsg}`,
+        `Gửi email OTP xác thực thiết bị thất bại tới [${to}]: ${errMsg}`,
       );
       throw new BadRequestException(
-        `Không thể gửi mã xác thực tới email ${to} qua Google Mail: ${errMsg}.`,
+        'Không thể gửi mã xác thực thiết bị mới vào lúc này. Vui lòng thử lại sau.',
       );
     }
   }

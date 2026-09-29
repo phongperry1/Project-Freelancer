@@ -158,16 +158,15 @@ export function useGoogleAuth(
             }
           }
         },
-        error_callback: (err: unknown) => {
+        error_callback: () => {
           if (isMountedRef.current) {
             setIsGoogleLoading(false);
           }
-          console.error('Google OAuth error:', err);
           toast.error('Không thể mở cửa sổ đăng nhập Google.');
         },
       });
     } catch (err) {
-      console.warn('Lỗi khởi tạo Google Client:', err);
+      void err;
     }
   }, [googleClientId, handleGoogleSuccess]);
 
@@ -222,11 +221,10 @@ export function useGoogleAuth(
     if (tokenClientRef.current) {
       try {
         tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
-      } catch (err) {
+      } catch {
         if (isMountedRef.current) {
           setIsGoogleLoading(false);
         }
-        console.error('Error requesting token:', err);
         toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
       }
       return;
@@ -242,11 +240,10 @@ export function useGoogleAuth(
         if (tokenClientRef.current) {
           try {
             tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
-          } catch (err) {
+          } catch {
             if (isMountedRef.current) {
               setIsGoogleLoading(false);
             }
-            console.error('Error requesting token:', err);
             toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
           }
         } else {

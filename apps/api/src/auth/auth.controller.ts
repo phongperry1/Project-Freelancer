@@ -5,8 +5,11 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  Ip,
   Post,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
   ApiBody,
@@ -28,6 +31,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { GoogleAuthDto } from './dto/google-auth.dto.js';
 import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
 import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import {
   AuthService,
   type AuthResponse,
@@ -130,8 +134,23 @@ export class AuthController {
   @ApiBadRequestResponse({
     description: 'Dữ liệu đầu vào không hợp lệ.',
   })
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
-    return this.authService.login(loginDto);
+  async login(
+    @Body() loginDto: LoginDto,
+    @Ip() ip?: string,
+    @Req() req?: Request,
+  ): Promise<AuthResponse> {
+    const forwarded =
+      typeof req?.headers['x-forwarded-for'] === 'string'
+        ? req.headers['x-forwarded-for'].split(',')[0]?.trim()
+        : undefined;
+    const clientIp =
+      loginDto.ipAddress ||
+      ip ||
+      forwarded ||
+      req?.ip ||
+      req?.socket?.remoteAddress ||
+      '127.0.0.1';
+    return this.authService.login(loginDto, clientIp);
   }
 
   @Post('google')
@@ -305,6 +324,29 @@ export class AuthController {
     return this.authService.checkSession(authorization);
   }
 
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Làm mới Access Token bằng Refresh Token (hiệu lực 7 ngày)',
+    description:
+      'Xác thực refresh token hợp lệ và cấp cặp token mới.',
+  })
+  @ApiBody({
+    type: RefreshTokenDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cấp mới token thành công.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Refresh token không hợp lệ hoặc đã hết hạn sau 7 ngày.',
+  })
+  async refresh(
+    @Body() refreshTokenDto: RefreshTokenDto,
+  ): Promise<AuthResponse> {
+    return this.authService.refreshAccessToken(refreshTokenDto);
+  }
+
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -312,7 +354,8 @@ export class AuthController {
   })
   async logout(
     @Headers('authorization') authorization?: string,
+    @Body('refreshToken') refreshToken?: string,
   ): Promise<{ message: string }> {
-    return this.authService.logout(authorization);
+    return this.authService.logout(authorization, refreshToken);
   }
 }
