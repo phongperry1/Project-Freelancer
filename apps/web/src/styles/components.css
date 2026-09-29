@@ -869,5 +869,199 @@
   animation: tku-spin 0.8s linear infinite;
 }
 
+.tku-device-detected-page {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  background: radial-gradient(circle at 50% 25%, #ffffff 0%, #f4f8fe 55%, #eaf2fc 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  padding: 32px 20px;
+  font-family: var(--font-family, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+}
+
+.tku-device-detected-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(60px);
+}
+
+.tku-device-detected-orb--bottom-left {
+  bottom: -120px;
+  left: -120px;
+  width: 420px;
+  height: 420px;
+  background: rgba(186, 215, 255, 0.45);
+}
+
+.tku-device-detected-orb--top-right {
+  top: -100px;
+  right: -100px;
+  width: 360px;
+  height: 360px;
+  background: rgba(219, 234, 254, 0.4);
+}
+
+.tku-device-detected-container {
+  position: relative;
+  z-index: 1;
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tku-device-detected-illustration-wrap {
+  width: 100%;
+  max-width: 440px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-device-detected-illustration {
+  width: 100%;
+  height: auto;
+  max-height: 290px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+  filter: drop-shadow(0 12px 24px rgba(37, 99, 235, 0.08));
+  will-change: transform;
+  animation: tkuFloat 4s ease-in-out infinite alternate;
+}
+
+@keyframes tkuFloat {
+  0% {
+    transform: translateY(0px);
+  }
+  100% {
+    transform: translateY(-6px);
+  }
+}
+
+.tku-device-detected-title {
+  color: #17365d;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  margin: 0 0 16px 0;
+}
+
+.tku-device-detected-desc {
+  color: #597393;
+  font-size: 15.5px;
+  line-height: 1.65;
+  margin: 0 0 36px 0;
+  max-width: 580px;
+}
+
+.tku-device-detected-desc strong {
+  color: #1e293b;
+  font-weight: 700;
+}
+
+.tku-device-detected-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+}
+
+.tku-device-detected-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 140px;
+  padding: 12px 34px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+  text-decoration: none;
+  outline: none;
+}
+
+.tku-device-detected-btn--primary {
+  background: #1e78eb;
+  color: #ffffff;
+  border: 1px solid transparent;
+  box-shadow: 0 4px 14px rgba(30, 120, 235, 0.32);
+}
+
+.tku-device-detected-btn--primary:hover {
+  background: #1562c9;
+  box-shadow: 0 6px 20px rgba(30, 120, 235, 0.42);
+  transform: translateY(-1px);
+}
+
+.tku-device-detected-btn--primary:active {
+  transform: translateY(0);
+}
+
+.tku-device-detected-btn--secondary {
+  background: #ffffff;
+  color: #17365d;
+  border: 1px solid #dce5f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tku-device-detected-btn--secondary:hover {
+  background: #f8fbff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.tku-device-detected-btn--secondary:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .tku-device-detected-title {
+    font-size: 26px;
+  }
+  .tku-device-detected-desc {
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+  .tku-device-detected-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .tku-device-detected-btn {
+    width: 100%;
+  }
+  .tku-device-detected-illustration-wrap {
+    max-width: 300px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tku-device-detected-illustration {
+    animation: none;
+  }
+  .tku-device-detected-btn {
+    transition: none;
+  }
+}
+
 
 
