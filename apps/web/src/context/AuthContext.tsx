@@ -137,12 +137,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const res = await authService.checkSession();
         if (!isMounted) return;
 
-        if (res && res.valid === false && res.code === 'SESSION_TERMINATED') {
-          setSessionTerminatedReason(
-            res.message ||
-              'Tài khoản của bạn vừa đăng nhập ở một thiết bị hoặc trình duyệt khác. Vui lòng xác nhận đăng xuất khỏi thiết bị này.',
-          );
-          setIsSessionTerminated(true);
+        if (res && res.valid === false) {
+          if (res.code === 'TOKEN_EXPIRED') {
+            const refreshRes = await authService.refreshTokens();
+            if (!isMounted) return;
+            if (refreshRes?.accessToken) {
+              setToken(refreshRes.accessToken);
+              if (refreshRes.user) {
+                setUser(refreshRes.user);
+              }
+            } else {
+              authService.logout();
+              setToken(null);
+              setUser(null);
+              if (
+                typeof window !== 'undefined' &&
+                !window.location.pathname.startsWith('/login')
+              ) {
+                window.location.href = '/login?expired=1';
+              }
+            }
+            return;
+          }
+
+          if (res.code === 'SESSION_TERMINATED') {
+            setSessionTerminatedReason(
+              res.message ||
+                'Tài khoản của bạn vừa đăng nhập ở một thiết bị hoặc trình duyệt khác. Vui lòng xác nhận đăng xuất khỏi thiết bị này.',
+            );
+            setIsSessionTerminated(true);
+            return;
+          }
+
+          if (res.code === 'UNAUTHORIZED') {
+            authService.logout();
+            setToken(null);
+            setUser(null);
+            return;
+          }
         }
       } catch (err) {
         void err;
@@ -165,8 +197,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'tku_token') {
-        const storedToken = localStorage.getItem('tku_token');
+      if (
+        e.key === 'tku_access_token' ||
+        e.key === 'tku_refresh_token' ||
+        e.key === 'tku_token'
+      ) {
+        const storedToken = authService.getStoredToken();
         if (!storedToken) {
           setToken(null);
           setUser(null);

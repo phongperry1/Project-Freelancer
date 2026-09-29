@@ -1,8 +1,10 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   Injectable,
   Logger,
   NotFoundException,
@@ -27,6 +29,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { GoogleAuthDto } from './dto/google-auth.dto.js';
 import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
 import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
+import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 
 export interface UserResponse {
   id: string;
@@ -39,6 +42,7 @@ export interface UserResponse {
 
 export interface AuthResponse {
   accessToken?: string;
+  refreshToken?: string;
   user?: UserResponse;
   requireDeviceVerification?: boolean;
   deviceId?: string;
@@ -112,6 +116,23 @@ interface PendingDeviceVerification {
   resendAvailableAt: number;
 }
 
+interface IpRateLimitRecord {
+  timestamps: number[];
+}
+
+interface AccountLockoutRecord {
+  failedAttempts: number;
+  lockedUntil: number;
+  lastAttemptAt: number;
+}
+
+interface DevRefreshTokenRecord {
+  userId: string;
+  sessionId: string;
+  expiresAt: number;
+  revoked: boolean;
+}
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -128,6 +149,18 @@ export class AuthService {
   private static readonly pendingDeviceVerifications = new Map<
     string,
     PendingDeviceVerification
+  >();
+  private static readonly ipLoginRateLimits = new Map<
+    string,
+    IpRateLimitRecord
+  >();
+  private static readonly accountLockouts = new Map<
+    string,
+    AccountLockoutRecord
+  >();
+  private static readonly devRefreshTokens = new Map<
+    string,
+    DevRefreshTokenRecord
   >();
 
   private readonly googleClient = new OAuth2Client();
@@ -165,6 +198,168 @@ export class AuthService {
     }
   }
 
+  private getRefreshSecret(): string {
+    return (
+      this.configService.get<string>('JWT_REFRESH_SECRET') ||
+      ((this.configService.get<string>('JWT_SECRET') ??
+        'tku-learning-platform-secret-jwt-key-2026') + '-refresh')
+    );
+  }
+
+  private pruneRateLimitRecords(): void {
+    const now = Date.now();
+    const windowMs = 60 * 1000;
+    for (const [key, value] of AuthService.ipLoginRateLimits.entries()) {
+      value.timestamps = value.timestamps.filter((ts) => now - ts < windowMs);
+      if (value.timestamps.length === 0) {
+        AuthService.ipLoginRateLimits.delete(key);
+      }
+    }
+    for (const [key, value] of AuthService.accountLockouts.entries()) {
+      if (
+        (value.lockedUntil > 0 && value.lockedUntil <= now) ||
+        (value.lockedUntil === 0 && now - value.lastAttemptAt > 60 * 60 * 1000)
+      ) {
+        AuthService.accountLockouts.delete(key);
+      }
+    }
+    for (const [key, value] of AuthService.devRefreshTokens.entries()) {
+      if (value.revoked || now > value.expiresAt) {
+        AuthService.devRefreshTokens.delete(key);
+      }
+    }
+  }
+
+  private checkLoginRateLimit(ip?: string, email?: string): void {
+    this.pruneRateLimitRecords();
+    const now = Date.now();
+    const windowMs = 60 * 1000;
+    const maxRequests = 10;
+    const resolvedIp = ip?.trim() || 'unknown';
+
+    let ipRecord = AuthService.ipLoginRateLimits.get(resolvedIp);
+    if (!ipRecord) {
+      ipRecord = { timestamps: [] };
+      AuthService.ipLoginRateLimits.set(resolvedIp, ipRecord);
+    }
+    ipRecord.timestamps = ipRecord.timestamps.filter((ts) => now - ts < windowMs);
+    if (ipRecord.timestamps.length >= maxRequests) {
+      throw new HttpException(
+        'Bạn đã thử đăng nhập quá nhiều lần từ địa chỉ IP này. Vui lòng thử lại sau 1 phút.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    ipRecord.timestamps.push(now);
+
+    if (email) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const lockout = AuthService.accountLockouts.get(normalizedEmail);
+      if (lockout && lockout.lockedUntil > now) {
+        const remainingMinutes = Math.ceil((lockout.lockedUntil - now) / 60000);
+        throw new HttpException(
+          `Tài khoản đã bị tạm khóa do nhập sai mật khẩu quá 5 lần. Vui lòng thử lại sau ${remainingMinutes} phút.`,
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+    }
+  }
+
+  private handleFailedLoginAttempt(email: string): never {
+    const now = Date.now();
+    const normalizedEmail = email.trim().toLowerCase();
+    let record = AuthService.accountLockouts.get(normalizedEmail);
+    if (!record || record.lockedUntil <= now) {
+      record = { failedAttempts: 0, lockedUntil: 0, lastAttemptAt: now };
+      AuthService.accountLockouts.set(normalizedEmail, record);
+    }
+    record.lastAttemptAt = now;
+    record.failedAttempts += 1;
+    if (record.failedAttempts >= 5) {
+      record.lockedUntil = now + 15 * 60 * 1000;
+      throw new HttpException(
+        'Tài khoản đã bị tạm khóa 15 phút do nhập sai mật khẩu quá 5 lần liên tiếp. Vui lòng thử lại sau 15 phút.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    const remaining = 5 - record.failedAttempts;
+    throw new UnauthorizedException(
+      `Email hoặc mật khẩu không chính xác. Bạn còn ${remaining} lần thử trước khi tài khoản bị khóa tạm thời 15 phút.`,
+    );
+  }
+
+  private handleSuccessfulLogin(email: string): void {
+    AuthService.accountLockouts.delete(email.trim().toLowerCase());
+  }
+
+  private revokeDevRefreshTokens(userId: string): void {
+    for (const record of AuthService.devRefreshTokens.values()) {
+      if (record.userId === userId) {
+        record.revoked = true;
+      }
+    }
+  }
+
+  private async generateTokens(
+    user: UserResponse,
+    sessionId: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    const tokenPayload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role,
+      fullName: user.fullName,
+      sessionId,
+    };
+    const accessToken = await this.jwtService.signAsync(tokenPayload, {
+      expiresIn: '1d',
+    });
+
+    const refreshSecret = this.getRefreshSecret();
+
+    const refreshToken = await this.jwtService.signAsync(
+      {
+        sub: user.id,
+        sessionId,
+        type: 'refresh',
+      },
+      {
+        secret: refreshSecret,
+        expiresIn: '7d',
+      },
+    );
+
+    const tokenHash = createHash('sha256').update(refreshToken).digest('hex');
+
+    try {
+      await this.prisma.authToken.create({
+        data: {
+          userId: user.id,
+          tokenHash,
+          type: 'REFRESH_TOKEN',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+      void this.prisma.authToken
+        .deleteMany({
+          where: {
+            expiresAt: { lt: new Date() },
+          },
+        })
+        .catch(() => {});
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi lưu refresh token: ${(err as Error)?.message}`);
+    }
+
+    AuthService.devRefreshTokens.set(tokenHash, {
+      userId: user.id,
+      sessionId,
+      expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000,
+      revoked: false,
+    });
+
+    return { accessToken, refreshToken };
+  }
+
   async initiateRegister(registerDto: RegisterDto): Promise<OtpResponse> {
     this.pruneExpiredRegistrations();
 
@@ -198,7 +393,7 @@ export class AuthService {
 
     if (!this.mailService.isConfigured()) {
       throw new BadRequestException(
-        'Hệ thống chưa được cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.',
+        'Dịch vụ gửi email tạm thời không khả dụng. Vui lòng thử lại sau.',
       );
     }
 
@@ -385,9 +580,10 @@ export class AuthService {
       );
 
       if (!isPasswordValid) {
-        throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+        this.handleFailedLoginAttempt(normalizedEmail);
       }
 
+      this.handleSuccessfulLogin(normalizedEmail);
       return {
         id: user.id,
         email: user.email,
@@ -406,9 +602,10 @@ export class AuthService {
       );
 
       if (!isDevPasswordValid) {
-        throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+        this.handleFailedLoginAttempt(normalizedEmail);
       }
 
+      this.handleSuccessfulLogin(normalizedEmail);
       return {
         id: devUser.id,
         email: devUser.email,
@@ -421,9 +618,10 @@ export class AuthService {
 
     if (normalizedEmail === 'student@tku.edu.vn') {
       if (password !== 'Password@123') {
-        throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+        this.handleFailedLoginAttempt(normalizedEmail);
       }
 
+      this.handleSuccessfulLogin(normalizedEmail);
       return {
         id: '11111111-1111-1111-1111-111111111111',
         email: 'student@tku.edu.vn',
@@ -434,10 +632,15 @@ export class AuthService {
       };
     }
 
-    throw new UnauthorizedException('Email hoặc mật khẩu không chính xác.');
+    this.handleFailedLoginAttempt(normalizedEmail);
   }
 
-  async login(loginDto: LoginDto): Promise<AuthResponse> {
+  async login(
+    loginDto: LoginDto,
+    clientIp?: string,
+  ): Promise<AuthResponse> {
+    const ip = clientIp || loginDto.ipAddress;
+    this.checkLoginRateLimit(ip, loginDto.email);
     const user = await this.validateUser(loginDto.email, loginDto.password);
     return this.handleDeviceAndSession(
       user,
@@ -845,7 +1048,7 @@ export class AuthService {
 
     if (!this.mailService.isConfigured()) {
       throw new BadRequestException(
-        'Hệ thống chưa được cấu hình tài khoản Google Mail. Vui lòng cấu hình MAIL_USER và MAIL_PASS trong file apps/api/.env.',
+        'Dịch vụ gửi email tạm thời không khả dụng. Vui lòng thử lại sau.',
       );
     }
 
@@ -1084,37 +1287,31 @@ export class AuthService {
         );
       }
 
-      const tokenPayload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        fullName: user.fullName,
-        sessionId: sessionToken,
-      };
-      const accessToken = await this.jwtService.signAsync(tokenPayload);
+      const tokens = await this.generateTokens(user, sessionToken);
 
       return {
-        accessToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         user,
       };
     }
 
-    // CASE 2: Đã có danh sách thiết bị. Kiểm tra xem thiết bị này đã từng được tin cậy chưa.
     const currentDevice = existingDevices.find(
       (d) => d.deviceId === resolvedDeviceId,
     );
 
     if (currentDevice && currentDevice.isTrusted) {
-      // Thiết bị quen thuộc đã được tin cậy -> Đăng nhập ngay & thực thi Single Active Session
       const sessionToken = randomUUID();
       try {
         await this.prisma.$transaction([
-          // Kick out tất cả các phiên đăng nhập khác của user này
           this.prisma.userDevice.updateMany({
             where: { userId: user.id, sessionToken: { not: null } },
             data: { sessionToken: null },
           }),
-          // Gán sessionToken mới cho thiết bị hiện tại
+          this.prisma.authToken.updateMany({
+            where: { userId: user.id, revokedAt: null, type: 'REFRESH_TOKEN' },
+            data: { revokedAt: new Date() },
+          }),
           this.prisma.userDevice.update({
             where: { id: currentDevice.id },
             data: {
@@ -1130,18 +1327,13 @@ export class AuthService {
           `Không thể cập nhật session thiết bị: ${(err as Error)?.message}`,
         );
       }
+      this.revokeDevRefreshTokens(user.id);
 
-      const tokenPayload = {
-        sub: user.id,
-        email: user.email,
-        role: user.role,
-        fullName: user.fullName,
-        sessionId: sessionToken,
-      };
-      const accessToken = await this.jwtService.signAsync(tokenPayload);
+      const tokens = await this.generateTokens(user, sessionToken);
 
       return {
-        accessToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
         user,
       };
     }
@@ -1210,17 +1402,18 @@ export class AuthService {
       throw new BadRequestException('Mã OTP xác thực không chính xác.');
     }
 
-    // OTP chính xác! Tin cậy thiết bị này và áp dụng Single Active Session
     const sessionToken = randomUUID();
 
     try {
       await this.prisma.$transaction([
-        // Kick out tất cả phiên trước đó
         this.prisma.userDevice.updateMany({
           where: { userId: pending.userId, sessionToken: { not: null } },
           data: { sessionToken: null },
         }),
-        // Upsert thiết bị mới là trusted
+        this.prisma.authToken.updateMany({
+          where: { userId: pending.userId, revokedAt: null, type: 'REFRESH_TOKEN' },
+          data: { revokedAt: new Date() },
+        }),
         this.prisma.userDevice.upsert({
           where: {
             userId_deviceId: {
@@ -1249,6 +1442,7 @@ export class AuthService {
     } catch (err: unknown) {
       this.logger.warn(`Lỗi lưu thiết bị xác thực: ${(err as Error)?.message}`);
     }
+    this.revokeDevRefreshTokens(pending.userId);
 
     AuthService.pendingDeviceVerifications.delete(key);
 
@@ -1261,17 +1455,11 @@ export class AuthService {
       avatarUrl: null,
     }));
 
-    const tokenPayload = {
-      sub: user.id,
-      email: user.email,
-      role: user.role,
-      fullName: user.fullName,
-      sessionId: sessionToken,
-    };
-    const accessToken = await this.jwtService.signAsync(tokenPayload);
+    const tokens = await this.generateTokens(user, sessionToken);
 
     return {
-      accessToken,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
       user,
       message: 'Xác thực thiết bị thành công! Đã đăng nhập.',
     };
@@ -1387,25 +1575,179 @@ export class AuthService {
     }
   }
 
-  async logout(tokenHeader?: string): Promise<{ message: string }> {
-    if (!tokenHeader) {
-      return { message: 'Đăng xuất thành công.' };
+  async refreshAccessToken(
+    refreshTokenDto: RefreshTokenDto,
+  ): Promise<AuthResponse> {
+    const rawToken = refreshTokenDto.refreshToken?.trim();
+    if (!rawToken) {
+      throw new UnauthorizedException('Thiếu refresh token.');
     }
 
-    const token = tokenHeader.replace(/^Bearer\s+/i, '').trim();
+    const refreshSecret = this.getRefreshSecret();
+
+    let payload: { sub?: string; sessionId?: string; type?: string } | null =
+      null;
     try {
-      const payload = this.jwtService.decode(token) as {
-        sub?: string;
-        sessionId?: string;
-      } | null;
-      if (payload?.sub && payload?.sessionId) {
-        await this.prisma.userDevice.updateMany({
-          where: { userId: payload.sub, sessionToken: payload.sessionId },
-          data: { sessionToken: null },
+      payload = await this.jwtService.verifyAsync(rawToken, {
+        secret: refreshSecret,
+      });
+    } catch {
+      throw new UnauthorizedException(
+        'Phiên đăng nhập đã hết hạn sau 7 ngày. Vui lòng đăng nhập lại.',
+      );
+    }
+
+    if (!payload?.sub || !payload?.sessionId || payload?.type !== 'refresh') {
+      throw new UnauthorizedException('Refresh token không hợp lệ.');
+    }
+
+    const tokenHash = createHash('sha256').update(rawToken).digest('hex');
+    let isTokenValid = false;
+
+    try {
+      const updateResult = await this.prisma.authToken.updateMany({
+        where: {
+          tokenHash,
+          revokedAt: null,
+          expiresAt: { gt: new Date() },
+        },
+        data: { revokedAt: new Date() },
+      });
+
+      if (updateResult.count > 0) {
+        isTokenValid = true;
+      } else {
+        const existing = await this.prisma.authToken.findUnique({
+          where: { tokenHash },
         });
+        if (existing) {
+          throw new UnauthorizedException(
+            'Refresh token đã bị thu hồi hoặc đã hết hạn sau 7 ngày.',
+          );
+        }
       }
     } catch (err: unknown) {
-      this.logger.warn(`Lỗi logout device: ${(err as Error)?.message}`);
+      if (err instanceof UnauthorizedException) throw err;
+    }
+
+    if (!isTokenValid) {
+      const devRecord = AuthService.devRefreshTokens.get(tokenHash);
+      if (devRecord) {
+        if (devRecord.revoked || Date.now() > devRecord.expiresAt) {
+          throw new UnauthorizedException(
+            'Refresh token đã bị thu hồi hoặc đã hết hạn sau 7 ngày.',
+          );
+        }
+        devRecord.revoked = true;
+        isTokenValid = true;
+      }
+    }
+
+    if (!isTokenValid) {
+      throw new UnauthorizedException(
+        'Refresh token không tồn tại hoặc không hợp lệ.',
+      );
+    }
+
+    try {
+      const device = await this.prisma.userDevice.findUnique({
+        where: { sessionToken: payload.sessionId },
+      });
+
+      if (!device) {
+        const isDbUser = await this.prisma.user
+          .findUnique({ where: { id: payload.sub } })
+          .catch(() => null);
+        if (isDbUser) {
+          throw new UnauthorizedException(
+            'Phiên đăng nhập đã bị ngắt kết nối bởi thiết bị khác.',
+          );
+        }
+      } else if (device.userId !== payload.sub) {
+        throw new UnauthorizedException(
+          'Phiên đăng nhập đã bị ngắt kết nối bởi thiết bị khác.',
+        );
+      }
+    } catch (err: unknown) {
+      if (err instanceof UnauthorizedException) throw err;
+    }
+
+    const user = await this.getProfile(payload.sub);
+    if (user.status === 'SUSPENDED') {
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
+      );
+    }
+
+    if (user.status === 'INACTIVE') {
+      throw new UnauthorizedException(
+        'Tài khoản chưa được kích hoạt hoặc đã bị vô hiệu hóa.',
+      );
+    }
+
+    try {
+      await this.prisma.userDevice.updateMany({
+        where: { sessionToken: payload.sessionId },
+        data: { lastLoginAt: new Date() },
+      });
+    } catch {}
+
+    const tokens = await this.generateTokens(user, payload.sessionId);
+
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user,
+    };
+  }
+
+  async logout(
+    tokenHeader?: string,
+    refreshToken?: string,
+  ): Promise<{ message: string }> {
+    if (refreshToken) {
+      const tokenHash = createHash('sha256')
+        .update(refreshToken.trim())
+        .digest('hex');
+      try {
+        await this.prisma.authToken.updateMany({
+          where: { tokenHash, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+      } catch (err: unknown) {
+        this.logger.warn(`Lỗi revoke refreshToken: ${(err as Error)?.message}`);
+      }
+      const devRecord = AuthService.devRefreshTokens.get(tokenHash);
+      if (devRecord) {
+        devRecord.revoked = true;
+      }
+    }
+
+    if (tokenHeader) {
+      const token = tokenHeader.replace(/^Bearer\s+/i, '').trim();
+      try {
+        const payload = this.jwtService.decode(token) as {
+          sub?: string;
+          sessionId?: string;
+        } | null;
+        if (payload?.sub && payload?.sessionId) {
+          await this.prisma.userDevice.updateMany({
+            where: { userId: payload.sub, sessionToken: payload.sessionId },
+            data: { sessionToken: null },
+          });
+          await this.prisma.authToken.updateMany({
+            where: {
+              userId: payload.sub,
+              revokedAt: null,
+              type: 'REFRESH_TOKEN',
+            },
+            data: { revokedAt: new Date() },
+          });
+          this.revokeDevRefreshTokens(payload.sub);
+        }
+      } catch (err: unknown) {
+        this.logger.warn(`Lỗi logout device: ${(err as Error)?.message}`);
+      }
     }
 
     return { message: 'Đăng xuất thành công.' };

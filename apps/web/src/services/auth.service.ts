@@ -22,32 +22,63 @@ const API_BASE_URL =
   import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 
 const TOKEN_KEY = 'tku_access_token';
+const REFRESH_TOKEN_KEY = 'tku_refresh_token';
 const USER_KEY = 'tku_user';
 
 const handleAuthSession = (data: AuthResponse): void => {
-  if (typeof window !== 'undefined' && data.accessToken && data.user) {
+  if (typeof window !== 'undefined' && data.accessToken) {
     localStorage.setItem(TOKEN_KEY, data.accessToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    if (data.user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    }
+    if (data.refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_KEY, data.refreshToken);
+    }
   }
+};
+
+const isTechnicalError = (msg: string): boolean => {
+  const lower = msg.toLowerCase();
+  return (
+    lower.includes('prisma') ||
+    lower.includes('sql') ||
+    lower.includes('database') ||
+    lower.includes('jwt') ||
+    lower.includes('stack') ||
+    lower.includes('.env') ||
+    lower.includes('exception') ||
+    lower.includes('transporter') ||
+    lower.includes('internal server')
+  );
 };
 
 const extractErrorMessage = async (
   response: Response,
   fallbackMessage: string,
 ): Promise<string> => {
+  if (response.status >= 500) {
+    return 'Hệ thống đang bận hoặc gián đoạn kết nối. Vui lòng thử lại sau.';
+  }
   try {
     const errorData: ApiErrorResponse = await response.json();
     if (Array.isArray(errorData.message) && errorData.message.length > 0) {
-      return errorData.message[0];
+      const msg = errorData.message[0];
+      if (typeof msg === 'string' && msg.trim() && !isTechnicalError(msg)) {
+        return msg;
+      }
     }
     if (typeof errorData.message === 'string' && errorData.message.trim()) {
-      return errorData.message;
+      if (!isTechnicalError(errorData.message)) {
+        return errorData.message;
+      }
     }
   } catch {
     return fallbackMessage;
   }
   return fallbackMessage;
 };
+
+let activeRefreshPromise: Promise<AuthResponse | null> | null = null;
 
 export const authService = {
   async sendRegisterOtp(
@@ -410,36 +441,84 @@ export const authService = {
       const data: CheckSessionResponse = await response.json();
       return data;
     } catch {
-      // Nếu lỗi mạng, coi như tạm thời hợp lệ để không ngắt người dùng vô cớ
       return { valid: true };
     }
   },
 
+  async refreshTokens(): Promise<AuthResponse | null> {
+    if (activeRefreshPromise) {
+      return activeRefreshPromise;
+    }
+
+    activeRefreshPromise = (async () => {
+      const refreshToken = this.getStoredRefreshToken();
+      if (!refreshToken) {
+        return null;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+
+        if (!response.ok) {
+          this.logout();
+          return null;
+        }
+
+        const data: AuthResponse = await response.json();
+        if (data.accessToken && data.user) {
+          handleAuthSession(data);
+        }
+        return data;
+      } catch {
+        return null;
+      }
+    })().finally(() => {
+      activeRefreshPromise = null;
+    });
+
+    return activeRefreshPromise;
+  },
+
   logout(): void {
     const token = this.getStoredToken();
-    if (token) {
+    const refreshToken = this.getStoredRefreshToken();
+    if (token || refreshToken) {
       try {
         void fetch(`${API_BASE_URL}/auth/logout`, {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
+          body: JSON.stringify({ refreshToken }),
         }).catch(() => {});
       } catch (err) {
-        // Bỏ qua lỗi kết nối khi gửi yêu cầu logout
         void err;
       }
     }
 
     if (typeof window !== 'undefined') {
       localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('tku_token');
+      localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
     }
   },
 
   getStoredToken(): string | null {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY) || localStorage.getItem('tku_token');
+  },
+
+  getStoredRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
   },
 
   getStoredUser(): User | null {
