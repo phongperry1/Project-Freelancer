@@ -69,6 +69,17 @@ export const LoginForm: React.FC = () => {
           '',
           `${window.location.pathname}${newQuery}`,
         );
+      } else if (params.get('expired') === '1') {
+        toast.warning(
+          'Phiên đăng nhập đã hết hạn sau 7 ngày. Vui lòng đăng nhập lại.',
+        );
+        params.delete('expired');
+        const newQuery = params.toString() ? `?${params.toString()}` : '';
+        window.history.replaceState(
+          {},
+          '',
+          `${window.location.pathname}${newQuery}`,
+        );
       }
     }
 
@@ -81,6 +92,8 @@ export const LoginForm: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isLoading) return;
 
     if (!email.trim() || !password.trim()) {
       toast.error('Vui lòng nhập đầy đủ email và mật khẩu.');

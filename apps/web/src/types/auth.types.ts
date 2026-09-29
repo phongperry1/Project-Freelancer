@@ -35,6 +35,7 @@ export interface GoogleAuthPayload {
 
 export interface AuthResponse {
   accessToken?: string;
+  refreshToken?: string;
   user?: User;
   requireDeviceVerification?: boolean;
   deviceId?: string;
