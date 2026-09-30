@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
+import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
 import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
-import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
-import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
 import type { AuthResponse } from '../../../types/auth.types';
 
 export const LoginForm: React.FC = () => {
@@ -129,8 +129,12 @@ export const LoginForm: React.FC = () => {
         typeof window !== 'undefined'
           ? new URLSearchParams(window.location.search).get('redirect')
           : null;
-      const targetUrl =
+      let targetUrl =
         redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+
+      if (!redirectParam && res.user?.role === 'ADMIN') {
+        targetUrl = '/admin';
+      }
 
       timerRef.current = setTimeout(() => {
         window.location.href = targetUrl;
@@ -158,8 +162,12 @@ export const LoginForm: React.FC = () => {
       typeof window !== 'undefined'
         ? new URLSearchParams(window.location.search).get('redirect')
         : null;
-    const targetUrl =
+    let targetUrl =
       redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+
+    if (!redirectParam && res.user?.role === 'ADMIN') {
+      targetUrl = '/admin';
+    }
 
     timerRef.current = setTimeout(() => {
       window.location.href = targetUrl;
