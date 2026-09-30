@@ -616,6 +616,22 @@ export class AuthService {
       };
     }
 
+    if (normalizedEmail === 'admin@tku.edu.vn') {
+      if (password !== 'Admin@123' && password !== 'Password@123') {
+        this.handleFailedLoginAttempt(normalizedEmail);
+      }
+
+      this.handleSuccessfulLogin(normalizedEmail);
+      return {
+        id: '00000000-0000-0000-0000-000000000001',
+        email: 'admin@tku.edu.vn',
+        fullName: 'Quản trị viên TKU',
+        role: 'ADMIN',
+        status: 'ACTIVE',
+        avatarUrl: null,
+      };
+    }
+
     if (normalizedEmail === 'student@tku.edu.vn') {
       if (password !== 'Password@123') {
         this.handleFailedLoginAttempt(normalizedEmail);
@@ -876,6 +892,17 @@ export class AuthService {
         }
         if (picture) devUser.avatarUrl = picture;
         devUser.status = 'ACTIVE';
+      } else if (normalizedEmail === 'admin@tku.edu.vn') {
+        devUser = {
+          id: '00000000-0000-0000-0000-000000000001',
+          email: 'admin@tku.edu.vn',
+          fullName: name || 'Quản trị viên TKU',
+          passwordHash: '',
+          role: 'ADMIN',
+          status: 'ACTIVE',
+          avatarUrl: picture || null,
+        };
+        AuthService.devUsers.set(normalizedEmail, devUser);
       } else if (normalizedEmail === 'student@tku.edu.vn') {
         devUser = {
           id: '11111111-1111-1111-1111-111111111111',
