@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, UserCheck, ArrowRight, Info } from 'lucide-react';
+import { X, Sparkles, UserCheck, ArrowRight, Info, ShieldCheck } from 'lucide-react';
 
 interface GoogleDevModalProps {
   isOpen: boolean;
@@ -85,6 +85,26 @@ export const GoogleDevModal: React.FC<GoogleDevModalProps> = ({
         <div className="tku-gmodal-section">
           <label className="tku-gmodal-label">Lựa chọn tài khoản kiểm thử:</label>
           <div className="tku-gmodal-presets">
+            <button
+              type="button"
+              className="tku-gmodal-preset-btn"
+              disabled={isLoading}
+              onClick={() => onSelectAccount('admin@tku.edu.vn')}
+            >
+              <div className="tku-gmodal-preset-avatar" style={{ background: '#eff6ff', color: '#1d68f2' }}>
+                <ShieldCheck size={18} color="#1d68f2" />
+              </div>
+              <div className="tku-gmodal-preset-text">
+                <span className="tku-gmodal-preset-title">
+                  Tài khoản Quản trị viên (Admin)
+                </span>
+                <span className="tku-gmodal-preset-email">
+                  admin@tku.edu.vn
+                </span>
+              </div>
+              <ArrowRight size={16} className="tku-gmodal-preset-arrow" />
+            </button>
+
             <button
               type="button"
               className="tku-gmodal-preset-btn"

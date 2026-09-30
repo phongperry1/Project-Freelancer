@@ -113,8 +113,12 @@ export function useGoogleAuth(
           typeof window !== 'undefined'
             ? new URLSearchParams(window.location.search).get('redirect')
             : null;
-        const targetUrl =
+        let targetUrl =
           redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+
+        if (!redirectParam && res.user?.role === 'ADMIN') {
+          targetUrl = '/admin';
+        }
 
         redirectTimerRef.current = setTimeout(() => {
           window.location.href = targetUrl;
