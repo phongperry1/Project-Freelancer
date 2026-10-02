@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Search,
   ChevronDown,
-  Plus,
   ArrowUpRight,
   Edit3,
   BookOpen,
@@ -10,12 +10,15 @@ import {
   AlertCircle,
   X,
   RotateCcw,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import {
   adminService,
   type AdminCourseItem,
   type AdminCoursesResponse,
 } from '../../services/admin.service';
+import { toast } from '../../context/toastService';
 import './adminCourses.css';
 
 export const AdminCoursesPage: React.FC = () => {
@@ -24,7 +27,6 @@ export const AdminCoursesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [searchKeyword, setSearchKeyword] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [teacherFilter, setTeacherFilter] = useState<string>('ALL');
 
   useEffect(() => {
@@ -34,7 +36,6 @@ export const AdminCoursesPage: React.FC = () => {
       .then((res) => {
         if (isMounted) {
           setData(res);
-          setIsLoading(false);
         }
       })
       .catch((err: unknown) => {
@@ -44,6 +45,10 @@ export const AdminCoursesPage: React.FC = () => {
               ? err.message
               : 'Không thể tải danh sách khóa học.',
           );
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
           setIsLoading(false);
         }
       });
@@ -60,7 +65,6 @@ export const AdminCoursesPage: React.FC = () => {
       .getCoursesList()
       .then((res) => {
         setData(res);
-        setIsLoading(false);
       })
       .catch((err: unknown) => {
         setError(
@@ -68,6 +72,8 @@ export const AdminCoursesPage: React.FC = () => {
             ? err.message
             : 'Không thể tải danh sách khóa học.',
         );
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, []);
@@ -81,33 +87,71 @@ export const AdminCoursesPage: React.FC = () => {
       const matchKeyword =
         !query || course.title.toLowerCase().includes(query);
 
-      const matchStatus =
-        statusFilter === 'ALL' || course.status === statusFilter;
-
       const matchTeacher =
         teacherFilter === 'ALL' || course.teacherId === teacherFilter;
 
-      return matchKeyword && matchStatus && matchTeacher;
+      return matchKeyword && matchTeacher;
     });
-  }, [coursesList, searchKeyword, statusFilter, teacherFilter]);
+  }, [coursesList, searchKeyword, teacherFilter]);
 
   const handleResetFilters = useCallback(() => {
     setSearchKeyword('');
-    setStatusFilter('ALL');
     setTeacherFilter('ALL');
   }, []);
 
-  const stats = useMemo(
-    () =>
-      data?.stats ?? {
-        totalCourses: 0,
-        publishedCourses: 0,
-        archivedCourses: 0,
-        draftCourses: 0,
-        publishedPercentage: 0,
-      },
-    [data?.stats],
-  );
+  const [togglingCourseId, setTogglingCourseId] = useState<string | null>(null);
+
+  const handleToggleStatus = useCallback(async (course: AdminCourseItem) => {
+    const nextStatus: 'ACTIVE' | 'HIDDEN' =
+      course.status === 'ACTIVE' ? 'HIDDEN' : 'ACTIVE';
+    setTogglingCourseId(course.id);
+    try {
+      await adminService.updateCourse(course.id, { status: nextStatus });
+      setData((prev) => {
+        if (!prev) return prev;
+        const updatedCourses = prev.courses.map((item) => {
+          if (item.id === course.id) {
+            return {
+              ...item,
+              status: nextStatus,
+              statusText: nextStatus === 'HIDDEN' ? 'Đã ẩn' : 'Đang hoạt động',
+            };
+          }
+          return item;
+        });
+        const activeCount = updatedCourses.filter((c) => c.status === 'ACTIVE').length;
+        const hiddenCount = updatedCourses.filter((c) => c.status === 'HIDDEN').length;
+        return {
+          ...prev,
+          courses: updatedCourses,
+          stats: {
+            ...prev.stats,
+            activeCourses: activeCount,
+            hiddenCourses: hiddenCount,
+            activePercentage:
+              prev.stats.totalCourses > 0
+                ? Math.round((activeCount / prev.stats.totalCourses) * 100)
+                : 0,
+          },
+        };
+      });
+      toast.success(
+        nextStatus === 'ACTIVE'
+          ? `Đã hiện khóa học "${course.title}".`
+          : `Đã ẩn khóa học "${course.title}".`,
+      );
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : 'Không thể cập nhật trạng thái khóa học.',
+      );
+    } finally {
+      setTogglingCourseId(null);
+    }
+  }, []);
+
+
 
   const teachers = useMemo(() => data?.teachers ?? [], [data?.teachers]);
   const totalInDb = data?.courses?.length ?? 0;
@@ -159,62 +203,15 @@ export const AdminCoursesPage: React.FC = () => {
               Danh sách tất cả khóa học
             </h2>
             <p className="tku-courses-banner__desc">
-              Theo dõi tên khóa học, giảng viên, số học sinh và trạng thái hiển thị.
+              Theo dõi tên khóa học, giảng viên, số học sinh và bài học.
             </p>
           </div>
-          <button
-            type="button"
-            className="tku-courses-banner__btn"
-            onClick={() => {
-              alert('Chức năng tạo khóa học đang được hoàn thiện.');
-            }}
-          >
-            <Plus size={16} />
-            <span>Tạo khóa học</span>
-          </button>
+          <Link to="/admin/courses/create" className="tku-courses-banner__btn">
+            Tạo khóa học
+          </Link>
         </section>
 
-        <div className="tku-courses-stats-grid">
-          <div className="tku-courses-stat-card">
-            <span className="tku-courses-stat-card__label">Tổng khóa học</span>
-            <span className="tku-courses-stat-card__value">
-              {stats.totalCourses.toLocaleString('vi-VN')}
-            </span>
-            <span className="tku-courses-stat-card__sub tku-courses-stat-card__sub--green">
-              {stats.totalCourses > 0 ? '+6 tháng này' : 'Hệ thống TKU'}
-            </span>
-          </div>
 
-          <div className="tku-courses-stat-card">
-            <span className="tku-courses-stat-card__label">Đang xuất bản</span>
-            <span className="tku-courses-stat-card__value">
-              {stats.publishedCourses.toLocaleString('vi-VN')}
-            </span>
-            <span className="tku-courses-stat-card__sub tku-courses-stat-card__sub--green">
-              {stats.publishedPercentage}% tổng số
-            </span>
-          </div>
-
-          <div className="tku-courses-stat-card">
-            <span className="tku-courses-stat-card__label">Đã lưu trữ</span>
-            <span className="tku-courses-stat-card__value">
-              {stats.archivedCourses.toLocaleString('vi-VN')}
-            </span>
-            <span className="tku-courses-stat-card__sub tku-courses-stat-card__sub--gray">
-              Cần rà soát
-            </span>
-          </div>
-
-          <div className="tku-courses-stat-card">
-            <span className="tku-courses-stat-card__label">Bản nháp</span>
-            <span className="tku-courses-stat-card__value">
-              {stats.draftCourses.toLocaleString('vi-VN')}
-            </span>
-            <span className="tku-courses-stat-card__sub tku-courses-stat-card__sub--amber">
-              Chờ hoàn thiện
-            </span>
-          </div>
-        </div>
 
         <div className="tku-courses-filter-bar">
           <div className="tku-courses-search-wrap">
@@ -241,24 +238,13 @@ export const AdminCoursesPage: React.FC = () => {
           <div className="tku-courses-select-wrap">
             <select
               className="tku-courses-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả trạng thái</option>
-              <option value="PUBLISHED">Đang xuất bản</option>
-              <option value="ARCHIVED">Đã lưu trữ</option>
-              <option value="DRAFT">Bản nháp</option>
-            </select>
-            <ChevronDown size={14} className="tku-courses-select-icon" />
-          </div>
-
-          <div className="tku-courses-select-wrap">
-            <select
-              className="tku-courses-select"
               value={teacherFilter}
               onChange={(e) => setTeacherFilter(e.target.value)}
+              disabled={teachers.length === 0}
             >
-              <option value="ALL">Tất cả giảng viên</option>
+              <option value="ALL">
+                {teachers.length === 0 ? 'Tất cả giảng viên (Chưa có dữ liệu)' : 'Tất cả giảng viên'}
+              </option>
               {teachers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.fullName}
@@ -268,7 +254,7 @@ export const AdminCoursesPage: React.FC = () => {
             <ChevronDown size={14} className="tku-courses-select-icon" />
           </div>
 
-          {(searchKeyword || statusFilter !== 'ALL' || teacherFilter !== 'ALL') && (
+          {(searchKeyword || teacherFilter !== 'ALL') && (
             <button
               type="button"
               className="tku-courses-filter-reset-btn"
@@ -282,12 +268,6 @@ export const AdminCoursesPage: React.FC = () => {
         </div>
 
         <div className="tku-courses-card">
-          <div className="tku-courses-card-header">
-            <h3 className="tku-courses-card-title">Khóa học hiện có</h3>
-            <span className="tku-courses-card-meta">
-              {filteredCourses.length} khóa học
-            </span>
-          </div>
 
           {totalInDb === 0 ? (
             <div className="tku-courses-empty">
@@ -301,15 +281,9 @@ export const AdminCoursesPage: React.FC = () => {
                 Cơ sở dữ liệu hiện tại chưa có khóa học nào được khởi tạo. Hãy bấm
                 nút bên dưới để tạo khóa học đầu tiên cho nền tảng.
               </p>
-              <button
-                type="button"
-                className="tku-courses-empty__btn"
-                onClick={() => {
-                  alert('Chức năng tạo khóa học đang được hoàn thiện.');
-                }}
-              >
-                + Tạo khóa học mới
-              </button>
+              <Link to="/admin/courses/create" className="tku-courses-empty__btn">
+                Tạo khóa học mới
+              </Link>
             </div>
           ) : filteredCourses.length === 0 ? (
             <div className="tku-courses-empty">
@@ -338,59 +312,100 @@ export const AdminCoursesPage: React.FC = () => {
                   <tr>
                     <th>Khóa học</th>
                     <th>Giảng viên</th>
-                    <th>Khối</th>
                     <th>Học sinh</th>
                     <th>Bài học</th>
-                    <th>Trạng thái</th>
                     <th style={{ textAlign: 'right' }}>Hành động</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredCourses.map((c) => (
-                    <tr key={c.id}>
+                    <tr
+                      key={c.id}
+                      className={c.status === 'HIDDEN' ? 'tku-courses-row--hidden' : ''}
+                    >
                       <td>
-                        <div className="tku-course-item-title">{c.title}</div>
-                        <div className="tku-course-item-date">{c.updatedAt}</div>
+                        <div className="tku-course-cell">
+                          {c.thumbnailUrl ? (
+                            <Link
+                              to={`/admin/courses/${c.id}`}
+                              className="tku-course-thumb-link"
+                              tabIndex={-1}
+                              aria-hidden="true"
+                            >
+                              <img
+                                src={c.thumbnailUrl}
+                                alt={c.title}
+                                className="tku-course-thumb-img"
+                                loading="lazy"
+                                onError={(e) => {
+                                  const parent = (e.currentTarget as HTMLElement).parentElement;
+                                  if (parent) {
+                                    parent.className = 'tku-course-thumb-placeholder';
+                                    parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="tku-course-thumb-placeholder-icon"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>';
+                                  }
+                                }}
+                              />
+                            </Link>
+                          ) : (
+                            <div className="tku-course-thumb-placeholder" aria-hidden="true">
+                              <BookOpen size={18} className="tku-course-thumb-placeholder-icon" />
+                            </div>
+                          )}
+                          <Link
+                            to={`/admin/courses/${c.id}`}
+                            className="tku-course-item-title-link"
+                            title={c.title}
+                          >
+                            {c.title}
+                          </Link>
+                        </div>
                       </td>
                       <td>{c.teacherName}</td>
-                      <td>{c.grade}</td>
                       <td>{c.studentCount.toLocaleString('vi-VN')}</td>
                       <td>{c.lessonCount.toLocaleString('vi-VN')}</td>
-                      <td>
-                        <span
-                          className={`tku-courses-badge ${
-                            c.status === 'PUBLISHED'
-                              ? 'tku-courses-badge--published'
-                              : c.status === 'ARCHIVED'
-                                ? 'tku-courses-badge--archived'
-                                : 'tku-courses-badge--draft'
-                          }`}
-                        >
-                          {c.statusText}
-                        </span>
-                      </td>
+
                       <td>
                         <div className="tku-courses-actions">
                           <button
                             type="button"
+                            className={`tku-courses-action-btn ${
+                              c.status === 'HIDDEN'
+                                ? 'tku-courses-action-btn--toggle-hidden'
+                                : 'tku-courses-action-btn--toggle-active'
+                            }`}
+                            title={
+                              c.status === 'ACTIVE'
+                                ? 'Đang hiện - Bấm để ẩn khóa học'
+                                : 'Đang ẩn - Bấm để hiện khóa học'
+                            }
+                            onClick={() => handleToggleStatus(c)}
+                            disabled={togglingCourseId === c.id}
+                            aria-label={
+                              c.status === 'ACTIVE'
+                                ? 'Ẩn khóa học'
+                                : 'Hiện khóa học'
+                            }
+                          >
+                            {c.status === 'ACTIVE' ? (
+                              <Eye size={15} />
+                            ) : (
+                              <EyeOff size={15} />
+                            )}
+                          </button>
+                          <Link
+                            to={`/admin/courses/${c.id}`}
                             className="tku-courses-action-btn"
                             title="Xem chi tiết"
-                            onClick={() => {
-                              alert(`Xem chi tiết khóa học: ${c.title}`);
-                            }}
                           >
                             <ArrowUpRight size={15} />
-                          </button>
-                          <button
-                            type="button"
+                          </Link>
+                          <Link
+                            to={`/admin/courses/${c.id}/edit`}
                             className="tku-courses-action-btn"
                             title="Chỉnh sửa khóa học"
-                            onClick={() => {
-                              alert(`Chỉnh sửa khóa học: ${c.title}`);
-                            }}
                           >
                             <Edit3 size={15} />
-                          </button>
+                          </Link>
                         </div>
                       </td>
                     </tr>
