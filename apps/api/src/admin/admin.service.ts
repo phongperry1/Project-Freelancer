@@ -1,5 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import {
+  CreateCourseDto,
+  UpdateCourseDto,
+  CreateChapterDto,
+} from './dto/course.dto.js';
 
 export interface DashboardStatsResponse {
   totalUsers: number;
@@ -42,13 +51,14 @@ export interface DashboardStatsResponse {
 
 export interface AdminCourseItem {
   id: string;
+  slug?: string;
   title: string;
+  thumbnailUrl?: string | null;
   teacherName: string;
   teacherId: string;
-  grade: string;
   studentCount: number;
   lessonCount: number;
-  status: 'PUBLISHED' | 'ARCHIVED' | 'DRAFT';
+  status: 'ACTIVE' | 'HIDDEN';
   statusText: string;
   updatedAt: string;
   createdAt: string;
@@ -57,10 +67,13 @@ export interface AdminCourseItem {
 export interface AdminCoursesResponse {
   stats: {
     totalCourses: number;
-    publishedCourses: number;
-    archivedCourses: number;
-    draftCourses: number;
-    publishedPercentage: number;
+    activeCourses: number;
+    hiddenCourses: number;
+    activePercentage: number;
+    publishedCourses?: number;
+    archivedCourses?: number;
+    draftCourses?: number;
+    publishedPercentage?: number;
   };
   courses: AdminCourseItem[];
   teachers: Array<{ id: string; fullName: string }>;
@@ -142,7 +155,7 @@ export class AdminService {
       ] = await Promise.all([
         this.prisma.user.count(),
         this.prisma.user.count({ where: { status: 'ACTIVE' } }),
-        this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
+        this.prisma.course.count({ where: { status: 'ACTIVE' } }),
         this.prisma.lesson.count(),
         this.prisma.user.count({ where: { role: 'STUDENT' } }),
         this.prisma.user.count({ where: { role: 'TEACHER' } }),
@@ -156,7 +169,7 @@ export class AdminService {
           },
         }),
         this.prisma.user.findMany({
-          take: 4,
+          take: 15,
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
@@ -166,7 +179,7 @@ export class AdminService {
           },
         }),
         this.prisma.course.findMany({
-          take: 2,
+          take: 15,
           orderBy: { createdAt: 'desc' },
           select: {
             id: true,
@@ -270,14 +283,14 @@ export class AdminService {
     );
 
     const recentCourses = recentDbCourses.map((c) => {
-      let status: 'ACTIVE' | 'PENDING' | 'DRAFT' = 'DRAFT';
-      let statusText = 'Bản nháp';
-      if (c.status === 'PUBLISHED') {
+      let status: 'ACTIVE' | 'PENDING' | 'DRAFT' = 'ACTIVE';
+      let statusText = 'Đang hoạt động';
+      if (c.status === 'ACTIVE') {
         status = 'ACTIVE';
         statusText = 'Đang hoạt động';
-      } else if (c.status === 'ARCHIVED') {
+      } else {
         status = 'PENDING';
-        statusText = 'Lưu trữ';
+        statusText = 'Đã ẩn';
       }
 
       return {
@@ -330,7 +343,7 @@ export class AdminService {
 
     recentActivities.sort((a, b) => b.timestamp - a.timestamp);
 
-    const sanitizedActivities = recentActivities.slice(0, 5).map(({ id, type, title, description, timeAgo }) => ({
+    const sanitizedActivities = recentActivities.slice(0, 20).map(({ id, type, title, description, timeAgo }) => ({
       id,
       type,
       title,
@@ -362,16 +375,14 @@ export class AdminService {
   async getAdminCourses(): Promise<AdminCoursesResponse> {
     const [
       totalCourses,
-      publishedCourses,
-      archivedCourses,
-      draftCourses,
+      activeCourses,
+      hiddenCourses,
       dbCourses,
       teachers,
     ] = await Promise.all([
       this.prisma.course.count(),
-      this.prisma.course.count({ where: { status: 'PUBLISHED' } }),
-      this.prisma.course.count({ where: { status: 'ARCHIVED' } }),
-      this.prisma.course.count({ where: { status: 'DRAFT' } }),
+      this.prisma.course.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.course.count({ where: { status: 'HIDDEN' } }),
       this.prisma.course.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
@@ -387,56 +398,373 @@ export class AdminService {
       this.prisma.user.findMany({
         where: { role: 'TEACHER' },
         select: { id: true, fullName: true },
-        orderBy: { fullName: 'asc' },
+        orderBy: [{ fullName: 'asc' }],
       }),
     ]);
 
-    const publishedPercentage =
+    const activePercentage =
       totalCourses > 0
-        ? Math.round((publishedCourses / totalCourses) * 100)
+        ? Math.round((activeCourses / totalCourses) * 100)
         : 0;
 
-    const courses: AdminCourseItem[] = dbCourses.map((c) => {
-      let statusText = 'Bản nháp';
-      if (c.status === 'PUBLISHED') statusText = 'Đang xuất bản';
-      else if (c.status === 'ARCHIVED') statusText = 'Đã lưu trữ';
-
-      const gradeMatch = c.title.match(/\b(1[0-2]|[1-9])\b/);
-      const grade = gradeMatch ? gradeMatch[1] : 'Khác';
-
-      const lessonCount = c.chapters.reduce(
-        (sum, ch) => sum + ch._count.lessons,
-        0,
-      );
-
-      const d = c.updatedAt || c.createdAt;
-      const dateFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-
-      return {
-        id: c.id,
-        title: c.title,
-        teacherName: c.teacher?.fullName || 'Chưa phân công',
-        teacherId: c.teacher?.id || '',
-        grade,
-        studentCount: c._count.enrollments,
-        lessonCount,
-        status: c.status as 'PUBLISHED' | 'ARCHIVED' | 'DRAFT',
-        statusText,
-        updatedAt: `Cập nhật ${dateFormatted}`,
-        createdAt: c.createdAt.toISOString(),
-      };
-    });
+    const courses: AdminCourseItem[] = dbCourses.map((c) =>
+      this.mapToAdminCourseItem(c),
+    );
 
     return {
       stats: {
         totalCourses,
-        publishedCourses,
-        archivedCourses,
-        draftCourses,
-        publishedPercentage,
+        activeCourses,
+        hiddenCourses,
+        activePercentage,
+        publishedCourses: activeCourses,
+        archivedCourses: hiddenCourses,
+        draftCourses: 0,
+        publishedPercentage: activePercentage,
       },
       courses,
-      teachers,
+      teachers: teachers.map((t) => ({
+        id: t.id,
+        fullName: t.fullName,
+      })),
     };
   }
+
+  private generateSlug(text: string): string {
+    return text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[đĐ]/g, 'd')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+  }
+
+  private async createUniqueSlug(baseTitle: string): Promise<string> {
+    const baseSlug = this.generateSlug(baseTitle) || 'khoa-hoc';
+    const existing = await this.prisma.course.findMany({
+      where: {
+        slug: { startsWith: baseSlug },
+      },
+      select: { slug: true },
+    });
+    const slugSet = new Set(existing.map((c) => c.slug));
+    if (!slugSet.has(baseSlug)) {
+      return baseSlug;
+    }
+    let counter = 1;
+    while (slugSet.has(`${baseSlug}-${counter}`)) {
+      counter++;
+    }
+    return `${baseSlug}-${counter}`;
+  }
+
+  private mapToAdminCourseItem(course: {
+    id: string;
+    slug?: string | null;
+    title: string;
+    thumbnailUrl?: string | null;
+    teacherName?: string;
+    teacherId: string;
+    teacher?: { id: string; fullName: string } | null;
+    chapters: Array<{ _count: { lessons: number } }>;
+    _count: { enrollments: number };
+    status: string;
+    updatedAt?: Date | null;
+    createdAt: Date;
+  }): AdminCourseItem {
+    const statusText = course.status === 'HIDDEN' ? 'Đã ẩn' : 'Đang hoạt động';
+
+    const lessonCount = course.chapters.reduce(
+      (sum, ch) => sum + ch._count.lessons,
+      0,
+    );
+
+    const d = course.updatedAt || course.createdAt;
+    const dateFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+
+    return {
+      id: course.id,
+      slug: course.slug || undefined,
+      title: course.title,
+      thumbnailUrl: course.thumbnailUrl || undefined,
+      teacherName:
+        course.teacher?.fullName || course.teacherName || 'Chưa phân công',
+      teacherId: course.teacherId,
+      studentCount: course._count.enrollments,
+      lessonCount,
+      status: (course.status === 'HIDDEN' ? 'HIDDEN' : 'ACTIVE') as 'ACTIVE' | 'HIDDEN',
+      statusText,
+      updatedAt: `Cập nhật ${dateFormatted}`,
+      createdAt: course.createdAt.toISOString(),
+    };
+  }
+
+  async createCourse(dto: CreateCourseDto): Promise<AdminCourseItem> {
+    if (!dto.title || !dto.title.trim()) {
+      throw new BadRequestException('Tiêu đề khóa học không được để trống.');
+    }
+    if (!dto.teacherId || !dto.teacherId.trim()) {
+      throw new BadRequestException('Vui lòng chọn giảng viên phụ trách, không được để trống.');
+    }
+    if (!dto.description || !dto.description.trim()) {
+      throw new BadRequestException('Mô tả khóa học không được để trống.');
+    }
+    if (!dto.thumbnailUrl || !dto.thumbnailUrl.trim()) {
+      throw new BadRequestException('Ảnh bìa khóa học không được để trống.');
+    }
+
+    const teacher = await this.prisma.user.findFirst({
+      where: {
+        id: dto.teacherId,
+        role: 'TEACHER',
+      },
+      select: { id: true, fullName: true, role: true },
+    });
+    if (!teacher) {
+      throw new BadRequestException(
+        'Giảng viên phụ trách không hợp lệ hoặc không có vai trò Giảng viên (TEACHER).',
+      );
+    }
+
+    const duplicateCourse = await this.prisma.course.findFirst({
+      where: {
+        teacherId: dto.teacherId,
+        title: { equals: dto.title.trim(), mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    if (duplicateCourse) {
+      throw new BadRequestException(
+        'Giảng viên này đã có khóa học với tiêu đề tương tự. Vui lòng kiểm tra lại.',
+      );
+    }
+
+    const courseStatus = dto.status === 'HIDDEN' ? 'HIDDEN' : 'ACTIVE';
+
+    const slug = await this.createUniqueSlug(dto.title);
+
+    const course = await this.prisma.course.create({
+      data: {
+        title: dto.title.trim(),
+        slug,
+        teacherId: dto.teacherId.trim(),
+        description: dto.description.trim(),
+        thumbnailUrl: dto.thumbnailUrl.trim(),
+        status: courseStatus,
+        ...(dto.initialChapters && dto.initialChapters.length > 0
+          ? {
+              chapters: {
+                create: dto.initialChapters
+                  .filter((ch) => ch && ch.trim().length > 0)
+                  .map((title, index) => ({
+                    title: title.trim(),
+                    sortOrder: index + 1,
+                  })),
+              },
+            }
+          : {}),
+      },
+      include: {
+        teacher: { select: { id: true, fullName: true } },
+        chapters: {
+          select: {
+            _count: { select: { lessons: true } },
+          },
+        },
+        _count: { select: { enrollments: true } },
+      },
+    });
+
+    return this.mapToAdminCourseItem(course);
+  }
+
+  async getCourseById(id: string) {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      include: {
+        teacher: { select: { id: true, fullName: true, role: true } },
+        chapters: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            lessons: {
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                sortOrder: true,
+                status: true,
+                videoUrl: true,
+              },
+            },
+          },
+        },
+        _count: { select: { enrollments: true } },
+      },
+    });
+    if (!course) {
+      throw new NotFoundException('Không tìm thấy khóa học yêu cầu.');
+    }
+    return course;
+  }
+
+  async updateCourse(
+    id: string,
+    dto: UpdateCourseDto,
+  ): Promise<AdminCourseItem> {
+    const existing = await this.prisma.course.findUnique({
+      where: { id },
+      select: { id: true, title: true, teacherId: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Không tìm thấy khóa học để cập nhật.');
+    }
+
+    if (dto.teacherId !== undefined) {
+      if (!dto.teacherId.trim()) {
+        throw new BadRequestException(
+          'Vui lòng chọn giảng viên phụ trách, không được để trống.',
+        );
+      }
+      if (dto.teacherId !== existing.teacherId) {
+        const teacher = await this.prisma.user.findFirst({
+          where: { id: dto.teacherId, role: 'TEACHER' },
+        });
+        if (!teacher) {
+          throw new BadRequestException(
+            'Giảng viên phụ trách không hợp lệ hoặc không có vai trò Giảng viên (TEACHER).',
+          );
+        }
+      }
+    }
+
+    if (dto.title !== undefined) {
+      const trimmedTitle = dto.title.trim();
+      if (!trimmedTitle) {
+        throw new BadRequestException('Tên khóa học không được để trống.');
+      }
+      if (trimmedTitle.length < 5) {
+        throw new BadRequestException('Tên khóa học cần tối thiểu 5 ký tự.');
+      }
+      if (trimmedTitle.length > 255) {
+        throw new BadRequestException('Tên khóa học không được vượt quá 255 ký tự.');
+      }
+      if (trimmedTitle !== existing.title) {
+        const duplicate = await this.prisma.course.findFirst({
+          where: {
+            id: { not: id },
+            teacherId: dto.teacherId || existing.teacherId,
+            title: { equals: trimmedTitle, mode: 'insensitive' },
+          },
+        });
+        if (duplicate) {
+          throw new BadRequestException(
+            'Giảng viên này đã có khóa học với tiêu đề tương tự.',
+          );
+        }
+      }
+    }
+
+    if (dto.description !== undefined) {
+      if (!dto.description || !dto.description.trim()) {
+        throw new BadRequestException('Mô tả khóa học không được để trống.');
+      }
+    }
+
+    if (dto.thumbnailUrl !== undefined) {
+      if (!dto.thumbnailUrl || !dto.thumbnailUrl.trim()) {
+        throw new BadRequestException('Ảnh bìa khóa học không được để trống.');
+      }
+    }
+
+    const course = await this.prisma.course.update({
+      where: { id },
+      data: {
+        ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
+        ...(dto.teacherId !== undefined ? { teacherId: dto.teacherId.trim() } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description.trim() }
+          : {}),
+        ...(dto.thumbnailUrl !== undefined
+          ? { thumbnailUrl: dto.thumbnailUrl.trim() }
+          : {}),
+        ...(dto.status ? { status: dto.status } : {}),
+      },
+      include: {
+        teacher: { select: { id: true, fullName: true } },
+        chapters: {
+          select: {
+            _count: { select: { lessons: true } },
+          },
+        },
+        _count: { select: { enrollments: true } },
+      },
+    });
+
+    return this.mapToAdminCourseItem(course);
+  }
+
+  async deleteCourse(
+    id: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const course = await this.prisma.course.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        _count: { select: { enrollments: true } },
+      },
+    });
+    if (!course) {
+      throw new NotFoundException('Không tìm thấy khóa học để xóa.');
+    }
+
+    if (course._count.enrollments > 0) {
+      await this.prisma.course.update({
+        where: { id },
+        data: { status: 'HIDDEN' },
+      });
+      return {
+        success: true,
+        message:
+          'Khóa học đã có học viên đăng ký nên được chuyển sang trạng thái Đã ẩn (HIDDEN).',
+      };
+    }
+
+    await this.prisma.course.delete({ where: { id } });
+    return {
+      success: true,
+      message: 'Khóa học đã được xóa thành công.',
+    };
+  }
+
+  async addChapter(courseId: string, dto: CreateChapterDto) {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true },
+    });
+    if (!course) {
+      throw new NotFoundException('Không tìm thấy khóa học để thêm chương.');
+    }
+
+    const lastChapter = await this.prisma.chapter.findFirst({
+      where: { courseId },
+      orderBy: { sortOrder: 'desc' },
+      select: { sortOrder: true },
+    });
+
+    const sortOrder =
+      dto.sortOrder ?? (lastChapter ? lastChapter.sortOrder + 1 : 1);
+
+    return this.prisma.chapter.create({
+      data: {
+        courseId,
+        title: dto.title.trim(),
+        sortOrder,
+      },
+    });
+  }
 }
+
