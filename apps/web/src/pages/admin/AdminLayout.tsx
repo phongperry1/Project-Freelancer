@@ -1,5 +1,5 @@
-import React, { Suspense, useCallback, useMemo } from 'react';
-import { Link, useLocation, Outlet } from 'react-router-dom';
+import React, { Suspense, useCallback, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom';
 import {
   LayoutGrid,
   Users,
@@ -14,11 +14,14 @@ import './adminDashboard.css';
 export const AdminLayout: React.FC = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
 
   const handleLogoutClick = useCallback(() => {
     logout();
-    window.location.href = '/login';
-  }, [logout]);
+    navigate('/login');
+  }, [logout, navigate]);
 
   const userFullName = user?.fullName;
   const adminInitials = useMemo(() => {
@@ -108,7 +111,24 @@ export const AdminLayout: React.FC = () => {
         <div className="tku-admin-sidebar-footer">
           <div className="tku-admin-user-card">
             <div className="tku-admin-user-card__main">
-              <div className="tku-admin-user-avatar">{adminInitials}</div>
+              <div className="tku-admin-user-avatar">
+                {user?.avatarUrl && failedAvatarUrl !== user.avatarUrl ? (
+                  <img
+                    key={user.avatarUrl}
+                    src={user.avatarUrl}
+                    alt={user.fullName || 'Admin'}
+                    className="tku-admin-user-avatar-img"
+                    referrerPolicy="no-referrer"
+                    onError={() => {
+                      if (user?.avatarUrl) {
+                        setFailedAvatarUrl(user.avatarUrl);
+                      }
+                    }}
+                  />
+                ) : (
+                  adminInitials
+                )}
+              </div>
               <div className="tku-admin-user-meta">
                 <span className="tku-admin-user-name">
                   {user?.fullName || 'Admin'}

@@ -62,6 +62,7 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
+  text-decoration: none;
 }
 
 .tku-courses-banner__btn:hover {
@@ -69,54 +70,8 @@
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.tku-courses-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
 
-.tku-courses-stat-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 20px 22px;
-  border: 1px solid #eef2f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
 
-.tku-courses-stat-card__label {
-  font-size: 13px;
-  font-weight: 500;
-  color: #64748b;
-}
-
-.tku-courses-stat-card__value {
-  font-size: 28px;
-  font-weight: 800;
-  color: #0f172a;
-  line-height: 1.1;
-  margin: 4px 0;
-}
-
-.tku-courses-stat-card__sub {
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.tku-courses-stat-card__sub--green {
-  color: #16a34a;
-}
-
-.tku-courses-stat-card__sub--gray {
-  color: #64748b;
-}
-
-.tku-courses-stat-card__sub--amber {
-  color: #d97706;
-}
 
 .tku-courses-filter-bar {
   display: flex;
@@ -277,25 +232,7 @@
   overflow: hidden;
 }
 
-.tku-courses-card-header {
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f1f5f9;
-}
 
-.tku-courses-card-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.tku-courses-card-meta {
-  font-size: 13px;
-  color: #64748b;
-  font-weight: 500;
-}
 
 .tku-courses-table-wrap {
   width: 100%;
@@ -335,42 +272,70 @@
   background-color: #fbfcfe;
 }
 
-.tku-course-item-title {
-  font-size: 14.5px;
+.tku-course-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tku-course-thumb-link {
+  display: block;
+  flex-shrink: 0;
+  width: 70px;
+  height: 58px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background-color: #f1f5f9;
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tku-courses-table tbody tr:hover .tku-course-thumb-link {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  transform: scale(1.02);
+}
+
+.tku-course-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-course-thumb-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 70px;
+  height: 58px;
+  border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  background-color: #f8fafc;
+  color: #94a3b8;
+  box-sizing: border-box;
+}
+
+.tku-course-thumb-placeholder-icon {
+  opacity: 0.6;
+}
+
+.tku-course-item-title-link {
+  font-size: 14px;
   font-weight: 700;
   color: #0f172a;
-  margin-bottom: 3px;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
-.tku-course-item-date {
-  font-size: 12px;
-  color: #94a3b8;
+.tku-course-item-title-link:hover {
+  color: #1d68f2;
 }
 
-.tku-courses-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 12px;
-  border-radius: 9999px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
 
-.tku-courses-badge--published {
-  background: #dcfce7;
-  color: #15803d;
-}
-
-.tku-courses-badge--archived {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.tku-courses-badge--draft {
-  background: #fef3c7;
-  color: #b45309;
-}
 
 .tku-courses-actions {
   display: flex;
@@ -397,6 +362,41 @@
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #1d68f2;
+}
+
+.tku-courses-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tku-courses-action-btn--toggle-hidden {
+  background: #fefce8;
+  border-color: #fef08a;
+  color: #ca8a04;
+}
+
+.tku-courses-action-btn--toggle-hidden:hover {
+  background: #fef9c3;
+  border-color: #fde047;
+  color: #a16207;
+}
+
+.tku-courses-action-btn--toggle-active {
+  color: #059669;
+}
+
+.tku-courses-action-btn--toggle-active:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #047857;
+}
+
+.tku-courses-row--hidden {
+  opacity: 0.72;
+}
+
+.tku-courses-row--hidden:hover {
+  opacity: 1;
 }
 
 .tku-courses-empty {
@@ -445,6 +445,10 @@
   color: #ffffff;
   cursor: pointer;
   transition: background 0.15s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tku-courses-empty__btn:hover {

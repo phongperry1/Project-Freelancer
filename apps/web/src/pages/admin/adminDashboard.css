@@ -178,6 +178,14 @@
   font-size: 14px;
   font-weight: 700;
   flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tku-admin-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .tku-admin-user-meta {
@@ -435,55 +443,81 @@
   cursor: pointer;
 }
 
-.tku-admin-bar-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 200px;
-  padding-top: 20px;
+.tku-admin-stats-card-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 16px;
+  height: 100%;
 }
 
-.tku-admin-bar-col {
-  flex: 1;
+.tku-admin-stat-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.tku-admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.tku-admin-stat-card__icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-admin-stat-card__icon--blue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+}
+
+.tku-admin-stat-card__icon--emerald {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #059669;
+}
+
+.tku-admin-stat-card__icon--amber {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #d97706;
+}
+
+.tku-admin-stat-card__icon--purple {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #7c3aed;
+}
+
+.tku-admin-stat-card__info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  height: 100%;
-  justify-content: flex-end;
-  gap: 8px;
-}
-
-.tku-admin-bar-track {
-  width: 100%;
-  max-width: 44px;
-  height: 150px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
   gap: 4px;
+  min-width: 0;
 }
 
-.tku-admin-bar {
-  width: 14px;
-  border-radius: 6px 6px 0 0;
-  transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  position: relative;
-}
-
-.tku-admin-bar--primary {
-  background-color: #2563eb;
-}
-
-.tku-admin-bar--secondary {
-  background-color: #bfdbfe;
-}
-
-.tku-admin-bar-label {
-  font-size: 12px;
+.tku-admin-stat-card__label {
+  font-size: 13px;
   font-weight: 600;
   color: #64748b;
   white-space: nowrap;
+}
+
+.tku-admin-stat-card__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
 .tku-admin-donut-wrapper {
@@ -567,127 +601,57 @@
 }
 
 .tku-admin-bottom-grid {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: 20px;
-}
-
-.tku-admin-card__link {
-  font-size: 13px;
-  font-weight: 700;
-  color: #1d68f2;
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tku-admin-card__link:hover {
-  text-decoration: underline;
-}
-
-.tku-admin-table-container {
-  overflow-x: auto;
-}
-
-.tku-admin-table {
-  width: 100%;
-  border-collapse: collapse;
-  text-align: left;
-}
-
-.tku-admin-table th {
-  font-size: 11px;
-  font-weight: 700;
-  color: #94a3b8;
-  letter-spacing: 0.05em;
-  padding: 10px 12px;
-  border-bottom: 1px solid #f1f5f9;
-  text-transform: uppercase;
-}
-
-.tku-admin-table td {
-  padding: 14px 12px;
-  border-bottom: 1px solid #f8fafc;
-  vertical-align: middle;
-  font-size: 13px;
-}
-
-.tku-admin-table tr:last-child td {
-  border-bottom: none;
-}
-
-.tku-admin-course-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.tku-admin-course-code {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  background-color: #eff6ff;
-  color: #1d68f2;
-  font-size: 12px;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.tku-admin-course-meta {
   display: flex;
   flex-direction: column;
-}
-
-.tku-admin-course-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.tku-admin-course-sub {
-  font-size: 12px;
-  color: #64748b;
-  margin-top: 2px;
-}
-
-.tku-admin-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.tku-admin-badge--active {
-  background-color: #ecfdf5;
-  color: #059669;
-}
-
-.tku-admin-badge--pending {
-  background-color: #fffbeb;
-  color: #d97706;
-}
-
-.tku-admin-badge--draft {
-  background-color: #f1f5f9;
-  color: #64748b;
+  gap: 20px;
 }
 
 .tku-admin-activity-list {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .tku-admin-activity-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-admin-activity-item:last-child {
+  border-bottom: none;
+}
+
+.tku-admin-activity-left {
+  display: flex;
+  align-items: center;
   gap: 14px;
+  min-width: 0;
 }
 
 .tku-admin-activity-icon {
@@ -720,7 +684,8 @@
 .tku-admin-activity-meta {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  gap: 2px;
+  min-width: 0;
 }
 
 .tku-admin-activity-title {
@@ -731,14 +696,15 @@
 
 .tku-admin-activity-desc {
   font-size: 12px;
-  color: #475569;
-  margin-top: 1px;
+  color: #64748b;
 }
 
 .tku-admin-activity-time {
   font-size: 11px;
+  font-weight: 600;
   color: #94a3b8;
-  margin-top: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tku-admin-empty-state {
@@ -803,6 +769,17 @@
   .tku-admin-charts-grid,
   .tku-admin-bottom-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-admin-stats-card-group {
+    grid-template-columns: 1fr;
+  }
+  .tku-admin-activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 

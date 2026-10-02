@@ -4,8 +4,8 @@ import {
   BookOpen,
   FileText,
   KeyRound,
-  ArrowRight,
-  TrendingUp,
+  GraduationCap,
+  UserCheck,
   Inbox,
   AlertCircle,
   RotateCw,
@@ -65,23 +65,6 @@ export const AdminDashboardPage: React.FC = () => {
       });
   }, []);
 
-  const maxMonthCount = useMemo(() => {
-    if (!stats || stats.userActivityByMonth.length === 0) return 1;
-    return Math.max(
-      1,
-      ...stats.userActivityByMonth.map((m) =>
-        Math.max(m.totalCount, m.studentCount),
-      ),
-    );
-  }, [stats]);
-
-  const hasActivityData = useMemo(() => {
-    return Boolean(
-      stats?.userActivityByMonth.some(
-        (m) => m.totalCount > 0 || m.studentCount > 0,
-      ),
-    );
-  }, [stats]);
 
   const donutData = useMemo(() => {
     if (!stats || stats.totalUsers <= 0) return null;
@@ -159,69 +142,54 @@ export const AdminDashboardPage: React.FC = () => {
               </section>
 
               <div className="tku-admin-charts-grid">
-                <div className="tku-admin-card">
-                  <div className="tku-admin-card__header">
-                    <div className="tku-admin-card__title-group">
-                      <h3 className="tku-admin-card__title">Hoạt động người dùng</h3>
-                      <span className="tku-admin-card__subtitle">
-                        Số người dùng mới theo tháng
+                <div className="tku-admin-stats-card-group">
+                  <div className="tku-admin-stat-card">
+                    <div className="tku-admin-stat-card__icon tku-admin-stat-card__icon--blue">
+                      <BookOpen size={22} />
+                    </div>
+                    <div className="tku-admin-stat-card__info">
+                      <span className="tku-admin-stat-card__label">Tổng khóa học</span>
+                      <span className="tku-admin-stat-card__value">
+                        {stats.activeCourses.toLocaleString('vi-VN')}
                       </span>
                     </div>
-                    <select className="tku-admin-select" defaultValue="6months">
-                      <option value="6months">6 tháng gần đây</option>
-                    </select>
                   </div>
 
-                  {!hasActivityData ? (
-                    <div className="tku-admin-empty-state">
-                      <div className="tku-admin-empty-state__icon">
-                        <TrendingUp size={24} />
-                      </div>
-                      <span className="tku-admin-empty-state__text">
-                        Chưa có dữ liệu hoạt động trong 6 tháng qua
-                      </span>
-                      <span className="tku-admin-empty-state__sub">
-                        Số liệu sẽ xuất hiện khi có học viên đăng ký mới
+                  <div className="tku-admin-stat-card">
+                    <div className="tku-admin-stat-card__icon tku-admin-stat-card__icon--emerald">
+                      <FileText size={22} />
+                    </div>
+                    <div className="tku-admin-stat-card__info">
+                      <span className="tku-admin-stat-card__label">Tổng bài học</span>
+                      <span className="tku-admin-stat-card__value">
+                        {stats.totalLessons.toLocaleString('vi-VN')}
                       </span>
                     </div>
-                  ) : (
-                    <div className="tku-admin-bar-chart">
-                      {stats.userActivityByMonth.map((item, idx) => {
-                        const totalHeightPct = Math.max(
-                          8,
-                          Math.round((item.totalCount / maxMonthCount) * 100),
-                        );
-                        const studentHeightPct = Math.max(
-                          6,
-                          Math.round((item.studentCount / maxMonthCount) * 100),
-                        );
+                  </div>
 
-                        return (
-                          <div key={idx} className="tku-admin-bar-col">
-                            <div className="tku-admin-bar-track">
-                              <div
-                                className="tku-admin-bar tku-admin-bar--secondary"
-                                style={{
-                                  height: item.totalCount > 0 ? `${totalHeightPct}%` : '0px',
-                                  opacity: item.totalCount > 0 ? 1 : 0,
-                                }}
-                                title={`Tổng: ${item.totalCount}`}
-                              />
-                              <div
-                                className="tku-admin-bar tku-admin-bar--primary"
-                                style={{
-                                  height: item.studentCount > 0 ? `${studentHeightPct}%` : '0px',
-                                  opacity: item.studentCount > 0 ? 1 : 0,
-                                }}
-                                title={`Học sinh: ${item.studentCount}`}
-                              />
-                            </div>
-                            <span className="tku-admin-bar-label">{item.month}</span>
-                          </div>
-                        );
-                      })}
+                  <div className="tku-admin-stat-card">
+                    <div className="tku-admin-stat-card__icon tku-admin-stat-card__icon--amber">
+                      <GraduationCap size={22} />
                     </div>
-                  )}
+                    <div className="tku-admin-stat-card__info">
+                      <span className="tku-admin-stat-card__label">Học sinh</span>
+                      <span className="tku-admin-stat-card__value">
+                        {stats.userRoleDistribution.students.toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="tku-admin-stat-card">
+                    <div className="tku-admin-stat-card__icon tku-admin-stat-card__icon--purple">
+                      <UserCheck size={22} />
+                    </div>
+                    <div className="tku-admin-stat-card__info">
+                      <span className="tku-admin-stat-card__label">Giảng viên</span>
+                      <span className="tku-admin-stat-card__value">
+                        {stats.userRoleDistribution.teachers.toLocaleString('vi-VN')}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="tku-admin-card">
@@ -365,84 +333,6 @@ export const AdminDashboardPage: React.FC = () => {
                 <div className="tku-admin-card">
                   <div className="tku-admin-card__header">
                     <div className="tku-admin-card__title-group">
-                      <h3 className="tku-admin-card__title">Khóa học gần đây</h3>
-                      <span className="tku-admin-card__subtitle">
-                        Theo dõi trạng thái các khóa học mới nhất
-                      </span>
-                    </div>
-                    <a href="#all-courses" className="tku-admin-card__link">
-                      <span>Xem tất cả</span>
-                      <ArrowRight size={14} />
-                    </a>
-                  </div>
-
-                  {stats.recentCourses.length === 0 ? (
-                    <div className="tku-admin-empty-state">
-                      <div className="tku-admin-empty-state__icon">
-                        <Inbox size={24} />
-                      </div>
-                      <span className="tku-admin-empty-state__text">
-                        Chưa có khóa học nào trên hệ thống
-                      </span>
-                      <span className="tku-admin-empty-state__sub">
-                        Các khóa học mới khởi tạo sẽ hiển thị tại đây
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="tku-admin-table-container">
-                      <table className="tku-admin-table">
-                        <thead>
-                          <tr>
-                            <th>KHÓA HỌC</th>
-                            <th>GIẢNG VIÊN</th>
-                            <th>HỌC SINH</th>
-                            <th>TRẠNG THÁI</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {stats.recentCourses.map((c) => (
-                            <tr key={c.id}>
-                              <td>
-                                <div className="tku-admin-course-cell">
-                                  <div className="tku-admin-course-code">
-                                    {c.code}
-                                  </div>
-                                  <div className="tku-admin-course-meta">
-                                    <span className="tku-admin-course-title">
-                                      {c.title}
-                                    </span>
-                                    <span className="tku-admin-course-sub">
-                                      {c.subTitle}
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-                              <td>{c.teacherName}</td>
-                              <td>{c.studentCount}</td>
-                              <td>
-                                <span
-                                  className={`tku-admin-badge ${
-                                    c.status === 'ACTIVE'
-                                      ? 'tku-admin-badge--active'
-                                      : c.status === 'PENDING'
-                                        ? 'tku-admin-badge--pending'
-                                        : 'tku-admin-badge--draft'
-                                  }`}
-                                >
-                                  {c.statusText}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </div>
-
-                <div className="tku-admin-card">
-                  <div className="tku-admin-card__header">
-                    <div className="tku-admin-card__title-group">
                       <h3 className="tku-admin-card__title">Hoạt động gần đây</h3>
                       <span className="tku-admin-card__subtitle">
                         Các thao tác mới nhất của hệ thống
@@ -466,38 +356,40 @@ export const AdminDashboardPage: React.FC = () => {
                     <div className="tku-admin-activity-list">
                       {stats.recentActivities.map((act) => (
                         <div key={act.id} className="tku-admin-activity-item">
-                          <div
-                            className={`tku-admin-activity-icon ${
-                              act.type === 'COURSE'
-                                ? 'tku-admin-activity-icon--course'
-                                : act.type === 'CONTENT'
-                                  ? 'tku-admin-activity-icon--content'
-                                  : act.type === 'KEY'
-                                    ? 'tku-admin-activity-icon--key'
-                                    : ''
-                            }`}
-                          >
-                            {act.type === 'COURSE' ? (
-                              <BookOpen size={16} />
-                            ) : act.type === 'CONTENT' ? (
-                              <FileText size={16} />
-                            ) : act.type === 'KEY' ? (
-                              <KeyRound size={16} />
-                            ) : (
-                              <Users size={16} />
-                            )}
+                          <div className="tku-admin-activity-left">
+                            <div
+                              className={`tku-admin-activity-icon ${
+                                act.type === 'COURSE'
+                                  ? 'tku-admin-activity-icon--course'
+                                  : act.type === 'CONTENT'
+                                    ? 'tku-admin-activity-icon--content'
+                                    : act.type === 'KEY'
+                                      ? 'tku-admin-activity-icon--key'
+                                      : ''
+                              }`}
+                            >
+                              {act.type === 'COURSE' ? (
+                                <BookOpen size={16} />
+                              ) : act.type === 'CONTENT' ? (
+                                <FileText size={16} />
+                              ) : act.type === 'KEY' ? (
+                                <KeyRound size={16} />
+                              ) : (
+                                <Users size={16} />
+                              )}
+                            </div>
+                            <div className="tku-admin-activity-meta">
+                              <span className="tku-admin-activity-title">
+                                {act.title}
+                              </span>
+                              <span className="tku-admin-activity-desc">
+                                {act.description}
+                              </span>
+                            </div>
                           </div>
-                          <div className="tku-admin-activity-meta">
-                            <span className="tku-admin-activity-title">
-                              {act.title}
-                            </span>
-                            <span className="tku-admin-activity-desc">
-                              {act.description}
-                            </span>
-                            <span className="tku-admin-activity-time">
-                              {act.timeAgo}
-                            </span>
-                          </div>
+                          <span className="tku-admin-activity-time">
+                            {act.timeAgo}
+                          </span>
                         </div>
                       ))}
                     </div>
