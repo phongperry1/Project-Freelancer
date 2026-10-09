@@ -30,12 +30,20 @@ import {
   type DashboardStatsResponse,
   type AdminCoursesResponse,
   type AdminCourseItem,
+  type AdminUsersResponse,
+  type AdminUserItem,
+  type AdminUserDetailResponse,
 } from './admin.service.js';
 import {
   CreateCourseDto,
   UpdateCourseDto,
   CreateChapterDto,
 } from './dto/course.dto.js';
+import {
+  UpdateUserStatusDto,
+  CreateUserDto,
+  BulkCreateUsersDto,
+} from './dto/user.dto.js';
 
 import {
   CloudinaryService,
@@ -229,6 +237,94 @@ export class AdminController {
     await this.verifyAdmin(authorization);
     return this.adminService.addChapter(id, body);
   }
+
+  @Get('users')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách người dùng và thống kê vai trò',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách tài khoản người dùng và thống kê.',
+  })
+  async getUsers(
+    @Headers('authorization') authorization?: string,
+  ): Promise<AdminUsersResponse> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.getAdminUsers();
+  }
+
+  @Get('users/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy thông tin chi tiết người dùng',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chi tiết thông tin tài khoản người dùng.',
+  })
+  async getUserById(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<AdminUserDetailResponse> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.getUserById(id);
+  }
+
+  @Put('users/:id/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Cập nhật trạng thái tài khoản người dùng',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Trạng thái người dùng được cập nhật thành công.',
+  })
+  async updateUserStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: UpdateUserStatusDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<AdminUserItem> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.updateUserStatus(id, body.status);
+  }
+
+  @Post('users')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Tạo tài khoản người dùng mới',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Tài khoản người dùng được tạo thành công.',
+  })
+  async createUser(
+    @Body() body: CreateUserDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<AdminUserItem> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.createUser(body);
+  }
+
+  @Post('users/bulk')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Tạo hàng loạt tài khoản người dùng từ file hoặc danh sách',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Kết quả tạo danh sách tài khoản người dùng.',
+  })
+  async bulkCreateUsers(
+    @Body() body: BulkCreateUsersDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    await this.verifyAdmin(authorization);
+    return this.adminService.bulkCreateUsers(body);
+  }
 }
-
-
