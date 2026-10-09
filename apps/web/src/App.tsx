@@ -1,13 +1,13 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 
 import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastProvider';
 import { useAuth } from './context/useAuth';
 
-import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 import { AdminRoute } from './components/auth/AdminRoute';
+import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
@@ -15,6 +15,9 @@ const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'));
+const AdminUsersPage = lazy(() => import('./pages/admin/AdminUsersPage'));
+const AdminCreateUserPage = lazy(() => import('./pages/admin/AdminCreateUserPage'));
+const AdminUserDetailPage = lazy(() => import('./pages/admin/AdminUserDetailPage'));
 const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage'));
 const AdminCreateCoursePage = lazy(() => import('./pages/admin/AdminCreateCoursePage'));
 const AdminCourseDetailPage = lazy(() => import('./pages/admin/AdminCourseDetailPage'));
@@ -77,6 +80,9 @@ export const App: React.FC = () => {
                 }
               >
                 <Route index element={<AdminDashboardPage />} />
+                <Route path="users" element={<AdminUsersPage />} />
+                <Route path="users/create" element={<AdminCreateUserPage />} />
+                <Route path="users/:id" element={<AdminUserDetailPage />} />
                 <Route path="courses" element={<AdminCoursesPage />} />
                 <Route path="courses/create" element={<AdminCreateCoursePage />} />
                 <Route path="courses/:id" element={<AdminCourseDetailPage />} />

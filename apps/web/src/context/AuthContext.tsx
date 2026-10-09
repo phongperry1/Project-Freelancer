@@ -52,6 +52,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     [],
   );
 
+
   const loginWithGoogle = useCallback(
     async (payload: GoogleAuthPayload): Promise<AuthResponse> => {
       const result = await authService.loginWithGoogle(payload);
