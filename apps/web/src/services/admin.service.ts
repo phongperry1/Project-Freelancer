@@ -112,6 +112,119 @@ export interface AdminCoursesResponse {
   teachers: Array<{ id: string; fullName: string }>;
 }
 
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl: string | null;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  formattedDateOfBirth: string;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  roleText: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  statusText: string;
+  enrolledCoursesCount: number;
+  taughtCoursesCount: number;
+  devicesCount: number;
+  createdAt: string;
+  formattedCreatedAt: string;
+  timeAgo: string;
+}
+
+export interface AdminUsersResponse {
+  stats: {
+    totalUsers: number;
+    activeUsers: number;
+    suspendedUsers: number;
+    studentCount: number;
+    teacherCount: number;
+    adminCount: number;
+  };
+  users: AdminUserItem[];
+}
+
+export interface AdminUserDeviceItem {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  ipAddress: string | null;
+  isTrusted: boolean;
+  lastLoginAt: string;
+  formattedLastLoginAt: string;
+}
+
+export interface AdminUserCourseItem {
+  id: string;
+  title: string;
+  slug?: string;
+  status: string;
+  statusText: string;
+  thumbnailUrl: string | null;
+  studentCount?: number;
+  progress?: number;
+  createdAt: string;
+  formattedCreatedAt: string;
+}
+
+export interface AdminUserDetailResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl: string | null;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  formattedDateOfBirth: string;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  roleText: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  statusText: string;
+  createdAt: string;
+  formattedCreatedAt: string;
+  timeAgo: string;
+  devices: AdminUserDeviceItem[];
+  taughtCourses: AdminUserCourseItem[];
+  enrolledCourses: AdminUserCourseItem[];
+  stats: {
+    enrolledCoursesCount: number;
+    taughtCoursesCount: number;
+    devicesCount: number;
+  };
+}
+
+export interface CreateUserPayload {
+  fullName: string;
+  email: string;
+  password?: string;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  status?: 'ACTIVE' | 'SUSPENDED';
+  avatarUrl?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+}
+
+export interface BulkCreateUsersPayload {
+  users: Array<{
+    fullName: string;
+    email: string;
+    password?: string;
+    role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+    status?: 'ACTIVE' | 'SUSPENDED';
+    avatarUrl?: string;
+    phoneNumber?: string;
+    dateOfBirth?: string;
+  }>;
+}
+
+export interface BulkCreateUsersResponse {
+  total: number;
+  successCount: number;
+  failedCount: number;
+  errors: Array<{ email: string; reason: string }>;
+  createdUsers: AdminUserItem[];
+}
+
+
 export interface CreateCoursePayload {
   title: string;
   teacherId: string;
@@ -271,6 +384,56 @@ export const adminService = {
       'Không thể tạo chương học mới.',
     );
   },
+
+  getUsersList(): Promise<AdminUsersResponse> {
+    return requestWithAuth<AdminUsersResponse>(
+      '/admin/users',
+      'GET',
+      undefined,
+      'Không thể tải danh sách người dùng.',
+    );
+  },
+
+  getUserById(id: string): Promise<AdminUserDetailResponse> {
+    return requestWithAuth<AdminUserDetailResponse>(
+      `/admin/users/${id}`,
+      'GET',
+      undefined,
+      'Không thể tải chi tiết người dùng.',
+    );
+  },
+
+  updateUserStatus(
+    id: string,
+    status: 'ACTIVE' | 'SUSPENDED',
+  ): Promise<AdminUserItem> {
+    return requestWithAuth<AdminUserItem>(
+      `/admin/users/${id}/status`,
+      'PUT',
+      { status },
+      'Không thể cập nhật trạng thái người dùng.',
+    );
+  },
+
+  createUser(payload: CreateUserPayload): Promise<AdminUserItem> {
+    return requestWithAuth<AdminUserItem>(
+      '/admin/users',
+      'POST',
+      payload,
+      'Không thể tạo tài khoản người dùng.',
+    );
+  },
+
+  bulkCreateUsers(payload: BulkCreateUsersPayload): Promise<BulkCreateUsersResponse> {
+    return requestWithAuth<BulkCreateUsersResponse>(
+      '/admin/users/bulk',
+      'POST',
+      payload,
+      'Không thể nhập danh sách người dùng.',
+    );
+  },
 };
+
+
 
 

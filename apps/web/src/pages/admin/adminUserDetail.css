@@ -1,0 +1,532 @@
+/* ==========================================================================
+   TKU Admin - User Detail Page Styling (Unified Design System)
+   ========================================================================== */
+
+.tku-user-detail-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Header & Breadcrumbs */
+.tku-user-detail-header {
+  padding: 24px 36px 18px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-user-detail-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.tku-user-detail-breadcrumbs a {
+  color: #64748b;
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
+.tku-user-detail-breadcrumbs a:hover {
+  color: #2563eb;
+}
+
+.tku-user-detail-breadcrumbs__sep {
+  color: #cbd5e1;
+}
+
+.tku-user-detail-breadcrumbs__current {
+  color: #0f172a;
+  font-weight: 600;
+  max-width: 380px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tku-user-detail-title-box {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-user-detail-title-main {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-user-detail-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-user-detail-desc {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Main Content Area */
+.tku-user-detail-content {
+  padding: 0 36px 40px 36px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Card Container */
+.tku-user-detail-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.tku-user-detail-card {
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+/* Hero Profile Card */
+.tku-user-detail-hero {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tku-user-detail-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tku-user-detail-academic-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tku-user-detail-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.tku-user-detail-avatar-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.2);
+}
+
+.tku-user-detail-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-user-detail-avatar-initials {
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.tku-user-detail-profile-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tku-user-detail-user-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  word-break: break-word;
+}
+
+.tku-user-detail-user-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Card Section Header */
+.tku-user-detail-section-header {
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  gap: 16px;
+}
+
+.tku-user-detail-section-title-box {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tku-user-detail-section-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-user-detail-section-sub {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Card Body & Grid */
+.tku-user-detail-card-body {
+  padding: 22px 24px;
+}
+
+.tku-user-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px 24px;
+}
+
+.tku-user-detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-user-detail-field__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
+.tku-user-detail-field__value {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.tku-user-detail-phone-link {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s ease;
+}
+
+.tku-user-detail-phone-link:hover {
+  text-decoration: underline;
+  color: #1d4ed8;
+}
+
+.tku-user-detail-empty-text-inline {
+  color: #94a3b8;
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* Role Badges */
+.tku-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tku-role-badge--student {
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+}
+
+.tku-role-badge--teacher {
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ede9fe;
+}
+
+.tku-role-badge--admin {
+  background-color: #fdf2f8;
+  color: #db2777;
+  border: 1px solid #fce7f3;
+}
+
+/* Status Badges */
+.tku-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tku-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tku-status-badge--active {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-status-badge--active .tku-status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.tku-status-badge--suspended {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.tku-status-badge--suspended .tku-status-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+/* Courses List */
+.tku-user-detail-courses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-user-detail-course-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border: 1px solid #f1f5f9;
+  border-radius: 12px;
+  background: #fbfcfe;
+  gap: 16px;
+  transition: all 0.15s ease;
+}
+
+.tku-user-detail-course-card:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.05);
+}
+
+.tku-user-detail-course-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tku-user-detail-course-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tku-user-detail-course-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-user-detail-course-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tku-user-detail-course-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration: none;
+}
+
+.tku-user-detail-course-name:hover {
+  color: #2563eb;
+}
+
+.tku-user-detail-course-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tku-user-detail-course-action {
+  flex-shrink: 0;
+}
+
+.tku-user-detail-course-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #2563eb;
+  text-decoration: none;
+  padding: 6px 12px;
+  background: #eff6ff;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+}
+
+.tku-user-detail-course-link:hover {
+  background: #dbeafe;
+}
+
+/* Empty & Error State */
+.tku-user-detail-empty-box {
+  padding: 36px 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: #94a3b8;
+}
+
+.tku-user-detail-empty-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  margin-bottom: 2px;
+}
+
+.tku-user-detail-empty-text {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  max-width: 360px;
+}
+
+.tku-user-detail-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+  text-decoration: none;
+}
+
+.tku-user-detail-btn--outline {
+  background-color: #ffffff;
+  border-color: #e2e8f0;
+  color: #334155;
+}
+
+.tku-user-detail-btn--outline:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tku-user-detail-header,
+  .tku-user-detail-content {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .tku-user-detail-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .tku-user-detail-hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tku-user-detail-course-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tku-user-detail-course-action {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+  }
+}

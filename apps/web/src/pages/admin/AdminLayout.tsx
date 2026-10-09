@@ -5,7 +5,6 @@ import {
   Users,
   BookOpen,
   FileText,
-  KeyRound,
   LogOut,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
@@ -68,7 +67,7 @@ export const AdminLayout: React.FC = () => {
             <span className="tku-admin-nav-heading">QUẢN TRỊ</span>
             <Link
               to="/admin/users"
-              className={`tku-admin-nav-item ${location.pathname === '/admin/users' ? 'tku-admin-nav-item--active' : ''}`}
+              className={`tku-admin-nav-item ${location.pathname.startsWith('/admin/users') ? 'tku-admin-nav-item--active' : ''}`}
             >
               <div className="tku-admin-nav-item__left">
                 <Users size={18} />
@@ -93,16 +92,6 @@ export const AdminLayout: React.FC = () => {
               <div className="tku-admin-nav-item__left">
                 <FileText size={18} />
                 <span>Nội dung</span>
-              </div>
-            </Link>
-
-            <Link
-              to="/admin/keys"
-              className={`tku-admin-nav-item ${location.pathname === '/admin/keys' ? 'tku-admin-nav-item--active' : ''}`}
-            >
-              <div className="tku-admin-nav-item__left">
-                <KeyRound size={18} />
-                <span>Key đăng nhập</span>
               </div>
             </Link>
           </div>

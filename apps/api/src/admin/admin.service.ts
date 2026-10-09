@@ -1,14 +1,18 @@
 import {
   Injectable,
   BadRequestException,
+  ConflictException,
   NotFoundException,
 } from '@nestjs/common';
+import argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
 import {
   CreateCourseDto,
   UpdateCourseDto,
   CreateChapterDto,
 } from './dto/course.dto.js';
+import { CreateUserDto, BulkCreateUsersDto } from './dto/user.dto.js';
+
 
 export interface DashboardStatsResponse {
   totalUsers: number;
@@ -42,7 +46,7 @@ export interface DashboardStatsResponse {
   }>;
   recentActivities: Array<{
     id: string;
-    type: 'USER' | 'COURSE' | 'CONTENT' | 'KEY';
+    type: 'USER' | 'COURSE' | 'CONTENT';
     title: string;
     description: string;
     timeAgo: string;
@@ -79,6 +83,87 @@ export interface AdminCoursesResponse {
   teachers: Array<{ id: string; fullName: string }>;
 }
 
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl: string | null;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  formattedDateOfBirth: string;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  roleText: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  statusText: string;
+  enrolledCoursesCount: number;
+  taughtCoursesCount: number;
+  devicesCount: number;
+  createdAt: string;
+  formattedCreatedAt: string;
+  timeAgo: string;
+}
+
+export interface AdminUsersResponse {
+  stats: {
+    totalUsers: number;
+    activeUsers: number;
+    suspendedUsers: number;
+    studentCount: number;
+    teacherCount: number;
+    adminCount: number;
+  };
+  users: AdminUserItem[];
+}
+
+export interface AdminUserDeviceItem {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  ipAddress: string | null;
+  isTrusted: boolean;
+  lastLoginAt: string;
+  formattedLastLoginAt: string;
+}
+
+export interface AdminUserCourseItem {
+  id: string;
+  title: string;
+  slug?: string;
+  status: string;
+  statusText: string;
+  thumbnailUrl: string | null;
+  studentCount?: number;
+  progress?: number;
+  createdAt: string;
+  formattedCreatedAt: string;
+}
+
+export interface AdminUserDetailResponse {
+  id: string;
+  email: string;
+  fullName: string;
+  avatarUrl: string | null;
+  phoneNumber: string | null;
+  dateOfBirth: string | null;
+  formattedDateOfBirth: string;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+  roleText: string;
+  status: 'ACTIVE' | 'SUSPENDED';
+  statusText: string;
+  createdAt: string;
+  formattedCreatedAt: string;
+  timeAgo: string;
+  devices: AdminUserDeviceItem[];
+  taughtCourses: AdminUserCourseItem[];
+  enrolledCourses: AdminUserCourseItem[];
+  stats: {
+    enrolledCoursesCount: number;
+    taughtCoursesCount: number;
+    devicesCount: number;
+  };
+}
+
+
 
 @Injectable()
 export class AdminService {
@@ -96,6 +181,101 @@ export class AdminService {
     if (diffHour < 24) return `${diffHour} giờ trước`;
     if (diffDay < 30) return `${diffDay} ngày trước`;
     return `${Math.floor(diffDay / 30)} tháng trước`;
+  }
+
+  private parseDateString(raw?: string): Date | null {
+    if (!raw || !raw.trim()) return null;
+    const trimmed = raw.trim();
+    const ddmmyyyy = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (ddmmyyyy) {
+      const day = parseInt(ddmmyyyy[1], 10);
+      const month = parseInt(ddmmyyyy[2], 10) - 1;
+      const year = parseInt(ddmmyyyy[3], 10);
+      const date = new Date(Date.UTC(year, month, day));
+      if (!isNaN(date.getTime())) return date;
+    }
+    const parsed = new Date(trimmed);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+
+  private formatDateOnly(date?: Date | null): string {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const year = d.getUTCFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  private getRoleText(role: 'STUDENT' | 'TEACHER' | 'ADMIN'): string {
+    if (role === 'TEACHER') return 'Giảng viên';
+    if (role === 'ADMIN') return 'Quản trị viên';
+    return 'Học sinh';
+  }
+
+  private getStatusText(status: 'ACTIVE' | 'SUSPENDED'): string {
+    return status === 'SUSPENDED' ? 'Tạm khóa' : 'Đang hoạt động';
+  }
+
+  private formatDate(date?: Date | string | null): string {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
+  }
+
+  private formatDateTime(date?: Date | string | null): string {
+    if (!date) return '—';
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    const hour = String(d.getHours()).padStart(2, '0');
+    const min = String(d.getMinutes()).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${hour}:${min} ${day}/${month}/${year}`;
+  }
+
+  private mapToAdminUserItem(user: {
+    id: string;
+    email: string;
+    fullName: string;
+    avatarUrl: string | null;
+    phoneNumber: string | null;
+    dateOfBirth: Date | null;
+    role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+    status: 'ACTIVE' | 'SUSPENDED';
+    createdAt: Date;
+    _count?: {
+      enrollments?: number;
+      taughtCourses?: number;
+      devices?: number;
+    };
+  }): AdminUserItem {
+    const d = new Date(user.createdAt);
+    return {
+      id: user.id,
+      email: user.email,
+      fullName: user.fullName,
+      avatarUrl: user.avatarUrl,
+      phoneNumber: user.phoneNumber ?? null,
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.toISOString().split('T')[0] : null,
+      formattedDateOfBirth: this.formatDateOnly(user.dateOfBirth),
+      role: user.role,
+      roleText: this.getRoleText(user.role),
+      status: user.status,
+      statusText: this.getStatusText(user.status),
+      enrolledCoursesCount: user._count?.enrollments ?? 0,
+      taughtCoursesCount: user._count?.taughtCourses ?? 0,
+      devicesCount: user._count?.devices ?? 0,
+      createdAt: user.createdAt.toISOString(),
+      formattedCreatedAt: this.formatDate(d),
+      timeAgo: this.formatTimeAgo(d),
+    };
   }
 
   private getCodeFromTitle(title: string): string {
@@ -307,7 +487,7 @@ export class AdminService {
 
     const recentActivities: Array<{
       id: string;
-      type: 'USER' | 'COURSE' | 'CONTENT' | 'KEY';
+      type: 'USER' | 'COURSE' | 'CONTENT';
       title: string;
       description: string;
       timeAgo: string;
@@ -585,7 +765,15 @@ export class AdminService {
     const course = await this.prisma.course.findUnique({
       where: { id },
       include: {
-        teacher: { select: { id: true, fullName: true, role: true } },
+        teacher: {
+          select: {
+            id: true,
+            fullName: true,
+            role: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
         chapters: {
           orderBy: { sortOrder: 'asc' },
           include: {
@@ -597,6 +785,9 @@ export class AdminService {
                 sortOrder: true,
                 status: true,
                 videoUrl: true,
+                content: true,
+                createdAt: true,
+                updatedAt: true,
               },
             },
           },
@@ -766,5 +957,331 @@ export class AdminService {
       },
     });
   }
-}
 
+  async getAdminUsers(): Promise<AdminUsersResponse> {
+    const [userCounts, dbUsers] = await Promise.all([
+      this.prisma.user.groupBy({
+        by: ['role', 'status'],
+        _count: {
+          _all: true,
+        },
+      }),
+      this.prisma.user.findMany({
+        where: {
+          role: { in: ['STUDENT', 'TEACHER'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          avatarUrl: true,
+          phoneNumber: true,
+          dateOfBirth: true,
+          role: true,
+          status: true,
+          createdAt: true,
+          _count: {
+            select: {
+              enrollments: true,
+              taughtCourses: true,
+              devices: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    let studentCount = 0;
+    let teacherCount = 0;
+    let adminCount = 0;
+    let activeUsers = 0;
+    let suspendedUsers = 0;
+
+    for (const group of userCounts) {
+      const count = group._count._all;
+      if (group.role === 'STUDENT') {
+        studentCount += count;
+      } else if (group.role === 'TEACHER') {
+        teacherCount += count;
+      } else if (group.role === 'ADMIN') {
+        adminCount += count;
+      }
+
+      if (group.status === 'ACTIVE') {
+        activeUsers += count;
+      } else if (group.status === 'SUSPENDED') {
+        suspendedUsers += count;
+      }
+    }
+
+    const totalUsers = studentCount + teacherCount;
+    const users: AdminUserItem[] = dbUsers.map((u) => this.mapToAdminUserItem(u));
+
+    return {
+      stats: {
+        totalUsers,
+        activeUsers,
+        suspendedUsers,
+        studentCount,
+        teacherCount,
+        adminCount,
+      },
+      users,
+    };
+  }
+
+  async getUserById(id: string): Promise<AdminUserDetailResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        devices: {
+          orderBy: { lastLoginAt: 'desc' },
+          take: 10,
+        },
+        taughtCourses: {
+          orderBy: { createdAt: 'desc' },
+          include: {
+            _count: {
+              select: {
+                enrollments: true,
+              },
+            },
+          },
+        },
+        enrollments: {
+          orderBy: { enrolledAt: 'desc' },
+          include: {
+            course: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                status: true,
+                thumbnailUrl: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            enrollments: true,
+            taughtCourses: true,
+            devices: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng này trong hệ thống.');
+    }
+
+    const formattedDevices: AdminUserDeviceItem[] = user.devices.map((dev) => ({
+      id: dev.id,
+      deviceId: dev.deviceId,
+      deviceName: dev.deviceName,
+      ipAddress: dev.ipAddress,
+      isTrusted: dev.isTrusted,
+      lastLoginAt: dev.lastLoginAt.toISOString(),
+      formattedLastLoginAt: this.formatDateTime(dev.lastLoginAt),
+    }));
+
+    const formattedTaughtCourses: AdminUserCourseItem[] = user.taughtCourses.map((c) => ({
+      id: c.id,
+      title: c.title,
+      slug: c.slug || undefined,
+      status: c.status,
+      statusText: c.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã ẩn',
+      thumbnailUrl: c.thumbnailUrl,
+      studentCount: c._count.enrollments,
+      createdAt: c.createdAt.toISOString(),
+      formattedCreatedAt: this.formatDate(c.createdAt),
+    }));
+
+    const formattedEnrolledCourses: AdminUserCourseItem[] = user.enrollments.map((en) => ({
+      id: en.course.id,
+      title: en.course.title,
+      slug: en.course.slug || undefined,
+      status: en.course.status,
+      statusText: en.course.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã ẩn',
+      thumbnailUrl: en.course.thumbnailUrl,
+      progress: en.progressPercent,
+      createdAt: en.enrolledAt.toISOString(),
+      formattedCreatedAt: this.formatDate(en.enrolledAt),
+    }));
+
+    const mappedUser = this.mapToAdminUserItem(user);
+
+    return {
+      ...mappedUser,
+      devices: formattedDevices,
+      taughtCourses: formattedTaughtCourses,
+      enrolledCourses: formattedEnrolledCourses,
+      stats: {
+        enrolledCoursesCount: user._count.enrollments,
+        taughtCoursesCount: user._count.taughtCourses,
+        devicesCount: user._count.devices,
+      },
+    };
+  }
+
+  async updateUserStatus(
+    id: string,
+    status: 'ACTIVE' | 'SUSPENDED',
+  ): Promise<AdminUserItem> {
+    const existing = await this.prisma.user.findUnique({
+      where: { id },
+      select: { id: true, role: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Không tìm thấy người dùng này trong hệ thống.');
+    }
+
+    if (existing.role === 'ADMIN') {
+      throw new BadRequestException('Không thể thay đổi trạng thái của tài khoản Quản trị viên.');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id },
+      data: { status },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        avatarUrl: true,
+        phoneNumber: true,
+        dateOfBirth: true,
+        role: true,
+        status: true,
+        createdAt: true,
+        _count: {
+          select: {
+            enrollments: true,
+            taughtCourses: true,
+            devices: true,
+          },
+        },
+      },
+    });
+
+    return this.mapToAdminUserItem(updated);
+  }
+
+  async createUser(dto: CreateUserDto): Promise<AdminUserItem> {
+    const normalizedEmail = dto.email.trim().toLowerCase();
+    const existing = await this.prisma.user.findUnique({
+      where: { email: normalizedEmail },
+    });
+    if (existing) {
+      throw new ConflictException('Email này đã được sử dụng trên hệ thống.');
+    }
+
+    const rawPassword = dto.password?.trim() || 'Giangvien@123';
+    const passwordHash = await argon2.hash(rawPassword, { type: argon2.argon2id });
+    const parsedDob = this.parseDateString(dto.dateOfBirth);
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: normalizedEmail,
+        fullName: dto.fullName.trim(),
+        passwordHash,
+        role: dto.role,
+        status: dto.status || 'ACTIVE',
+        avatarUrl: dto.avatarUrl?.trim() || null,
+        phoneNumber: dto.phoneNumber?.trim() || null,
+        dateOfBirth: parsedDob,
+      },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+        avatarUrl: true,
+        phoneNumber: true,
+        dateOfBirth: true,
+        role: true,
+        status: true,
+        createdAt: true,
+      },
+    });
+
+    return this.mapToAdminUserItem(user);
+  }
+
+  async bulkCreateUsers(dto: BulkCreateUsersDto): Promise<{
+    total: number;
+    successCount: number;
+    failedCount: number;
+    errors: Array<{ email: string; reason: string }>;
+    createdUsers: AdminUserItem[];
+  }> {
+    const createdUsers: AdminUserItem[] = [];
+    const errors: Array<{ email: string; reason: string }> = [];
+
+    const allEmails = Array.from(new Set(dto.users.map((u) => u.email.trim().toLowerCase())));
+    const existingUsers = await this.prisma.user.findMany({
+      where: { email: { in: allEmails } },
+      select: { email: true },
+    });
+    const existingEmailSet = new Set(existingUsers.map((u) => u.email));
+
+    const defaultPasswordHash = await argon2.hash('Giangvien@123', { type: argon2.argon2id });
+
+    for (const item of dto.users) {
+      const normalizedEmail = item.email.trim().toLowerCase();
+      try {
+        if (existingEmailSet.has(normalizedEmail)) {
+          errors.push({ email: normalizedEmail, reason: 'Email này đã tồn tại trên hệ thống.' });
+          continue;
+        }
+
+        const rawPassword = item.password?.trim() || 'Giangvien@123';
+        const passwordHash =
+          rawPassword === 'Giangvien@123'
+            ? defaultPasswordHash
+            : await argon2.hash(rawPassword, { type: argon2.argon2id });
+
+        const parsedDob = this.parseDateString(item.dateOfBirth);
+
+        const user = await this.prisma.user.create({
+          data: {
+            email: normalizedEmail,
+            fullName: item.fullName.trim(),
+            passwordHash,
+            role: item.role,
+            status: item.status || 'ACTIVE',
+            avatarUrl: item.avatarUrl?.trim() || null,
+            phoneNumber: item.phoneNumber?.trim() || null,
+            dateOfBirth: parsedDob,
+          },
+          select: {
+            id: true,
+            email: true,
+            fullName: true,
+            avatarUrl: true,
+            phoneNumber: true,
+            dateOfBirth: true,
+            role: true,
+            status: true,
+            createdAt: true,
+          },
+        });
+
+        existingEmailSet.add(normalizedEmail);
+        createdUsers.push(this.mapToAdminUserItem(user));
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : 'Lỗi khi tạo tài khoản.';
+        errors.push({ email: normalizedEmail, reason: msg });
+      }
+    }
+
+    return {
+      total: dto.users.length,
+      successCount: createdUsers.length,
+      failedCount: errors.length,
+      errors,
+      createdUsers,
+    };
+  }
+}

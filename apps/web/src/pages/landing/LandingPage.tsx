@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../../context/useAuth';
-import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
-import { HeroSection } from './components/HeroSection';
-import { FeaturesSection } from './components/FeaturesSection';
-import { CoursesSection } from './components/CoursesSection';
+import { Navbar } from '../../components/common/Navbar';
+import { useAuth } from '../../context/useAuth';
 import { AiAssistantSection } from './components/AiAssistantSection';
+import { CoursesSection } from './components/CoursesSection';
+import { FeaturesSection } from './components/FeaturesSection';
+import { HeroSection } from './components/HeroSection';
 import './landing.css';
 
 export const LandingPage: React.FC = () => {

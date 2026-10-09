@@ -1,0 +1,773 @@
+.tku-users-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tku-users-page .tku-admin-header {
+  padding: 26px 36px 18px 36px;
+}
+
+.tku-users-content {
+  padding: 0 36px 40px 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-users-banner {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
+  border-radius: 16px;
+  padding: 24px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.22), 0 8px 10px -6px rgba(37, 99, 235, 0.18);
+  margin-bottom: 22px;
+}
+
+.tku-users-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-users-banner__title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-users-banner__desc {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+}
+
+.tku-users-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+@media (max-width: 1200px) {
+  .tku-users-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-users-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-users-stat-card {
+  background: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tku-users-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tku-users-stat-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-users-stat-card__icon--blue {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.tku-users-stat-card__icon--cyan {
+  background-color: #f0f9ff;
+  color: #0284c7;
+}
+
+.tku-users-stat-card__icon--purple {
+  background-color: #f5f3ff;
+  color: #7c3aed;
+}
+
+.tku-users-stat-card__icon--emerald {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.tku-users-stat-card__info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-users-stat-card__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 2px;
+}
+
+.tku-users-stat-card__value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.tku-users-filter-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tku-users-search-wrap {
+  position: relative;
+  width: 320px;
+}
+
+.tku-users-search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 36px 0 40px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background-color: #ffffff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.18s ease;
+  box-sizing: border-box;
+}
+
+.tku-users-search-input::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.tku-users-search-input:hover {
+  border-color: #cbd5e1;
+}
+
+.tku-users-search-input:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-users-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-users-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  transition: all 0.15s ease;
+}
+
+.tku-users-search-clear:hover {
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.tku-users-select-wrap {
+  position: relative;
+  min-width: 165px;
+}
+
+.tku-users-select {
+  width: 100%;
+  height: 42px;
+  appearance: none;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 34px 0 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  box-sizing: border-box;
+}
+
+.tku-users-select:hover {
+  border-color: #cbd5e1;
+}
+
+.tku-users-select:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-users-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+  transition: color 0.18s ease;
+}
+
+.tku-users-select-wrap:focus-within .tku-users-select-icon {
+  color: #1d68f2;
+}
+
+.tku-users-filter-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px dashed #cbd5e1;
+  background-color: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-users-filter-reset-btn:hover {
+  border-color: #1d68f2;
+  color: #1d68f2;
+  background-color: #eff6ff;
+}
+
+.tku-users-add-btn {
+  margin-left: auto;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #1d68f2;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.25);
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-users-add-btn:hover {
+  background-color: #1857c9;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.35);
+  transform: translateY(-1px);
+}
+
+.tku-users-add-btn:active {
+  transform: translateY(0);
+}
+
+.tku-users-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.tku-users-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tku-users-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tku-users-table th {
+  padding: 14px 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #f1f5f9;
+  background: #f8fafc;
+  white-space: nowrap;
+}
+
+.tku-users-table td {
+  padding: 14px 20px;
+  font-size: 13.5px;
+  color: #334155;
+  border-bottom: 1px solid #f8fafc;
+  vertical-align: middle;
+}
+
+.tku-users-table th:first-child,
+.tku-users-table td:first-child {
+  padding-left: 24px;
+  width: 28%;
+}
+
+.tku-users-table th:nth-child(2),
+.tku-users-table td:nth-child(2) {
+  width: 13%;
+}
+
+.tku-users-table th:nth-child(3),
+.tku-users-table td:nth-child(3) {
+  width: 15%;
+}
+
+.tku-users-table th:nth-child(4),
+.tku-users-table td:nth-child(4) {
+  width: 14%;
+}
+
+.tku-users-table th:nth-child(5),
+.tku-users-table td:nth-child(5) {
+  width: 16%;
+}
+
+.tku-users-table th:last-child,
+.tku-users-table td:last-child {
+  padding-right: 24px;
+  width: 14%;
+  text-align: right;
+}
+
+.tku-user-phone-cell,
+.tku-user-dob-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.tku-user-meta-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.tku-user-empty-val {
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.tku-users-table tbody tr {
+  transition: background-color 0.12s ease;
+}
+
+.tku-users-table tbody tr:hover {
+  background-color: #fbfcfe;
+}
+
+.tku-users-row--suspended {
+  background-color: #fffbfa;
+}
+
+.tku-users-row--suspended:hover {
+  background-color: #fff5f5;
+}
+
+.tku-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.tku-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-user-avatar--student {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+
+.tku-user-avatar--teacher {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+}
+
+.tku-user-avatar--admin {
+  background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%);
+}
+
+.tku-user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-user-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-user-email {
+  font-size: 12.5px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tku-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tku-role-badge--student {
+  background-color: #eff6ff;
+  color: #1d68f2;
+  border: 1px solid #dbeafe;
+}
+
+.tku-role-badge--teacher {
+  background-color: #f5f3ff;
+  color: #7c3aed;
+  border: 1px solid #ede9fe;
+}
+
+.tku-role-badge--admin {
+  background-color: #fdf2f8;
+  color: #db2777;
+  border: 1px solid #fce7f3;
+}
+
+.tku-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tku-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tku-status-badge--active {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-status-badge--active .tku-status-dot {
+  background-color: #10b981;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.tku-status-badge--inactive {
+  background-color: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-status-badge--inactive .tku-status-dot {
+  background-color: #94a3b8;
+}
+
+.tku-status-badge--suspended {
+  background-color: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.tku-status-badge--suspended .tku-status-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
+.tku-user-date-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tku-user-date-main {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tku-user-date-sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+.tku-users-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tku-users-action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-users-action-btn:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-users-action-btn--lock {
+  color: #e11d48;
+  background-color: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.tku-users-action-btn--lock:hover {
+  background-color: #ffe4e6;
+  border-color: #fda4af;
+  color: #be123c;
+}
+
+.tku-users-action-btn--unlock {
+  color: #059669;
+  background-color: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.tku-users-action-btn--unlock:hover {
+  background-color: #d1fae5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+
+.tku-users-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tku-users-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+
+.tku-users-empty__icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 16px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.tku-users-empty__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.tku-users-empty__desc {
+  font-size: 13.5px;
+  color: #64748b;
+  max-width: 440px;
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.tku-users-empty__btn {
+  background-color: #1d68f2;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.2);
+}
+
+.tku-users-empty__btn:hover {
+  background-color: #1754c7;
+  box-shadow: 0 4px 10px rgba(29, 104, 242, 0.3);
+}
+
+.tku-users-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 24px;
+  background-color: #ffffff;
+  border-top: 1px solid #f1f5f9;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tku-users-pagination__info {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.tku-users-pagination__info strong {
+  color: #0f172a;
+}
+
+.tku-users-pagination__buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-users-pagination__btn {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-users-pagination__btn:hover:not(:disabled) {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-users-pagination__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tku-users-pagination__page {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #475569;
+  background-color: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-users-pagination__page:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-users-pagination__page--active {
+  background-color: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+}
+
+.tku-users-pagination__page--active:hover {
+  background-color: #1754c7;
+  color: #ffffff;
+}
+
+.tku-users-pagination__ellipsis {
+  padding: 0 4px;
+  color: #94a3b8;
+  font-size: 13px;
+}

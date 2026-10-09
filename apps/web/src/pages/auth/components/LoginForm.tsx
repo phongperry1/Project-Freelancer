@@ -218,7 +218,7 @@ export const LoginForm: React.FC = () => {
 
       <div className="tku-auth-divider">
         <span className="tku-auth-divider__line" />
-        <span className="tku-auth-divider__text">hoặc đăng nhập bằng tài khoản</span>
+        <span className="tku-auth-divider__text">hoặc</span>
         <span className="tku-auth-divider__line" />
       </div>
 

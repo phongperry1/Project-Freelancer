@@ -20,7 +20,6 @@ enum UserRole {
 
 enum UserStatus {
   ACTIVE
-  INACTIVE
   SUSPENDED
 }
 
@@ -78,6 +77,8 @@ model User {
   passwordHash String     @db.VarChar(255)
   fullName     String     @db.VarChar(150)
   avatarUrl    String?    @db.VarChar(500)
+  phoneNumber  String?    @db.VarChar(20)
+  dateOfBirth  DateTime?  @db.Date
   role         UserRole   @default(STUDENT)
   status       UserStatus @default(ACTIVE)
 

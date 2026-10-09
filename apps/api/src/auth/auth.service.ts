@@ -570,10 +570,6 @@ export class AuthService {
         );
       }
 
-      if (user.status === 'INACTIVE') {
-        throw new UnauthorizedException('Tài khoản chưa được kích hoạt.');
-      }
-
       const isPasswordValid = await this.verifyPassword(
         user.passwordHash,
         password,
@@ -831,9 +827,6 @@ export class AuthService {
         if (picture && user.avatarUrl !== picture) {
           updateData.avatarUrl = picture;
         }
-        if (user.status === 'INACTIVE') {
-          updateData.status = 'ACTIVE';
-        }
         if ((!user.fullName || !user.fullName.trim()) && name) {
           updateData.fullName = name;
         }
@@ -1064,12 +1057,6 @@ export class AuthService {
     if (user.status === 'SUSPENDED') {
       throw new ForbiddenException(
         'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
-      );
-    }
-
-    if (user.status === 'INACTIVE') {
-      throw new BadRequestException(
-        'Tài khoản này chưa được kích hoạt. Vui lòng hoàn tất kích hoạt tài khoản trước.',
       );
     }
 
@@ -1580,7 +1567,7 @@ export class AuthService {
     }
 
     try {
-      const device = await this.prisma.userDevice.findUnique({
+      const device = await this.prisma.userDevice.findFirst({
         where: {
           sessionToken: payload.sessionId,
         },
@@ -1703,12 +1690,6 @@ export class AuthService {
     if (user.status === 'SUSPENDED') {
       throw new ForbiddenException(
         'Tài khoản của bạn đã bị tạm khóa. Vui lòng liên hệ quản trị viên.',
-      );
-    }
-
-    if (user.status === 'INACTIVE') {
-      throw new UnauthorizedException(
-        'Tài khoản chưa được kích hoạt hoặc đã bị vô hiệu hóa.',
       );
     }
 
