@@ -7,6 +7,20 @@ import { toast } from '../../../context/useToast';
 import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
 import type { AuthResponse } from '../../../types/auth.types';
 
+const getRedirectTargetUrl = (userRole?: string): string => {
+  const redirectParam =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('redirect')
+      : null;
+
+  if (redirectParam && redirectParam.startsWith('/')) {
+    return redirectParam;
+  }
+  if (userRole === 'ADMIN') return '/admin';
+  if (userRole === 'TEACHER') return '/lecturer/dashboard';
+  return '/';
+};
+
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
 
@@ -125,17 +139,7 @@ export const LoginForm: React.FC = () => {
         `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
       );
 
-      const redirectParam =
-        typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('redirect')
-          : null;
-      let targetUrl =
-        redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
-
-      if (!redirectParam && res.user?.role === 'ADMIN') {
-        targetUrl = '/admin';
-      }
-
+      const targetUrl = getRedirectTargetUrl(res.user?.role);
       timerRef.current = setTimeout(() => {
         window.location.href = targetUrl;
       }, 500);
@@ -158,17 +162,7 @@ export const LoginForm: React.FC = () => {
       `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
     );
 
-    const redirectParam =
-      typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('redirect')
-        : null;
-    let targetUrl =
-      redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
-
-    if (!redirectParam && res.user?.role === 'ADMIN') {
-      targetUrl = '/admin';
-    }
-
+    const targetUrl = getRedirectTargetUrl(res.user?.role);
     timerRef.current = setTimeout(() => {
       window.location.href = targetUrl;
     }, 500);

@@ -1,0 +1,362 @@
+/* ==========================================================================
+   Lecturer Layout Styles - Fully synchronized with TKU Admin
+   ========================================================================== */
+
+.tku-lecturer-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Sidebar */
+.tku-lecturer-sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #eef2f6;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+/* Brand matching AdminLayout exactly */
+.tku-admin-brand,
+.tku-lecturer-brand {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-admin-brand__logo-box,
+.tku-lecturer-brand__logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.tku-admin-brand__logo,
+.tku-lecturer-brand__logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.tku-admin-brand:hover .tku-admin-brand__logo-box,
+.tku-lecturer-brand:hover .tku-lecturer-brand__logo-box {
+  transform: scale(1.04);
+}
+
+.tku-admin-brand__text,
+.tku-lecturer-brand__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-admin-brand__title,
+.tku-lecturer-brand__title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.tku-admin-brand__subtitle,
+.tku-lecturer-brand__subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* Navigation */
+.tku-lecturer-nav {
+  padding: 22px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tku-lecturer-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.tku-lecturer-nav-heading {
+  font-size: 11px;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.tku-lecturer-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  background: transparent;
+  cursor: pointer;
+}
+
+.tku-lecturer-nav-item__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-lecturer-nav-item:hover:not(.tku-lecturer-nav-item--active) {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.tku-lecturer-nav-item--active {
+  background-color: #eff6ff !important;
+  color: #1d68f2 !important;
+  font-weight: 700;
+}
+
+.tku-lecturer-nav-item--active .tku-lecturer-nav-icon {
+  color: #1d68f2;
+}
+
+.tku-lecturer-nav-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d68f2;
+  background-color: #dbeafe;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+/* Sidebar Footer Profile */
+.tku-lecturer-sidebar-footer {
+  padding: 16px 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-lecturer-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-lecturer-user-card__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.tku-lecturer-user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tku-lecturer-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-lecturer-user-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tku-lecturer-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-lecturer-user-role {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.tku-lecturer-logout-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-lecturer-logout-btn:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+/* Main Container */
+.tku-lecturer-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: #f8fafc;
+}
+
+/* Header Bar */
+.tku-lecturer-header {
+  padding: 20px 36px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #eef2f6;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+.tku-lecturer-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tku-lecturer-breadcrumbs__parent {
+  color: #64748b;
+  text-decoration: none;
+}
+
+.tku-lecturer-breadcrumbs__parent:hover {
+  color: #0f172a;
+}
+
+.tku-lecturer-breadcrumbs__sep {
+  color: #94a3b8;
+}
+
+.tku-lecturer-breadcrumbs__current {
+  color: #1d68f2;
+  font-weight: 700;
+}
+
+.tku-lecturer-header__right {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+/* Clean notification bell WITHOUT orange dot */
+.tku-lecturer-notif-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.tku-lecturer-notif-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+/* Loading Placeholder */
+.tku-lecturer-loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.tku-lecturer-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #1d68f2;
+  border-radius: 50%;
+  animation: tku-spin 0.8s linear infinite;
+}
+
+.tku-lecturer-spin-icon {
+  color: #1d68f2;
+  animation: tku-spin 0.8s linear infinite;
+}
+
+@keyframes tku-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .tku-lecturer-sidebar {
+    display: none;
+  }
+  .tku-lecturer-header {
+    padding: 16px 20px;
+  }
+}

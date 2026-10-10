@@ -1,0 +1,89 @@
+/* ==========================================================================
+   ROUTE TRANSITION LOADER (TOP BAR & SPINNER BADGE)
+   ========================================================================== */
+
+.tku-route-loader-bar-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 999999;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tku-route-loader-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #1d68f2 0%, #38bdf8 50%, #6366f1 100%);
+  box-shadow: 0 0 10px rgba(29, 104, 242, 0.8), 0 0 5px rgba(56, 189, 248, 0.6);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+  will-change: width, opacity;
+}
+
+.tku-route-loader-pill {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  z-index: 999999;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(226, 232, 240, 0.85);
+  border-radius: 999px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  animation: tku-fade-in-slide 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  will-change: transform, opacity;
+}
+
+.tku-route-loader-pill--fading {
+  animation: tku-fade-out 0.25s ease forwards;
+}
+
+.tku-route-loader-icon {
+  color: #1d68f2;
+  animation: tku-spin-smooth 0.8s linear infinite;
+}
+
+.tku-route-loader-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+@keyframes tku-spin-smooth {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes tku-fade-in-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes tku-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.96);
+  }
+}

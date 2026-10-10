@@ -759,6 +759,11 @@
   animation: tku-spin 0.8s linear infinite;
 }
 
+.tku-admin-spin-icon {
+  color: #1d68f2;
+  animation: tku-spin 0.8s linear infinite;
+}
+
 @keyframes tku-spin {
   to {
     transform: rotate(360deg);
