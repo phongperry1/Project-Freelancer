@@ -677,9 +677,13 @@ export class AuthService {
 
     if (credential === 'demo-google-credential' || credential.startsWith('mock-')) {
       email = demoEmail?.trim().toLowerCase() || 'google.student@tku.edu.vn';
-      name = 'Học sinh Google (TKU)';
+      if (email.includes('lecturer') || email.includes('teacher')) {
+        name = 'Nguyễn Minh Anh';
+      } else {
+        name = 'Học sinh Google (TKU)';
+      }
       picture =
-        'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80';
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
     } else if (isAccessToken) {
       // 1. Xác thực Google Access Token (ya29...) qua userinfo
       try {
@@ -857,7 +861,7 @@ export class AuthService {
             fullName: name || 'Người dùng Google',
             avatarUrl: picture || null,
             passwordHash,
-            role: 'STUDENT',
+            role: (normalizedEmail.includes('teacher') || normalizedEmail.includes('lecturer')) ? 'TEACHER' : 'STUDENT',
             status: 'ACTIVE',
           },
         });
