@@ -22,6 +22,7 @@ const AdminCoursesPage = lazy(() => import('./pages/admin/AdminCoursesPage'));
 const AdminCreateCoursePage = lazy(() => import('./pages/admin/AdminCreateCoursePage'));
 const AdminCourseDetailPage = lazy(() => import('./pages/admin/AdminCourseDetailPage'));
 const AdminEditCoursePage = lazy(() => import('./pages/admin/AdminEditCoursePage'));
+const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -87,6 +88,7 @@ export const App: React.FC = () => {
                 <Route path="courses/create" element={<AdminCreateCoursePage />} />
                 <Route path="courses/:id" element={<AdminCourseDetailPage />} />
                 <Route path="courses/:id/edit" element={<AdminEditCoursePage />} />
+                <Route path="content" element={<AdminContentPage />} />
               </Route>
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
