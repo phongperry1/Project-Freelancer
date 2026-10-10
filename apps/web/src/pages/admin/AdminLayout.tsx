@@ -6,6 +6,7 @@ import {
   BookOpen,
   FileText,
   LogOut,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import './adminDashboard.css';
@@ -140,9 +141,9 @@ export const AdminLayout: React.FC = () => {
       <main className="tku-admin-main">
         <Suspense
           fallback={
-            <div className="tku-admin-loading-wrapper">
-              <div className="tku-admin-spinner" />
-              <span>Đang tải...</span>
+            <div className="tku-admin-loading-wrapper" role="status" aria-live="polite">
+              <Loader2 size={36} className="tku-admin-spin-icon" />
+              <span>Đang tải nội dung...</span>
             </div>
           }
         >

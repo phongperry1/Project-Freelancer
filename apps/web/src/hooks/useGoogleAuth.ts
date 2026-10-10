@@ -118,6 +118,8 @@ export function useGoogleAuth(
 
         if (!redirectParam && res.user?.role === "ADMIN") {
           targetUrl = "/admin";
+        } else if (!redirectParam && res.user?.role === "TEACHER") {
+          targetUrl = "/lecturer/dashboard";
         }
 
         redirectTimerRef.current = setTimeout(() => {

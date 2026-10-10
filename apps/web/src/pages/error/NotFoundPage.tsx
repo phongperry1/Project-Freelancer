@@ -1,8 +1,26 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/useAuth';
 import './notFound.css';
 
 export const NotFoundPage: React.FC = () => {
+  const { user } = useAuth();
+  const location = useLocation();
+
+  const dashboardPath = useMemo(() => {
+    if (
+      user?.role === 'TEACHER' ||
+      location.pathname.startsWith('/lecturer') ||
+      location.pathname.startsWith('/teacher')
+    ) {
+      return '/lecturer/dashboard';
+    }
+    if (user?.role === 'ADMIN' || location.pathname.startsWith('/admin')) {
+      return '/admin';
+    }
+    return '/';
+  }, [user?.role, location.pathname]);
+
   return (
     <div className="tku-not-found-page">
       <div className="tku-not-found-container">
@@ -12,16 +30,19 @@ export const NotFoundPage: React.FC = () => {
             <span>ERROR 404</span>
           </div>
 
-          <h1 className="tku-not-found-title">
-            Không tìm thấy trang
-          </h1>
+          <h1 className="tku-not-found-title">Không tìm thấy trang</h1>
 
           <p className="tku-not-found-desc">
-            Trang bạn đang tìm kiếm không tồn tại hoặc đường dẫn có thể đã được thay đổi. Hãy kiểm tra lại địa chỉ hoặc quay về trang chính của hệ thống học tập.
+            Trang bạn đang tìm kiếm không tồn tại hoặc đường dẫn có thể đã được
+            thay đổi. Hãy kiểm tra lại địa chỉ hoặc quay về trang chính của hệ
+            thống học tập.
           </p>
 
           <div className="tku-not-found-actions">
-            <Link to="/admin" className="tku-not-found-btn tku-not-found-btn--primary">
+            <Link
+              to={dashboardPath}
+              className="tku-not-found-btn tku-not-found-btn--primary"
+            >
               Về trang dashboard
             </Link>
           </div>
@@ -41,3 +62,4 @@ export const NotFoundPage: React.FC = () => {
 };
 
 export default NotFoundPage;
+

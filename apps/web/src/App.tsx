@@ -7,6 +7,9 @@ import { ToastProvider } from './context/ToastProvider';
 import { useAuth } from './context/useAuth';
 
 import { AdminRoute } from './components/auth/AdminRoute';
+import { LecturerRoute } from './components/auth/LecturerRoute';
+import { RouteTransitionLoader } from './components/common/RouteTransitionLoader';
+
 import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
@@ -23,12 +26,18 @@ const AdminCreateCoursePage = lazy(() => import('./pages/admin/AdminCreateCourse
 const AdminCourseDetailPage = lazy(() => import('./pages/admin/AdminCourseDetailPage'));
 const AdminEditCoursePage = lazy(() => import('./pages/admin/AdminEditCoursePage'));
 const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
+const LecturerLayout = lazy(() => import('./pages/lecturer/LecturerLayout'));
+const LecturerDashboardPage = lazy(() => import('./pages/lecturer/LecturerDashboardPage'));
+const LecturerCoursesPage = lazy(() => import('./pages/lecturer/LecturerCoursesPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
   const { user, token } = useAuth();
   if (token && user?.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
+  }
+  if (token && user?.role === 'TEACHER') {
+    return <Navigate to="/lecturer/dashboard" replace />;
   }
   return <LandingPage />;
 };
@@ -39,6 +48,9 @@ const PublicAuthRoute: React.FC<{ children: React.ReactNode }> = ({
   const { user, token } = useAuth();
   if (token && user?.role === 'ADMIN') {
     return <Navigate to="/admin" replace />;
+  }
+  if (token && user?.role === 'TEACHER') {
+    return <Navigate to="/lecturer/dashboard" replace />;
   }
   if (token && user) {
     return <Navigate to="/" replace />;
@@ -51,6 +63,7 @@ export const App: React.FC = () => {
     <ToastProvider>
       <AuthProvider>
         <BrowserRouter>
+          <RouteTransitionLoader />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/" element={<HomeRoute />} />
@@ -90,6 +103,22 @@ export const App: React.FC = () => {
                 <Route path="courses/:id/edit" element={<AdminEditCoursePage />} />
                 <Route path="content" element={<AdminContentPage />} />
               </Route>
+              <Route
+                path="/lecturer"
+                element={
+                  <LecturerRoute>
+                    <LecturerLayout />
+                  </LecturerRoute>
+                }
+              >
+                <Route index element={<Navigate to="/lecturer/dashboard" replace />} />
+                <Route path="dashboard" element={<LecturerDashboardPage />} />
+                <Route path="courses" element={<LecturerCoursesPage />} />
+              </Route>
+              <Route
+                path="/teacher/*"
+                element={<Navigate to="/lecturer/dashboard" replace />}
+              />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
