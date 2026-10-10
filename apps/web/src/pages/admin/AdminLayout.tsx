@@ -87,7 +87,7 @@ export const AdminLayout: React.FC = () => {
 
             <Link
               to="/admin/content"
-              className={`tku-admin-nav-item ${location.pathname === '/admin/content' ? 'tku-admin-nav-item--active' : ''}`}
+              className={`tku-admin-nav-item ${location.pathname.startsWith('/admin/content') ? 'tku-admin-nav-item--active' : ''}`}
             >
               <div className="tku-admin-nav-item__left">
                 <FileText size={18} />

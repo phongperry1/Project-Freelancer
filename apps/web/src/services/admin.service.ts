@@ -67,6 +67,7 @@ export interface CourseLesson {
   sortOrder: number;
   status: string;
   videoUrl: string | null;
+  content?: string | null;
 }
 
 export interface CourseChapter {

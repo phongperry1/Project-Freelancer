@@ -1,24 +1,36 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   BookOpen,
-  FileText,
   Users,
-  Edit3,
-  ChevronDown,
-  Video,
-  X,
   AlertCircle,
   RotateCw,
   GraduationCap,
-  Layers,
+  Calendar,
+  Clock,
+  User as UserIcon,
+  Eye,
+  EyeOff,
+  ExternalLink,
 } from 'lucide-react';
 import {
   adminService,
   type AdminCourseDetail,
 } from '../../services/admin.service';
-import { toast } from '../../context/toastService';
 import './adminCourseDetail.css';
+
+const formatDate = (dateString?: string | null): string => {
+  if (!dateString) return '—';
+  try {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  } catch {
+    return dateString;
+  }
+};
 
 export const AdminCourseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,28 +38,6 @@ export const AdminCourseDetailPage: React.FC = () => {
   const [course, setCourse] = useState<AdminCourseDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [openChapterIds, setOpenChapterIds] = useState<Record<string, boolean>>({});
-
-  const [isAddChapterModalOpen, setIsAddChapterModalOpen] = useState<boolean>(false);
-  const [chapterTitle, setChapterTitle] = useState<string>('');
-  const [chapterOrder, setChapterOrder] = useState<number>(1);
-  const [isAddingChapter, setIsAddingChapter] = useState<boolean>(false);
-
-  const applyCourseData = useCallback(
-    (courseData: AdminCourseDetail) => {
-      setCourse(courseData);
-
-      const initialOpen: Record<string, boolean> = {};
-      if (courseData.chapters && courseData.chapters.length > 0) {
-        courseData.chapters.forEach((ch, idx) => {
-          if (idx === 0) initialOpen[ch.id] = true;
-        });
-      }
-      setOpenChapterIds(initialOpen);
-      setChapterOrder((courseData.chapters?.length || 0) + 1);
-    },
-    [],
-  );
 
   const fetchCourseData = useCallback(() => {
     if (!id) return;
@@ -57,7 +47,7 @@ export const AdminCourseDetailPage: React.FC = () => {
     adminService
       .getCourseById(id)
       .then((courseData) => {
-        applyCourseData(courseData);
+        setCourse(courseData);
         setIsLoading(false);
       })
       .catch((err: unknown) => {
@@ -68,7 +58,7 @@ export const AdminCourseDetailPage: React.FC = () => {
         );
         setIsLoading(false);
       });
-  }, [id, applyCourseData]);
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -78,7 +68,7 @@ export const AdminCourseDetailPage: React.FC = () => {
       .getCourseById(id)
       .then((courseData) => {
         if (isMounted) {
-          applyCourseData(courseData);
+          setCourse(courseData);
           setIsLoading(false);
         }
       })
@@ -96,51 +86,11 @@ export const AdminCourseDetailPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, applyCourseData]);
-
-  const toggleChapter = useCallback((chapterId: string) => {
-    setOpenChapterIds((prev) => ({
-      ...prev,
-      [chapterId]: !prev[chapterId],
-    }));
-  }, []);
-
-  const totalLessons = useMemo(() => {
-    if (!course || !course.chapters) return 0;
-    return course.chapters.reduce(
-      (acc, ch) => acc + (ch.lessons ? ch.lessons.length : 0),
-      0,
-    );
-  }, [course]);
-
-  const handleAddChapter = useCallback(async () => {
-    if (!id || !chapterTitle.trim()) {
-      toast.error('Vui lòng nhập tên chương học.');
-      return;
-    }
-    setIsAddingChapter(true);
-    try {
-      await adminService.addChapter(id, {
-        title: chapterTitle.trim(),
-        sortOrder: chapterOrder,
-      });
-      toast.success('Thêm chương học mới thành công!');
-      setChapterTitle('');
-      setIsAddChapterModalOpen(false);
-      fetchCourseData();
-    } catch (err: unknown) {
-      toast.error(
-        err instanceof Error ? err.message : 'Không thể tạo chương học lúc này.',
-      );
-    } finally {
-      setIsAddingChapter(false);
-    }
-  }, [id, chapterTitle, chapterOrder, fetchCourseData]);
-
-
+  }, [id]);
 
   return (
     <div className="tku-detail-page">
+      {/* 1. Header & Breadcrumbs & Action Bar */}
       <header className="tku-detail-header">
         <div className="tku-detail-top-nav">
           <div className="tku-detail-breadcrumbs">
@@ -185,293 +135,191 @@ export const AdminCourseDetailPage: React.FC = () => {
           </div>
         ) : course ? (
           <div className="tku-detail-layout">
+            {/* Cột Trái: Giới thiệu khóa học & Thống kê đào tạo */}
             <div className="tku-detail-col-main">
-              <div className="tku-detail-card tku-detail-hero">
-                <div className="tku-detail-hero-top">
-                  <div className="tku-detail-academic-badge">
-                    <GraduationCap size={15} />
-                    <span>Chương trình học thuật</span>
-                  </div>
-                  <Link
-                    to={`/admin/courses/${course.id}/edit`}
-                    className="tku-detail-btn-edit-sm"
-                  >
-                    <Edit3 size={13} />
-                    <span>Chỉnh sửa</span>
-                  </Link>
-                </div>
+              {/* Card 1: Tổng quan & Giới thiệu khóa học */}
+              <div className="tku-detail-card">
+                <div className="tku-detail-hero-box">
+                  <div className="tku-detail-hero-header-row">
+                    <span className="tku-detail-academic-pill">
+                      <GraduationCap size={14} />
+                      <span>Khóa học học thuật</span>
+                    </span>
 
-                <h1 className="tku-detail-course-title">{course.title}</h1>
-
-                <div className="tku-detail-teacher-pill">
-                  <div className="tku-detail-teacher-avatar-sm">
-                    {course.teacher?.fullName
-                      ? course.teacher.fullName.slice(0, 1).toUpperCase()
-                      : 'G'}
-                  </div>
-                  <span className="tku-detail-teacher-label">
-                    Giảng viên:{' '}
-                    <strong className="tku-detail-teacher-name-bold">
-                      {course.teacher?.fullName || 'Chưa phân công'}
-                    </strong>
-                  </span>
-                </div>
-
-                <div className="tku-detail-stats-bar">
-                  <div className="tku-detail-stat-item">
-                    <div className="tku-detail-stat-icon tku-detail-stat-icon--blue">
-                      <Layers size={20} />
-                    </div>
-                    <div className="tku-detail-stat-info">
-                      <span className="tku-detail-stat-value">
-                        {course.chapters?.length || 0}
+                    <span
+                      className={`tku-detail-status-pill ${
+                        course.status === 'ACTIVE'
+                          ? 'tku-detail-status-pill--active'
+                          : 'tku-detail-status-pill--hidden'
+                      }`}
+                    >
+                      <span className="tku-detail-status-dot" />
+                      <span>
+                        {course.status === 'ACTIVE' ? 'Đang hiển thị' : 'Đang tạm ẩn'}
                       </span>
-                      <span className="tku-detail-stat-label">Chương học</span>
-                    </div>
+                    </span>
                   </div>
 
-                  <div className="tku-detail-stat-item">
-                    <div className="tku-detail-stat-icon tku-detail-stat-icon--emerald">
-                      <FileText size={20} />
-                    </div>
-                    <div className="tku-detail-stat-info">
-                      <span className="tku-detail-stat-value">{totalLessons}</span>
-                      <span className="tku-detail-stat-label">Bài giảng</span>
-                    </div>
-                  </div>
+                  <h1 className="tku-detail-course-heading">{course.title}</h1>
 
-                  <div className="tku-detail-stat-item">
-                    <div className="tku-detail-stat-icon tku-detail-stat-icon--amber">
-                      <Users size={20} />
-                    </div>
-                    <div className="tku-detail-stat-info">
-                      <span className="tku-detail-stat-value">
-                        {course._count?.enrollments || 0}
-                      </span>
-                      <span className="tku-detail-stat-label">Học viên</span>
-                    </div>
+                  {/* Khu vực mô tả khóa học */}
+                  <div className="tku-detail-description-section">
+                    <h3 className="tku-detail-desc-title">Mô tả khóa học</h3>
+                    {course.description ? (
+                      <p className="tku-detail-desc-body">{course.description}</p>
+                    ) : (
+                      <p className="tku-detail-desc-placeholder">
+                        Khóa học này hiện chưa có nội dung mô tả chi tiết.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* Card 2: Thông tin & Thống kê đào tạo */}
               <div className="tku-detail-card">
-                <div className="tku-detail-section-header">
-                  <div className="tku-detail-section-title-box">
-                    <h2 className="tku-detail-section-title">
-                      Giáo trình & Khung chương trình
+                <div className="tku-detail-section-head">
+                  <div className="tku-detail-section-title-wrap">
+                    <h2 className="tku-detail-section-title-main">
+                      Thông tin & Thống kê đào tạo
                     </h2>
-                    <p className="tku-detail-section-sub">
-                      Danh sách các chương học và bài giảng theo cấu trúc sư phạm
+                    <p className="tku-detail-section-title-sub">
+                      Dữ liệu vận hành và học viên của khóa học trên hệ thống
                     </p>
                   </div>
                 </div>
 
-                <div className="tku-detail-syllabus-body">
-                  {!course.chapters || course.chapters.length === 0 ? (
-                    <div className="tku-detail-empty-box">
-                      <div className="tku-detail-empty-icon">
-                        <BookOpen size={28} />
-                      </div>
-                      <h3 className="tku-detail-empty-title">
-                        Chưa có chương học nào
-                      </h3>
-                      <p className="tku-detail-empty-desc">
-                        Khóa học này hiện chưa được thiết lập cấu trúc giáo trình.
-                      </p>
+                <div className="tku-detail-stats-grid-4">
+                  {/* Ô 1: Số học viên */}
+                  <div className="tku-detail-stat-card-item">
+                    <div className="tku-detail-stat-icon-wrapper tku-detail-stat-icon--blue">
+                      <Users size={20} />
                     </div>
-                  ) : (
-                    course.chapters.map((ch, idx) => {
-                      const isOpen = Boolean(openChapterIds[ch.id]);
-                      return (
-                        <div
-                          key={ch.id}
-                          className={`tku-detail-chapter-card ${
-                            isOpen ? 'tku-detail-chapter-card--open' : ''
-                          }`}
-                        >
-                          <button
-                            type="button"
-                            className="tku-detail-chapter-header"
-                            onClick={() => toggleChapter(ch.id)}
-                          >
-                            <div className="tku-detail-chapter-header-left">
-                              <span className="tku-detail-chapter-tag">
-                                Chương {idx + 1}
-                              </span>
-                              <span className="tku-detail-chapter-title">
-                                {ch.title}
-                              </span>
-                            </div>
-                            <div className="tku-detail-chapter-header-right">
-                              <span className="tku-detail-lesson-badge">
-                                {ch.lessons?.length || 0} bài học
-                              </span>
-                              <ChevronDown
-                                size={18}
-                                className={`tku-detail-chapter-chevron ${
-                                  isOpen ? 'tku-detail-chapter-chevron--open' : ''
-                                }`}
-                              />
-                            </div>
-                          </button>
+                    <div className="tku-detail-stat-info-text">
+                      <span className="tku-detail-stat-number">
+                        {(course._count?.enrollments || 0).toLocaleString('vi-VN')}
+                      </span>
+                      <span className="tku-detail-stat-caption">Học viên tham gia</span>
+                    </div>
+                  </div>
 
-                          {isOpen && (
-                            <div className="tku-detail-lesson-list">
-                              {!ch.lessons || ch.lessons.length === 0 ? (
-                                <div className="tku-detail-chapter-empty">
-                                  Chương này hiện chưa có bài giảng nào được tải lên.
-                                </div>
-                              ) : (
-                                ch.lessons.map((lesson, lessonIdx) => (
-                                  <div
-                                    key={lesson.id}
-                                    className="tku-detail-lesson-row"
-                                  >
-                                    <div className="tku-detail-lesson-left">
-                                      <span className="tku-detail-lesson-num">
-                                        {lessonIdx + 1}
-                                      </span>
-                                      <div
-                                        className={`tku-detail-lesson-icon ${
-                                          lesson.videoUrl
-                                            ? 'tku-detail-lesson-icon--video'
-                                            : 'tku-detail-lesson-icon--doc'
-                                        }`}
-                                      >
-                                        {lesson.videoUrl ? (
-                                          <Video size={14} />
-                                        ) : (
-                                          <FileText size={14} />
-                                        )}
-                                      </div>
-                                      <span className="tku-detail-lesson-title">
-                                        {lesson.title}
-                                      </span>
-                                    </div>
+                  {/* Ô 2: Trạng thái hiển thị */}
+                  <div className="tku-detail-stat-card-item">
+                    <div
+                      className={`tku-detail-stat-icon-wrapper ${
+                        course.status === 'ACTIVE'
+                          ? 'tku-detail-stat-icon--emerald'
+                          : 'tku-detail-stat-icon--slate'
+                      }`}
+                    >
+                      {course.status === 'ACTIVE' ? (
+                        <Eye size={20} />
+                      ) : (
+                        <EyeOff size={20} />
+                      )}
+                    </div>
+                    <div className="tku-detail-stat-info-text">
+                      <span className="tku-detail-stat-number">
+                        {course.status === 'ACTIVE' ? 'Công khai' : 'Tạm ẩn'}
+                      </span>
+                      <span className="tku-detail-stat-caption">Trạng thái hệ thống</span>
+                    </div>
+                  </div>
 
-                                    <div className="tku-detail-lesson-meta">
-                                      {lesson.videoUrl && (
-                                        <span className="tku-detail-video-tag">
-                                          Video
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                ))
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })
-                  )}
+                  {/* Ô 3: Ngày tạo */}
+                  <div className="tku-detail-stat-card-item">
+                    <div className="tku-detail-stat-icon-wrapper tku-detail-stat-icon--purple">
+                      <Calendar size={20} />
+                    </div>
+                    <div className="tku-detail-stat-info-text">
+                      <span className="tku-detail-stat-number">
+                        {formatDate(course.createdAt)}
+                      </span>
+                      <span className="tku-detail-stat-caption">Thời gian khởi tạo</span>
+                    </div>
+                  </div>
+
+                  {/* Ô 4: Cập nhật gần nhất */}
+                  <div className="tku-detail-stat-card-item">
+                    <div className="tku-detail-stat-icon-wrapper tku-detail-stat-icon--slate">
+                      <Clock size={20} />
+                    </div>
+                    <div className="tku-detail-stat-info-text">
+                      <span className="tku-detail-stat-number">
+                        {formatDate(course.updatedAt)}
+                      </span>
+                      <span className="tku-detail-stat-caption">Lần cập nhật cuối</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
+            {/* Cột Phải: Ảnh bìa & Giảng viên phụ trách */}
             <div className="tku-detail-col-side">
-              <div className="tku-detail-card tku-detail-thumb-card">
-                <div className="tku-detail-thumb-box">
-                  {course.thumbnailUrl || course.thumbnail ? (
-                    <img
-                      src={course.thumbnailUrl || course.thumbnail || ''}
-                      alt={course.title}
-                      className="tku-detail-thumb-img"
-                    />
-                  ) : (
-                    <div className="tku-detail-thumb-placeholder">
-                      <BookOpen size={36} />
-                      <span>Chưa có ảnh bìa</span>
-                    </div>
-                  )}
+              {/* Thẻ Ảnh bìa đại diện */}
+              <div className="tku-detail-card">
+                <div className="tku-detail-section-head">
+                  <h3 className="tku-detail-section-title-main" style={{ fontSize: '15px' }}>
+                    Ảnh bìa đại diện
+                  </h3>
+                </div>
+                <div className="tku-detail-thumb-container">
+                  <div className="tku-detail-thumb-box-rounded">
+                    {course.thumbnailUrl || course.thumbnail ? (
+                      <img
+                        src={course.thumbnailUrl || course.thumbnail || ''}
+                        alt={course.title}
+                        className="tku-detail-thumb-image"
+                      />
+                    ) : (
+                      <div className="tku-detail-thumb-empty-notice">
+                        <BookOpen size={32} />
+                        <span>Chưa cập nhật ảnh bìa</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
+              {/* Thẻ Giảng viên phụ trách */}
               <div className="tku-detail-card">
-                <div className="tku-detail-section-header">
-                  <h3 className="tku-detail-section-title">Giảng viên phụ trách</h3>
+                <div className="tku-detail-section-head">
+                  <h3 className="tku-detail-section-title-main" style={{ fontSize: '15px' }}>
+                    Giảng viên phụ trách
+                  </h3>
                 </div>
-                <div className="tku-detail-side-body">
-                  <div className="tku-detail-teacher-profile">
-                    <div className="tku-detail-teacher-avatar-lg">
+                <div className="tku-detail-teacher-box">
+                  <div className="tku-detail-teacher-profile-row">
+                    <div className="tku-detail-teacher-avatar-big">
                       {course.teacher?.fullName
                         ? course.teacher.fullName.slice(0, 1).toUpperCase()
                         : 'G'}
                     </div>
-                    <div className="tku-detail-teacher-info">
-                      <span className="tku-detail-teacher-name">
-                        {course.teacher?.fullName || 'Chưa phân công'}
+                    <div className="tku-detail-teacher-info-column">
+                      <span className="tku-detail-teacher-name-bold">
+                        {course.teacher?.fullName || 'Chưa phân công giảng viên'}
                       </span>
-                      <span className="tku-detail-teacher-badge">Giảng viên</span>
+                      <span className="tku-detail-teacher-role-tag">Giảng viên</span>
                     </div>
                   </div>
+
+                  {course.teacher?.id && (
+                    <Link
+                      to={`/admin/users/${course.teacher.id}`}
+                      className="tku-detail-teacher-link-btn"
+                    >
+                      <UserIcon size={14} />
+                      <span>Xem hồ sơ giảng viên</span>
+                      <ExternalLink size={12} style={{ marginLeft: 'auto' }} />
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>
           </div>
         ) : null}
       </div>
-
-      {isAddChapterModalOpen && (
-        <div className="tku-modal-overlay" onClick={() => setIsAddChapterModalOpen(false)}>
-          <div className="tku-modal-dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="tku-modal-header">
-              <h3 className="tku-modal-title">Thêm chương học mới</h3>
-              <button
-                type="button"
-                className="tku-modal-close-btn"
-                onClick={() => setIsAddChapterModalOpen(false)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="tku-modal-body">
-              <div className="tku-form-group">
-                <label className="tku-form-label">Tên chương học *</label>
-                <input
-                  type="text"
-                  className="tku-form-input"
-                  value={chapterTitle}
-                  onChange={(e) => setChapterTitle(e.target.value)}
-                  placeholder="Ví dụ: Chương 1: Cấu tạo nguyên tử..."
-                  autoFocus
-                />
-              </div>
-
-              <div className="tku-form-group">
-                <label className="tku-form-label">Thứ tự sắp xếp</label>
-                <input
-                  type="number"
-                  min="1"
-                  className="tku-form-input"
-                  value={chapterOrder}
-                  onChange={(e) => setChapterOrder(parseInt(e.target.value, 10) || 1)}
-                />
-              </div>
-            </div>
-
-            <div className="tku-modal-footer">
-              <button
-                type="button"
-                className="tku-detail-btn tku-detail-btn--secondary"
-                onClick={() => setIsAddChapterModalOpen(false)}
-                disabled={isAddingChapter}
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                className="tku-detail-btn tku-detail-btn--primary"
-                onClick={handleAddChapter}
-                disabled={isAddingChapter}
-              >
-                {isAddingChapter ? 'Đang tạo...' : 'Tạo chương'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
