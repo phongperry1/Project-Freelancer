@@ -1,0 +1,806 @@
+.tku-admin-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #1e293b;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+.tku-admin-sidebar {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  z-index: 40;
+}
+
+.tku-admin-brand {
+  padding: 24px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-admin-brand__logo-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.08);
+}
+
+.tku-admin-brand__logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.tku-admin-brand__text {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-admin-brand__title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.tku-admin-brand__subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.tku-admin-nav {
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tku-admin-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-admin-nav-heading {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.06em;
+  padding: 0 10px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.tku-admin-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  border: 1px solid transparent;
+  background: transparent !important;
+  background-color: transparent !important;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+  text-align: left;
+}
+
+.tku-admin-nav-item__left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-admin-nav-item:hover:not(.tku-admin-nav-item--active) {
+  background-color: #f8fafc !important;
+  color: #0f172a;
+}
+
+.tku-admin-nav-item--active {
+  background-color: #eff6ff !important;
+  color: #1d68f2 !important;
+  font-weight: 700;
+}
+
+.tku-admin-nav-item--active:hover {
+  background-color: #e0edff !important;
+  color: #1d68f2 !important;
+}
+
+.tku-admin-nav-badge {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d68f2;
+  background-color: #dbeafe;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.tku-admin-sidebar-footer {
+  padding: 16px 14px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-admin-user-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border-radius: 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-admin-user-card__main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.tku-admin-user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1d68f2 0%, #2563eb 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tku-admin-user-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-admin-user-meta {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.tku-admin-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-admin-user-role {
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 1px;
+}
+
+.tku-admin-logout-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-admin-logout-btn:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.tku-admin-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background-color: #f8fafc;
+}
+
+.tku-admin-header {
+  padding: 24px 32px 18px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.tku-admin-header__titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-admin-header__title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.tku-admin-header__subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+}
+
+.tku-admin-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-admin-search {
+  position: relative;
+  width: 260px;
+}
+
+.tku-admin-search__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-admin-search__input {
+  width: 100%;
+  height: 40px;
+  padding: 0 16px 0 38px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  font-size: 14px;
+  color: #1e293b;
+  outline: none;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tku-admin-search__input:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-admin-icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tku-admin-icon-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.tku-admin-content {
+  padding: 0 32px 36px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tku-admin-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #2563eb 55%, #3b82f6 100%);
+  border-radius: 18px;
+  padding: 28px 32px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 10px 25px -5px rgba(29, 104, 242, 0.25), 0 8px 10px -6px rgba(29, 104, 242, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.tku-admin-banner::after {
+  content: '';
+  position: absolute;
+  right: -20px;
+  top: -40px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+}
+
+.tku-admin-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1;
+}
+
+.tku-admin-banner__title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-admin-banner__desc {
+  font-size: 14px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 600px;
+  line-height: 1.5;
+}
+
+.tku-admin-banner__badge {
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+
+
+.tku-admin-charts-grid {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+}
+
+.tku-admin-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-admin-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+
+.tku-admin-card__title-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-admin-card__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-admin-card__subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.tku-admin-select {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  background-color: #ffffff;
+  outline: none;
+  cursor: pointer;
+}
+
+.tku-admin-stats-card-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  height: 100%;
+}
+
+.tku-admin-stat-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.tku-admin-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.tku-admin-stat-card__icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-admin-stat-card__icon--blue {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+}
+
+.tku-admin-stat-card__icon--emerald {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  color: #059669;
+}
+
+.tku-admin-stat-card__icon--amber {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  color: #d97706;
+}
+
+.tku-admin-stat-card__icon--purple {
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  color: #7c3aed;
+}
+
+.tku-admin-stat-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tku-admin-stat-card__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.tku-admin-stat-card__value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.tku-admin-donut-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 20px;
+  flex: 1;
+  min-height: 200px;
+}
+
+.tku-admin-donut-container {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-admin-donut-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.tku-admin-donut-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.tku-admin-donut-number {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.tku-admin-donut-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.tku-admin-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-admin-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+}
+
+.tku-admin-legend-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 500;
+}
+
+.tku-admin-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.tku-admin-legend-value {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-admin-bottom-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tku-admin-activity-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.tku-admin-activity-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.tku-admin-activity-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 4px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-admin-activity-item:last-child {
+  border-bottom: none;
+}
+
+.tku-admin-activity-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tku-admin-activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background-color: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-admin-activity-icon--course {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.tku-admin-activity-icon--content {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.tku-admin-activity-icon--key {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+.tku-admin-activity-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tku-admin-activity-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-admin-activity-desc {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tku-admin-activity-time {
+  font-size: 11px;
+  font-weight: 600;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tku-admin-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  gap: 10px;
+}
+
+.tku-admin-empty-state__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.tku-admin-empty-state__text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.tku-admin-empty-state__sub {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.tku-admin-loading-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+  color: #64748b;
+}
+
+.tku-admin-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #1d68f2;
+  border-radius: 50%;
+  animation: tku-spin 0.8s linear infinite;
+}
+
+.tku-admin-spin-icon {
+  color: #1d68f2;
+  animation: tku-spin 0.8s linear infinite;
+}
+
+@keyframes tku-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1200px) {
+  .tku-admin-charts-grid,
+  .tku-admin-bottom-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-admin-stats-card-group {
+    grid-template-columns: 1fr;
+  }
+  .tku-admin-activity-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tku-admin-sidebar {
+    display: none;
+  }
+  .tku-admin-header {
+    padding: 16px;
+  }
+  .tku-admin-content {
+    padding: 0 16px 24px 16px;
+  }
+  .tku-admin-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+}

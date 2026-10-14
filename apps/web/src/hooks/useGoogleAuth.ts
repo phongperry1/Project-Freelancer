@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '../context/useAuth';
-import { toast } from '../context/useToast';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useAuth } from "../context/useAuth";
+import { toast } from "../context/useToast";
 
 interface TokenResponse {
   access_token: string;
@@ -38,7 +38,7 @@ declare global {
   }
 }
 
-import type { AuthResponse } from '../types/auth.types';
+import type { AuthResponse } from "../types/auth.types";
 
 export function useGoogleAuth(
   onDeviceVerificationNeeded?: (res: AuthResponse) => void,
@@ -48,14 +48,14 @@ export function useGoogleAuth(
   const [isDevModalOpen, setIsDevModalOpen] = useState(false);
   const tokenClientRef = useRef<TokenClient | null>(null);
 
-  const googleClientId = (
-    import.meta.env.VITE_GOOGLE_CLIENT_ID ?? ''
-  ).trim();
+  const googleClientId = (import.meta.env.VITE_GOOGLE_CLIENT_ID ?? "").trim();
 
   const onDeviceVerificationNeededRef = useRef(onDeviceVerificationNeeded);
   const isMountedRef = useRef(true);
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
   useEffect(() => {
     onDeviceVerificationNeededRef.current = onDeviceVerificationNeeded;
@@ -97,7 +97,7 @@ export function useGoogleAuth(
         if (res.requireDeviceVerification) {
           toast.info(
             res.message ||
-              'Phát hiện đăng nhập thiết bị mới. Vui lòng xác thực mã OTP gửi về email.',
+              "Phát hiện đăng nhập thiết bị mới. Vui lòng xác thực mã OTP gửi về email.",
           );
           if (onDeviceVerificationNeededRef.current) {
             onDeviceVerificationNeededRef.current(res);
@@ -106,15 +106,21 @@ export function useGoogleAuth(
         }
 
         toast.success(
-          `Đăng nhập Google thành công! Chào mừng ${res.user?.fullName || ''}.`,
+          `Đăng nhập Google thành công! Chào mừng ${res.user?.fullName || ""}.`,
         );
 
         const redirectParam =
-          typeof window !== 'undefined'
-            ? new URLSearchParams(window.location.search).get('redirect')
+          typeof window !== "undefined"
+            ? new URLSearchParams(window.location.search).get("redirect")
             : null;
-        const targetUrl =
-          redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
+        let targetUrl =
+          redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
+
+        if (!redirectParam && res.user?.role === "ADMIN") {
+          targetUrl = "/admin";
+        } else if (!redirectParam && res.user?.role === "TEACHER") {
+          targetUrl = "/lecturer/dashboard";
+        }
 
         redirectTimerRef.current = setTimeout(() => {
           window.location.href = targetUrl;
@@ -123,7 +129,7 @@ export function useGoogleAuth(
         if (err instanceof Error) {
           toast.error(err.message);
         } else {
-          toast.error('Đăng nhập bằng Google thất bại. Vui lòng thử lại.');
+          toast.error("Đăng nhập bằng Google thất bại. Vui lòng thử lại.");
         }
       } finally {
         if (isMountedRef.current) {
@@ -139,14 +145,14 @@ export function useGoogleAuth(
     try {
       tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
         client_id: googleClientId,
-        scope: 'email profile openid',
+        scope: "email profile openid",
         callback: (response: TokenResponse) => {
           if (response.error) {
             if (isMountedRef.current) {
               setIsGoogleLoading(false);
             }
-            if (response.error !== 'user_closed_popup') {
-              toast.error('Đăng nhập Google bị hủy hoặc gặp sự cố.');
+            if (response.error !== "user_closed_popup") {
+              toast.error("Đăng nhập Google bị hủy hoặc gặp sự cố.");
             }
             return;
           }
@@ -162,7 +168,7 @@ export function useGoogleAuth(
           if (isMountedRef.current) {
             setIsGoogleLoading(false);
           }
-          toast.error('Không thể mở cửa sổ đăng nhập Google.');
+          toast.error("Không thể mở cửa sổ đăng nhập Google.");
         },
       });
     } catch (err) {
@@ -179,19 +185,23 @@ export function useGoogleAuth(
     }
 
     const existing =
-      (document.getElementById('google-gsi-client') as HTMLScriptElement | null) ||
-      (document.querySelector('script[src*="accounts.google.com/gsi/client"]') as HTMLScriptElement | null);
+      (document.getElementById(
+        "google-gsi-client",
+      ) as HTMLScriptElement | null) ||
+      (document.querySelector(
+        'script[src*="accounts.google.com/gsi/client"]',
+      ) as HTMLScriptElement | null);
 
     if (existing) {
-      existing.addEventListener('load', initClient);
+      existing.addEventListener("load", initClient);
       return () => {
-        existing.removeEventListener('load', initClient);
+        existing.removeEventListener("load", initClient);
       };
     }
 
-    const script = document.createElement('script');
-    script.id = 'google-gsi-client';
-    script.src = 'https://accounts.google.com/gsi/client';
+    const script = document.createElement("script");
+    script.id = "google-gsi-client";
+    script.src = "https://accounts.google.com/gsi/client";
     script.async = true;
     script.defer = true;
     script.onload = () => {
@@ -220,12 +230,12 @@ export function useGoogleAuth(
 
     if (tokenClientRef.current) {
       try {
-        tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
+        tokenClientRef.current.requestAccessToken({ prompt: "select_account" });
       } catch {
         if (isMountedRef.current) {
           setIsGoogleLoading(false);
         }
-        toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
+        toast.error("Không thể kích hoạt cửa sổ đăng nhập Google.");
       }
       return;
     }
@@ -239,12 +249,14 @@ export function useGoogleAuth(
         initClient();
         if (tokenClientRef.current) {
           try {
-            tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
+            tokenClientRef.current.requestAccessToken({
+              prompt: "select_account",
+            });
           } catch {
             if (isMountedRef.current) {
               setIsGoogleLoading(false);
             }
-            toast.error('Không thể kích hoạt cửa sổ đăng nhập Google.');
+            toast.error("Không thể kích hoạt cửa sổ đăng nhập Google.");
           }
         } else {
           if (isMountedRef.current) {
@@ -256,7 +268,9 @@ export function useGoogleAuth(
         if (isMountedRef.current) {
           setIsGoogleLoading(false);
         }
-        toast.error('Không thể kết nối với dịch vụ Google. Vui lòng kiểm tra kết nối mạng hoặc thử lại.');
+        toast.error(
+          "Không thể kết nối với dịch vụ Google. Vui lòng kiểm tra kết nối mạng hoặc thử lại.",
+        );
       }
     }, 100);
   }, [googleClientId, initClient, clearPolling]);
@@ -264,7 +278,7 @@ export function useGoogleAuth(
   const signInWithDemoAccount = useCallback(
     (email?: string) => {
       setIsDevModalOpen(false);
-      void handleGoogleSuccess('demo-google-credential', email);
+      void handleGoogleSuccess("demo-google-credential", email);
     },
     [handleGoogleSuccess],
   );
@@ -278,4 +292,3 @@ export function useGoogleAuth(
     hasConfiguredClientId: Boolean(googleClientId),
   };
 }
-

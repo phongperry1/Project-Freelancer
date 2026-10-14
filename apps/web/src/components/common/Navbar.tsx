@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Bell, Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
 import { useAuth } from '../../context/useAuth';
@@ -83,6 +83,15 @@ export const Navbar: React.FC = () => {
                 </div>
                 <span className="tku-user-name">{user.fullName}</span>
               </div>
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  className="tku-btn tku-btn--outline"
+                  style={{ padding: '6px 14px', fontSize: '13px' }}
+                >
+                  Trang quản trị
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -95,12 +104,12 @@ export const Navbar: React.FC = () => {
             </div>
           ) : (
             <>
-              <a href="/login" className="tku-btn tku-btn--outline">
+              <Link to="/login" className="tku-btn tku-btn--outline">
                 Đăng nhập
-              </a>
-              <a href="/register" className="tku-btn tku-btn--primary">
+              </Link>
+              <Link to="/register" className="tku-btn tku-btn--primary">
                 Đăng ký
-              </a>
+              </Link>
             </>
           )}
 
@@ -155,6 +164,16 @@ export const Navbar: React.FC = () => {
                       </span>
                     </div>
                   </div>
+                  {user.role === 'ADMIN' && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="tku-btn tku-btn--outline w-full"
+                      style={{ justifyContent: 'center', marginBottom: '8px' }}
+                    >
+                      Trang quản trị
+                    </Link>
+                  )}
                   <button
                     type="button"
                     onClick={handleLogout}
@@ -167,20 +186,20 @@ export const Navbar: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <a
-                    href="/login"
+                  <Link
+                    to="/login"
                     onClick={() => setMobileMenuOpen(false)}
                     className="tku-btn tku-btn--outline w-full"
                   >
                     Đăng nhập
-                  </a>
-                  <a
-                    href="/register"
+                  </Link>
+                  <Link
+                    to="/register"
                     onClick={() => setMobileMenuOpen(false)}
                     className="tku-btn tku-btn--primary w-full"
                   >
                     Đăng ký
-                  </a>
+                  </Link>
                 </>
               )}
             </div>

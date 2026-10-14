@@ -1,11 +1,25 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
+import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
 import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
-import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
-import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
 import type { AuthResponse } from '../../../types/auth.types';
+
+const getRedirectTargetUrl = (userRole?: string): string => {
+  const redirectParam =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('redirect')
+      : null;
+
+  if (redirectParam && redirectParam.startsWith('/')) {
+    return redirectParam;
+  }
+  if (userRole === 'ADMIN') return '/admin';
+  if (userRole === 'TEACHER') return '/lecturer/dashboard';
+  return '/';
+};
 
 export const LoginForm: React.FC = () => {
   const { login } = useAuth();
@@ -125,13 +139,7 @@ export const LoginForm: React.FC = () => {
         `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
       );
 
-      const redirectParam =
-        typeof window !== 'undefined'
-          ? new URLSearchParams(window.location.search).get('redirect')
-          : null;
-      const targetUrl =
-        redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
-
+      const targetUrl = getRedirectTargetUrl(res.user?.role);
       timerRef.current = setTimeout(() => {
         window.location.href = targetUrl;
       }, 500);
@@ -154,13 +162,7 @@ export const LoginForm: React.FC = () => {
       `Đăng nhập thành công! Chào mừng ${res.user?.fullName || ''} quay trở lại.`,
     );
 
-    const redirectParam =
-      typeof window !== 'undefined'
-        ? new URLSearchParams(window.location.search).get('redirect')
-        : null;
-    const targetUrl =
-      redirectParam && redirectParam.startsWith('/') ? redirectParam : '/';
-
+    const targetUrl = getRedirectTargetUrl(res.user?.role);
     timerRef.current = setTimeout(() => {
       window.location.href = targetUrl;
     }, 500);
@@ -210,7 +212,7 @@ export const LoginForm: React.FC = () => {
 
       <div className="tku-auth-divider">
         <span className="tku-auth-divider__line" />
-        <span className="tku-auth-divider__text">hoặc đăng nhập bằng tài khoản</span>
+        <span className="tku-auth-divider__text">hoặc</span>
         <span className="tku-auth-divider__line" />
       </div>
 

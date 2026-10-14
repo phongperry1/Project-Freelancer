@@ -20,7 +20,6 @@ enum UserRole {
 
 enum UserStatus {
   ACTIVE
-  INACTIVE
   SUSPENDED
 }
 
@@ -31,16 +30,10 @@ enum AuthTokenType {
 }
 
 enum CourseStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
+  ACTIVE
+  HIDDEN
 }
 
-enum LessonStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
 
 enum AssessmentType {
   QUIZ
@@ -79,6 +72,8 @@ model User {
   passwordHash String     @db.VarChar(255)
   fullName     String     @db.VarChar(150)
   avatarUrl    String?    @db.VarChar(500)
+  phoneNumber  String?    @db.VarChar(20)
+  dateOfBirth  DateTime?  @db.Date
   role         UserRole   @default(STUDENT)
   status       UserStatus @default(ACTIVE)
 
@@ -150,9 +145,10 @@ model Course {
   id           String       @id @default(uuid()) @db.Uuid
   teacherId    String       @db.Uuid
   title        String       @db.VarChar(255)
+  slug         String?      @unique @db.VarChar(255)
   description  String?      @db.Text
   thumbnailUrl String?      @db.VarChar(500)
-  status       CourseStatus @default(DRAFT)
+  status       CourseStatus @default(ACTIVE)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
@@ -208,13 +204,12 @@ model Chapter {
 // ============================================================
 
 model Lesson {
-  id        String       @id @default(uuid()) @db.Uuid
-  chapterId String       @db.Uuid
-  title     String       @db.VarChar(255)
-  content   String?      @db.Text
-  videoUrl  String?      @db.VarChar(500)
+  id        String   @id @default(uuid()) @db.Uuid
+  chapterId String   @db.Uuid
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text
+  videoUrl  String?  @db.VarChar(500)
   sortOrder Int
-  status    LessonStatus @default(DRAFT)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
@@ -228,7 +223,6 @@ model Lesson {
 
   @@unique([chapterId, sortOrder])
   @@index([chapterId])
-  @@index([status])
 }
 
 // ============================================================

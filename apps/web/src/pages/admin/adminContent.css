@@ -1,0 +1,1228 @@
+/* ==========================================================================
+   TKU Admin - Content Management (Academic & Minimalist Design System)
+   Synced with TKU Courses & Users Pages
+   ========================================================================== */
+
+.tku-content-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tku-content-page .tku-admin-header {
+  padding: 26px 36px 18px 36px;
+}
+
+.tku-content-content {
+  padding: 0 36px 40px 36px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Banner đồng bộ với trang Khóa học & Người dùng */
+.tku-content-banner {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
+  border-radius: 16px;
+  padding: 24px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.22), 0 8px 10px -6px rgba(37, 99, 235, 0.18);
+  margin-bottom: 22px;
+}
+
+.tku-content-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-content-banner__title {
+  font-size: 21px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-content-banner__desc {
+  font-size: 13.5px;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-weight: 400;
+}
+
+/* Stats Grid chuẩn đồng bộ với TKU Users Page */
+.tku-content-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.tku-content-stat-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef2f6;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tku-content-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tku-content-stat-card__icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-content-stat-card__icon--blue {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-content-stat-card__icon--emerald {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.tku-content-stat-card__icon--amber {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.tku-content-stat-card__icon--purple {
+  background: #faf5ff;
+  color: #7e22ce;
+}
+
+.tku-content-stat-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-content-stat-card__label {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.tku-content-stat-card__value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+/* Filter Bar phẳng, chuẩn TKU Courses & Users */
+.tku-content-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
+
+.tku-content-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 260px;
+}
+
+.tku-content-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-content-search-input {
+  width: 100%;
+  height: 42px;
+  padding: 0 36px 0 38px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 13.5px;
+  color: #0f172a;
+  outline: none;
+  box-sizing: border-box;
+  transition: all 0.18s ease;
+}
+
+.tku-content-search-input:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-content-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-content-search-clear:hover {
+  color: #0f172a;
+}
+
+.tku-content-select-wrap {
+  position: relative;
+  width: 200px;
+}
+
+.tku-content-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 32px 0 14px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  outline: none;
+  appearance: none;
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: all 0.18s ease;
+}
+
+.tku-content-select:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-content-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+}
+
+.tku-content-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  border: 1px dashed #cbd5e1;
+  background-color: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-content-reset-btn:hover {
+  border-color: #1d68f2;
+  color: #1d68f2;
+  background-color: #eff6ff;
+}
+
+/* Master - Detail Main Layout (Tỷ lệ học thuật: Cột trái 360px, Cột phải còn lại) */
+.tku-content-main-layout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* Cột Trái: Danh Sách Khóa Học */
+.tku-content-courses-panel {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+}
+
+.tku-content-panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fafbfc;
+}
+
+.tku-content-panel-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tku-content-panel-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #1d68f2;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.tku-content-panel-list {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 360px);
+  overflow-y: auto;
+  padding: 8px;
+  gap: 4px;
+}
+
+.tku-content-course-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tku-content-course-item:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.tku-content-course-item--active {
+  background: #f8faff !important;
+  border-color: #bfdbfe !important;
+}
+
+.tku-content-course-item--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background-color: #1d68f2;
+}
+
+.tku-content-course-thumb {
+  width: 52px;
+  height: 40px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-content-course-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-content-course-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-content-course-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-content-course-item--active .tku-content-course-title {
+  color: #1d68f2;
+}
+
+.tku-content-course-sub {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-content-course-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 2px;
+}
+
+.tku-content-course-stats {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+/* Badge trạng thái tinh tế */
+.tku-dot-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.tku-dot-badge--active {
+  background-color: #ecfdf5;
+  color: #059669;
+}
+
+.tku-dot-badge--hidden {
+  background-color: #fef2f2;
+  color: #dc2626;
+}
+
+.tku-dot-badge__circle {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.tku-dot-badge--active .tku-dot-badge__circle {
+  background-color: #10b981;
+}
+
+.tku-dot-badge--hidden .tku-dot-badge__circle {
+  background-color: #ef4444;
+}
+
+/* Cột Phải: Khung Chi Tiết Giáo Trình Học Thuật */
+.tku-content-curriculum-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Thẻ Hero Khóa Học Được Chọn */
+.tku-content-card {
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #eef2f6;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+}
+
+.tku-content-hero-header {
+  padding: 22px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-content-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tku-content-hero-img-box {
+  width: 64px;
+  height: 48px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-content-hero-img-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-content-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-content-hero-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-content-academic-pill {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #1d68f2;
+  background: #eff6ff;
+  border: 1px solid #dbeafe;
+  padding: 2px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.tku-content-hero-main-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.tku-content-hero-teacher-line {
+  font-size: 12.5px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-content-hero-teacher-line strong {
+  color: #0f172a;
+}
+
+/* Nút Admin Toggle Ẩn/Hiện Tối Giản, Thanh Lịch */
+.tku-content-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.tku-content-action-btn--hide {
+  background: #fff5f5;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+
+.tku-content-action-btn--hide:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.tku-content-action-btn--show {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.tku-content-action-btn--show:hover:not(:disabled) {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.tku-content-action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Phần Cấu Trúc Giáo Trình */
+.tku-content-curriculum-header {
+  padding: 16px 24px;
+  background: #fafbfc;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-content-curriculum-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.tku-content-curriculum-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-content-curriculum-summary {
+  font-size: 12.5px;
+  color: #64748b;
+}
+
+.tku-content-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #475569;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  padding: 5px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-content-expand-btn:hover {
+  color: #1d68f2;
+  border-color: #bfdbfe;
+  background: #f8fafc;
+}
+
+/* Danh Sách Các Chương */
+.tku-content-chapters-body {
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-content-chapter-block {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.tku-content-chapter-block--open {
+  border-color: #cbd5e1;
+}
+
+.tku-content-chapter-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background-color 0.15s ease;
+}
+
+.tku-content-chapter-bar:hover {
+  background: #f1f5f9;
+}
+
+.tku-content-chapter-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tku-content-chapter-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  background: #e2e8f0;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+
+.tku-content-chapter-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  word-break: break-word;
+}
+
+.tku-content-chapter-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tku-content-lesson-count-tag {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tku-content-chevron {
+  color: #94a3b8;
+  transition: transform 0.2s ease;
+}
+
+.tku-content-chevron--open {
+  transform: rotate(180deg);
+  color: #1d68f2;
+}
+
+/* Danh Sách Bài Học Trong Chương */
+.tku-content-lesson-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tku-content-lesson-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 18px;
+  border-top: 1px solid #f1f5f9;
+  background: #ffffff;
+  gap: 14px;
+  transition: background 0.15s ease;
+}
+
+.tku-content-lesson-item:hover {
+  background: #fafbfc;
+}
+
+.tku-content-lesson-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tku-content-lesson-idx {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+  width: 18px;
+  text-align: center;
+}
+
+.tku-content-lesson-type-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-content-lesson-type-icon--video {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-content-lesson-type-icon--doc {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.tku-content-lesson-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.tku-content-lesson-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tku-content-type-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.tku-content-type-badge--video {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #dcfce7;
+}
+
+.tku-content-type-badge--pub {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-content-type-badge--draft {
+  background: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-content-view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+  transition: all 0.15s ease;
+}
+
+.tku-content-view-btn:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+}
+
+.tku-content-empty-block {
+  padding: 20px;
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  font-style: italic;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-content-no-content-state {
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #94a3b8;
+}
+
+/* Modals */
+.tku-content-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.tku-content-modal-box {
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15);
+  width: 100%;
+  max-width: 500px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.tku-content-modal-box--preview {
+  max-width: 720px;
+  max-height: 88vh;
+}
+
+.tku-content-modal-header {
+  padding: 16px 22px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-content-modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-content-modal-close {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-content-modal-close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-content-modal-body {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.tku-content-modal-footer {
+  padding: 14px 22px;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  background-color: #fafbfc;
+}
+
+.tku-content-cancel-btn {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.tku-content-cancel-btn:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .tku-content-main-layout {
+    grid-template-columns: 1fr;
+  }
+  .tku-content-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-content-page .tku-admin-header,
+  .tku-content-content {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .tku-content-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-content-hero-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* ==========================================================================
+   Confirm Visibility Modal Styling (Elegant & Academic)
+   ========================================================================== */
+.tku-content-modal-box--confirm {
+  max-width: 490px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
+}
+
+.tku-confirm-modal-header {
+  padding: 22px 24px 18px 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-confirm-modal-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-confirm-modal-icon--danger {
+  background-color: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #ffe4e6;
+}
+
+.tku-confirm-modal-icon--success {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.tku-confirm-modal-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tku-confirm-modal-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.tku-confirm-modal-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.tku-confirm-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tku-confirm-course-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #eef2f6;
+}
+
+.tku-confirm-course-thumb {
+  width: 48px;
+  height: 36px;
+  border-radius: 6px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-confirm-course-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-confirm-course-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-confirm-course-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-confirm-course-teacher {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tku-confirm-callout {
+  padding: 12px 14px;
+  border-radius: 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.tku-confirm-callout--danger {
+  background-color: #fff8f8;
+  border: 1px solid #fee2e2;
+  color: #9f1239;
+}
+
+.tku-confirm-callout--danger .tku-confirm-callout-icon {
+  color: #e11d48;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tku-confirm-callout--success {
+  background-color: #f0fdf4;
+  border: 1px solid #dcfce7;
+  color: #065f46;
+}
+
+.tku-confirm-callout--success .tku-confirm-callout-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tku-confirm-callout-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.tku-confirm-callout-title {
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.tku-confirm-callout-text {
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+  opacity: 0.95;
+}
+
+.tku-confirm-modal-footer {
+  padding: 16px 24px;
+  background-color: #fafbfc;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.tku-confirm-btn-cancel {
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  transition: all 0.15s ease;
+}
+
+.tku-confirm-btn-cancel:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.tku-confirm-btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  color: #ffffff;
+  transition: all 0.18s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.tku-confirm-btn-action--danger {
+  background-color: #e11d48;
+}
+
+.tku-confirm-btn-action--danger:hover:not(:disabled) {
+  background-color: #be123c;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.25);
+  transform: translateY(-1px);
+}
+
+.tku-confirm-btn-action--success {
+  background-color: #059669;
+}
+
+.tku-confirm-btn-action--success:hover:not(:disabled) {
+  background-color: #047857;
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+  transform: translateY(-1px);
+}
+
+.tku-confirm-btn-action:disabled,
+.tku-confirm-btn-cancel:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+

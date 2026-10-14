@@ -1,0 +1,414 @@
+/* ==========================================================================
+   Lecturer Courses Page Styles - Modern Academic Design System
+   Synchronized with TKU Admin and Lecturer Dashboard
+   ========================================================================== */
+
+.tku-lecturer-courses-page {
+  padding: 28px 36px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* 1. Academic Banner */
+.tku-lecturer-courses-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(29, 104, 242, 0.16);
+  position: relative;
+  overflow: hidden;
+}
+
+.tku-lecturer-courses-banner::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-lecturer-courses-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 800px;
+  position: relative;
+  z-index: 1;
+}
+
+.tku-lecturer-courses-banner__title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-lecturer-courses-banner__desc {
+  font-size: 14px;
+  margin: 0;
+  color: #e0e7ff;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
+/* 2. Stats Grid */
+.tku-lecturer-courses-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.tku-lecturer-courses-stat-card {
+  background-color: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tku-lecturer-courses-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tku-lecturer-courses-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-lecturer-courses-stat-icon--blue {
+  background-color: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-lecturer-courses-stat-icon--emerald {
+  background-color: #ecfdf5;
+  color: #10b981;
+}
+
+.tku-lecturer-courses-stat-icon--purple {
+  background-color: #f5f3ff;
+  color: #8b5cf6;
+}
+
+.tku-lecturer-courses-stat-icon--amber {
+  background-color: #fffbeb;
+  color: #f59e0b;
+}
+
+.tku-lecturer-courses-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tku-lecturer-courses-stat-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.tku-lecturer-courses-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* 3. Filter Bar */
+.tku-lecturer-courses-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-lecturer-courses-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 280px;
+}
+
+.tku-lecturer-courses-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-lecturer-courses-search-input {
+  width: 100%;
+  height: 42px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 36px 0 38px;
+  font-size: 13.5px;
+  color: #0f172a;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tku-lecturer-courses-search-input:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-lecturer-courses-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.tku-lecturer-courses-search-clear:hover {
+  color: #0f172a;
+  background-color: #f1f5f9;
+}
+
+.tku-lecturer-courses-select-wrap {
+  position: relative;
+  min-width: 180px;
+}
+
+.tku-lecturer-courses-select {
+  width: 100%;
+  height: 42px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 34px 0 14px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tku-lecturer-courses-select:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-lecturer-courses-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-lecturer-courses-reset-btn {
+  height: 42px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-lecturer-courses-reset-btn:hover {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+/* 4. Table View */
+.tku-lecturer-courses-table-card {
+  background-color: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.tku-lecturer-courses-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tku-lecturer-courses-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.tku-lecturer-courses-table th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tku-lecturer-courses-table td {
+  padding: 16px 20px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+}
+
+.tku-lecturer-courses-table tr:hover td {
+  background-color: #fcfdfd;
+}
+
+.tku-lecturer-table-course-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tku-lecturer-table-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background-color: #f1f5f9;
+}
+
+.tku-lecturer-table-course-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14.5px;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.tku-lecturer-pencil-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background-color: #eff6ff;
+  border: 1px solid rgba(29, 104, 242, 0.2);
+  color: #1d68f2;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tku-lecturer-pencil-action-btn:hover {
+  background-color: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.25);
+}
+
+/* 6. Empty State */
+.tku-lecturer-courses-empty {
+  background-color: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  padding: 72px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.tku-lecturer-courses-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-lecturer-courses-empty-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-lecturer-courses-empty-desc {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 500px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Responsive adjustments */
+@media (max-width: 1024px) {
+  .tku-lecturer-courses-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tku-lecturer-courses-page {
+    padding: 20px 20px 36px 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-lecturer-courses-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-lecturer-courses-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tku-lecturer-courses-search-wrap,
+  .tku-lecturer-courses-select-wrap {
+    min-width: 100%;
+  }
+}
