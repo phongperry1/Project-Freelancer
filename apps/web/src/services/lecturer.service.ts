@@ -8,7 +8,6 @@ export interface LessonSummary {
   title: string;
   sortOrder: number;
   durationMinutes?: number | null;
-  status: string;
   videoUrl?: string | null;
   content?: string | null;
 }
@@ -182,26 +181,25 @@ class LecturerService {
     }
   }
 
-  async getCourseDetail(courseId: string): Promise<LecturerCourseItem | null> {
-    try {
-      const token = authService.getStoredToken();
-      if (!token) return null;
-
-      const res = await fetch(`${API_BASE_URL}/lecturer/courses/${courseId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!res.ok) {
-        return null;
-      }
-
-      return await res.json();
-    } catch {
-      return null;
+  async getCourseDetail(courseId: string): Promise<LecturerCourseItem> {
+    const token = authService.getStoredToken();
+    if (!token) {
+      throw new Error('Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn.');
     }
+
+    const res = await fetch(`${API_BASE_URL}/lecturer/courses/${courseId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải thông tin khóa học và giáo trình.');
+    }
+
+    return await res.json();
   }
 
   async addChapter(courseId: string, title: string): Promise<ChapterSummary> {
@@ -259,7 +257,6 @@ class LecturerService {
       title: string;
       content?: string | null;
       videoUrl?: string | null;
-      status?: 'DRAFT' | 'PUBLISHED';
     },
   ): Promise<LessonSummary> {
     const token = authService.getStoredToken();
@@ -284,7 +281,6 @@ class LecturerService {
       title?: string;
       content?: string | null;
       videoUrl?: string | null;
-      status?: 'DRAFT' | 'PUBLISHED';
     },
   ): Promise<LessonSummary> {
     const token = authService.getStoredToken();

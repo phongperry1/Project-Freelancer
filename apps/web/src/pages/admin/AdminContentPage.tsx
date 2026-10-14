@@ -30,10 +30,13 @@ import './adminContent.css';
 
 const getYouTubeEmbedUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-  const match = url.match(regExp);
-  return match && match[2].length === 11
-    ? `https://www.youtube.com/embed/${match[2]}`
+  const match = url
+    .trim()
+    .match(
+      /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?|shorts|live)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/,
+    );
+  return match?.[1]
+    ? `https://www.youtube-nocookie.com/embed/${match[1]}?rel=0&modestbranding=1&iv_load_policy=3&playsinline=1`
     : null;
 };
 
@@ -789,17 +792,6 @@ export const AdminContentPage: React.FC = () => {
                                                 Video
                                               </span>
                                             )}
-                                            <span
-                                              className={`tku-content-type-badge ${
-                                                lesson.status === 'PUBLISHED'
-                                                  ? 'tku-content-type-badge--pub'
-                                                  : 'tku-content-type-badge--draft'
-                                              }`}
-                                            >
-                                              {lesson.status === 'PUBLISHED'
-                                                ? 'Đã xuất bản'
-                                                : 'Bản nháp'}
-                                            </span>
 
                                             <button
                                               type="button"
@@ -851,15 +843,6 @@ export const AdminContentPage: React.FC = () => {
             <div className="tku-content-modal-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h3 className="tku-content-modal-title">{previewLesson.title}</h3>
-                <span
-                  className={`tku-content-type-badge ${
-                    previewLesson.status === 'PUBLISHED'
-                      ? 'tku-content-type-badge--pub'
-                      : 'tku-content-type-badge--draft'
-                  }`}
-                >
-                  {previewLesson.status === 'PUBLISHED' ? 'Đã xuất bản' : 'Bản nháp'}
-                </span>
               </div>
               <button
                 type="button"

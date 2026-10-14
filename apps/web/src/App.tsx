@@ -29,6 +29,7 @@ const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
 const LecturerLayout = lazy(() => import('./pages/lecturer/LecturerLayout'));
 const LecturerDashboardPage = lazy(() => import('./pages/lecturer/LecturerDashboardPage'));
 const LecturerCoursesPage = lazy(() => import('./pages/lecturer/LecturerCoursesPage'));
+const LecturerCourseCurriculumPage = lazy(() => import('./pages/lecturer/LecturerCourseCurriculumPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -114,6 +115,7 @@ export const App: React.FC = () => {
                 <Route index element={<Navigate to="/lecturer/dashboard" replace />} />
                 <Route path="dashboard" element={<LecturerDashboardPage />} />
                 <Route path="courses" element={<LecturerCoursesPage />} />
+                <Route path="courses/:id/curriculum" element={<LecturerCourseCurriculumPage />} />
               </Route>
               <Route
                 path="/teacher/*"
