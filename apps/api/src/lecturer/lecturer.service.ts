@@ -24,8 +24,8 @@ export interface LecturerCourseItem {
       title: string;
       sortOrder: number;
       durationMinutes?: number | null;
-      status: string;
       videoUrl?: string | null;
+      content?: string | null;
     }>;
   }>;
 }
@@ -72,8 +72,8 @@ export class LecturerService {
                 id: true,
                 title: true,
                 sortOrder: true,
-                status: true,
                 videoUrl: true,
+                content: true,
               },
             },
             _count: {
@@ -128,7 +128,7 @@ export class LecturerService {
         chapterCount: c._count.chapters,
         lessonCount,
         updatedAt: `Cập nhật ${this.formatDate(updatedDate)}`,
-        createdAt: this.formatDate(c.createdAt),
+        createdAt: c.createdAt.toISOString(),
         chapters: c.chapters.map((ch) => ({
           id: ch.id,
           title: ch.title,
@@ -139,8 +139,8 @@ export class LecturerService {
             title: l.title,
             sortOrder: l.sortOrder,
             durationMinutes: null,
-            status: l.status,
             videoUrl: l.videoUrl,
+            content: l.content,
           })),
         })),
       };
@@ -175,8 +175,8 @@ export class LecturerService {
                 id: true,
                 title: true,
                 sortOrder: true,
-                status: true,
                 videoUrl: true,
+                content: true,
               },
             },
             _count: {
@@ -222,7 +222,7 @@ export class LecturerService {
       chapterCount: course._count.chapters,
       lessonCount,
       updatedAt: `Cập nhật ${this.formatDate(course.updatedAt || course.createdAt)}`,
-      createdAt: this.formatDate(course.createdAt),
+      createdAt: course.createdAt.toISOString(),
       chapters: course.chapters.map((ch) => ({
         id: ch.id,
         title: ch.title,
@@ -233,8 +233,8 @@ export class LecturerService {
           title: l.title,
           sortOrder: l.sortOrder,
           durationMinutes: null,
-          status: l.status,
           videoUrl: l.videoUrl,
+          content: l.content,
         })),
       })),
     };
@@ -358,7 +358,6 @@ export class LecturerService {
       title: string;
       content?: string | null;
       videoUrl?: string | null;
-      status?: 'DRAFT' | 'PUBLISHED';
     } = { title: '' },
   ) {
     const chapter = await this.prisma.chapter.findUnique({
@@ -387,7 +386,6 @@ export class LecturerService {
         title: data.title.trim() || `Bài ${sortOrder}`,
         content: data.content ?? null,
         videoUrl: data.videoUrl ?? null,
-        status: data.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT',
         sortOrder,
       },
     });
@@ -401,7 +399,6 @@ export class LecturerService {
       title?: string;
       content?: string | null;
       videoUrl?: string | null;
-      status?: 'DRAFT' | 'PUBLISHED';
     } = {},
   ) {
     const lesson = await this.prisma.lesson.findUnique({
@@ -425,7 +422,6 @@ export class LecturerService {
         ...(data.title ? { title: data.title.trim() } : {}),
         ...(data.content !== undefined ? { content: data.content } : {}),
         ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl } : {}),
-        ...(data.status ? { status: data.status } : {}),
       },
     });
   }
