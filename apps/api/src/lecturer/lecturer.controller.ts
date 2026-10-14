@@ -186,7 +186,6 @@ export class LecturerController {
       title: string;
       content?: string;
       videoUrl?: string;
-      status?: 'DRAFT' | 'PUBLISHED';
     },
     @Headers('authorization') authorization?: string,
   ) {
@@ -205,7 +204,6 @@ export class LecturerController {
       title?: string;
       content?: string;
       videoUrl?: string;
-      status?: 'DRAFT' | 'PUBLISHED';
     },
     @Headers('authorization') authorization?: string,
   ) {

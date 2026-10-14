@@ -34,11 +34,6 @@ enum CourseStatus {
   HIDDEN
 }
 
-enum LessonStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
 
 enum AssessmentType {
   QUIZ
@@ -209,13 +204,12 @@ model Chapter {
 // ============================================================
 
 model Lesson {
-  id        String       @id @default(uuid()) @db.Uuid
-  chapterId String       @db.Uuid
-  title     String       @db.VarChar(255)
-  content   String?      @db.Text
-  videoUrl  String?      @db.VarChar(500)
+  id        String   @id @default(uuid()) @db.Uuid
+  chapterId String   @db.Uuid
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text
+  videoUrl  String?  @db.VarChar(500)
   sortOrder Int
-  status    LessonStatus @default(DRAFT)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
@@ -229,7 +223,6 @@ model Lesson {
 
   @@unique([chapterId, sortOrder])
   @@index([chapterId])
-  @@index([status])
 }
 
 // ============================================================

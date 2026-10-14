@@ -783,7 +783,6 @@ export class AdminService {
                 id: true,
                 title: true,
                 sortOrder: true,
-                status: true,
                 videoUrl: true,
                 content: true,
                 createdAt: true,

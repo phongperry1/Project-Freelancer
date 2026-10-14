@@ -107,6 +107,20 @@ export const LecturerLayout: React.FC = () => {
 
   // Determine active breadcrumb label
   const breadcrumbCurrent = useMemo(() => {
+    if (location.pathname.includes('/curriculum')) {
+      return (
+        <>
+          <Link
+            to="/lecturer/courses"
+            style={{ color: '#64748b', textDecoration: 'none' }}
+          >
+            Khóa học của tôi
+          </Link>
+          <span className="tku-lecturer-breadcrumbs__sep" style={{ margin: '0 6px' }}>/</span>
+          <span style={{ color: '#1d68f2', fontWeight: 700 }}>Biên soạn giáo trình</span>
+        </>
+      );
+    }
     const all = [...TEACHING_NAV_ITEMS, ...PERSONAL_NAV_ITEMS];
     const match = all.find((item) => item.isActive(location.pathname));
     if (match) return match.label;
