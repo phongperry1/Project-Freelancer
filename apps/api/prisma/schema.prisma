@@ -156,6 +156,7 @@ model Course {
   teacher     User               @relation(fields: [teacherId], references: [id], onDelete: Restrict)
   enrollments CourseEnrollment[]
   chapters    Chapter[]
+  assessments Assessment[]
 
   @@index([teacherId])
   @@index([status])
@@ -271,18 +272,23 @@ model LessonNote {
 
 model Assessment {
   id              String         @id @default(uuid()) @db.Uuid
-  lessonId        String         @db.Uuid
+  courseId        String         @db.Uuid
+  lessonId        String?        @db.Uuid
   title           String         @db.VarChar(255)
   type            AssessmentType
   durationMinutes Int?
+  startDate       DateTime?      @db.Timestamptz(6)
+  dueDate         DateTime?      @db.Timestamptz(6)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-  lesson      Lesson                 @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course      Course                 @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson      Lesson?                @relation(fields: [lessonId], references: [id], onDelete: SetNull)
   questions   Question[]
   submissions AssessmentSubmission[]
 
+  @@index([courseId])
   @@index([lessonId])
   @@index([type])
 }
@@ -296,7 +302,7 @@ model Question {
   assessmentId    String       @db.Uuid
   content         String       @db.Text
   type            QuestionType
-  score           Int          @default(1)
+  score           Float        @default(1)
   sortOrder       Int
   solutionText    String?      @db.Text
   solutionFileUrl String?      @db.VarChar(500)

@@ -1,5 +1,74 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { AssessmentType, QuestionType } from '../generated/prisma/enums.js';
+
+export interface AssessmentOptionItem {
+  id?: string;
+  content: string;
+  isCorrect: boolean;
+  sortOrder?: number;
+}
+
+export interface AssessmentQuestionItem {
+  id?: string;
+  content: string;
+  type?: QuestionType;
+  score?: number;
+  sortOrder?: number;
+  solutionText?: string | null;
+  solutionFileUrl?: string | null;
+  options?: AssessmentOptionItem[];
+}
+
+export interface LecturerAssessmentItem {
+  id: string;
+  title: string;
+  type: AssessmentType;
+  courseId: string;
+  courseTitle: string;
+  lessonId?: string | null;
+  lessonTitle?: string | null;
+  chapterTitle?: string | null;
+  durationMinutes?: number | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  status: 'DRAFT' | 'ASSIGNED' | 'CLOSED';
+  statusText: string;
+  totalScore: number;
+  questionCount: number;
+  assignedStudentsCount: number;
+  submittedCount: number;
+  createdAt: string;
+  updatedAt: string;
+  questions?: AssessmentQuestionItem[];
+}
+
+export interface CreateAssessmentDto {
+  title?: string;
+  type?: AssessmentType;
+  courseId?: string;
+  lessonId?: string | null;
+  durationMinutes?: number | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  questions?: AssessmentQuestionItem[];
+}
+
+export interface UpdateAssessmentDto {
+  title?: string;
+  type?: AssessmentType;
+  courseId?: string;
+  lessonId?: string | null;
+  durationMinutes?: number | null;
+  startDate?: string | null;
+  dueDate?: string | null;
+  questions?: AssessmentQuestionItem[];
+}
 
 export interface LecturerCourseItem {
   id: string;
@@ -240,6 +309,46 @@ export class LecturerService {
     };
   }
 
+  async getCourseStudents(userId: string, courseId: string, role?: string) {
+    const whereCourse =
+      role === 'ADMIN'
+        ? { id: courseId }
+        : { id: courseId, teacherId: userId };
+
+    const course = await this.prisma.course.findFirst({
+      where: whereCourse,
+      include: {
+        enrollments: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+          },
+          orderBy: { enrolledAt: 'desc' },
+        },
+      },
+    });
+
+    if (!course) {
+      throw new NotFoundException(
+        'Không tìm thấy khóa học hoặc bạn không có quyền xem khóa học này.',
+      );
+    }
+
+    return course.enrollments.map((en) => ({
+      id: en.student.id,
+      fullName: en.student.fullName,
+      email: en.student.email,
+      avatarUrl: en.student.avatarUrl,
+      enrolledAt: en.enrolledAt.toISOString(),
+    }));
+  }
+
   async getDashboardData(userId: string, role?: string) {
     const assigned = await this.getAssignedCourses(userId, role);
     return {
@@ -443,5 +552,382 @@ export class LecturerService {
     return this.prisma.lesson.delete({
       where: { id: lessonId },
     });
+  }
+
+  // ============================================================
+  // ASSESSMENTS & ASSIGNMENTS METHODS (DATABASE BACKED)
+  // ============================================================
+
+  private computeAssessmentStatus(
+    startDate?: Date | null,
+    dueDate?: Date | null,
+  ): { status: 'DRAFT' | 'ASSIGNED' | 'CLOSED'; statusText: string } {
+    const now = new Date();
+    if (!startDate && !dueDate) {
+      return { status: 'DRAFT', statusText: 'Bản nháp' };
+    }
+    if (dueDate && now > dueDate) {
+      return { status: 'CLOSED', statusText: 'Đã đóng' };
+    }
+    if (startDate && now < startDate) {
+      return { status: 'ASSIGNED', statusText: 'Chưa mở' };
+    }
+    return { status: 'ASSIGNED', statusText: 'Đang mở' };
+  }
+
+  async getAssessments(
+    userId: string,
+    role?: string,
+    courseId?: string,
+  ): Promise<LecturerAssessmentItem[]> {
+    const whereCourse = role === 'ADMIN' ? {} : { teacherId: userId };
+
+    const teacherCourses = await this.prisma.course.findMany({
+      where: courseId ? { ...whereCourse, id: courseId } : whereCourse,
+      select: { id: true },
+    });
+    const allowedCourseIds = teacherCourses.map((c) => c.id);
+
+    if (allowedCourseIds.length === 0) {
+      return [];
+    }
+
+    const assessments = await this.prisma.assessment.findMany({
+      where: { courseId: { in: allowedCourseIds } },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            _count: { select: { enrollments: true } },
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            chapter: { select: { id: true, title: true } },
+          },
+        },
+        questions: {
+          select: { id: true, score: true },
+        },
+        _count: {
+          select: { submissions: true },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    return assessments.map((a) => {
+      const { status, statusText } = this.computeAssessmentStatus(
+        a.startDate,
+        a.dueDate,
+      );
+      const totalScore =
+        Math.round(
+          a.questions.reduce((sum, q) => sum + (q.score || 0), 0) * 100,
+        ) / 100;
+
+      return {
+        id: a.id,
+        title: a.title,
+        type: a.type,
+        courseId: a.courseId,
+        courseTitle: a.course.title,
+        lessonId: a.lessonId,
+        lessonTitle: a.lesson?.title,
+        chapterTitle: a.lesson?.chapter?.title,
+        durationMinutes: a.durationMinutes,
+        startDate: a.startDate ? a.startDate.toISOString() : null,
+        dueDate: a.dueDate ? a.dueDate.toISOString() : null,
+        status,
+        statusText,
+        totalScore,
+        questionCount: a.questions.length,
+        assignedStudentsCount: a.course._count.enrollments,
+        submittedCount: a._count.submissions,
+        createdAt: a.createdAt.toISOString(),
+        updatedAt: a.updatedAt.toISOString(),
+      };
+    });
+  }
+
+  async getAssessmentById(
+    userId: string,
+    assessmentId: string,
+    role?: string,
+  ): Promise<LecturerAssessmentItem> {
+    const a = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            teacherId: true,
+            _count: { select: { enrollments: true } },
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            chapter: { select: { id: true, title: true } },
+          },
+        },
+        questions: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            options: {
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+        _count: {
+          select: { submissions: true },
+        },
+      },
+    });
+
+    if (!a) {
+      throw new NotFoundException('Không tìm thấy bài tập hoặc bài kiểm tra.');
+    }
+
+    if (role !== 'ADMIN' && a.course.teacherId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền xem bài tập này.');
+    }
+
+    const { status, statusText } = this.computeAssessmentStatus(
+      a.startDate,
+      a.dueDate,
+    );
+    const totalScore =
+      Math.round(
+        a.questions.reduce((sum, q) => sum + (q.score || 0), 0) * 100,
+      ) / 100;
+
+    return {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      courseId: a.courseId,
+      courseTitle: a.course.title,
+      lessonId: a.lessonId,
+      lessonTitle: a.lesson?.title,
+      chapterTitle: a.lesson?.chapter?.title,
+      durationMinutes: a.durationMinutes,
+      startDate: a.startDate ? a.startDate.toISOString() : null,
+      dueDate: a.dueDate ? a.dueDate.toISOString() : null,
+      status,
+      statusText,
+      totalScore,
+      questionCount: a.questions.length,
+      assignedStudentsCount: a.course._count.enrollments,
+      submittedCount: a._count.submissions,
+      createdAt: a.createdAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString(),
+      questions: a.questions.map((q) => ({
+        id: q.id,
+        content: q.content,
+        type: q.type,
+        score: q.score,
+        sortOrder: q.sortOrder,
+        solutionText: q.solutionText,
+        solutionFileUrl: q.solutionFileUrl,
+        options: q.options.map((opt) => ({
+          id: opt.id,
+          content: opt.content,
+          isCorrect: opt.isCorrect,
+          sortOrder: opt.sortOrder,
+        })),
+      })),
+    };
+  }
+
+  async createAssessment(
+    userId: string,
+    data: CreateAssessmentDto,
+    role?: string,
+  ): Promise<LecturerAssessmentItem> {
+    let targetCourseId = data.courseId;
+
+    if (!targetCourseId) {
+      const firstCourse = await this.prisma.course.findFirst({
+        where: role === 'ADMIN' ? {} : { teacherId: userId },
+        orderBy: { createdAt: 'asc' },
+      });
+      if (!firstCourse) {
+        throw new BadRequestException(
+          'Bạn chưa có khóa học nào để tạo bài tập. Vui lòng tạo khóa học trước.',
+        );
+      }
+      targetCourseId = firstCourse.id;
+    } else {
+      const course = await this.prisma.course.findUnique({
+        where: { id: targetCourseId },
+      });
+      if (!course) {
+        throw new NotFoundException('Không tìm thấy khóa học.');
+      }
+      if (role !== 'ADMIN' && course.teacherId !== userId) {
+        throw new ForbiddenException(
+          'Bạn không có quyền tạo bài tập cho khóa học này.',
+        );
+      }
+    }
+
+    const created = await this.prisma.assessment.create({
+      data: {
+        courseId: targetCourseId,
+        lessonId: data.lessonId || null,
+        title: data.title?.trim() || 'Bài tập mới',
+        type: data.type || AssessmentType.QUIZ,
+        durationMinutes: data.durationMinutes
+          ? Number(data.durationMinutes)
+          : null,
+        startDate: data.startDate ? new Date(data.startDate) : null,
+        dueDate: data.dueDate ? new Date(data.dueDate) : null,
+        questions: data.questions?.length
+          ? {
+              create: data.questions.map((q, qIdx) => ({
+                content: q.content || '',
+                type: q.type || QuestionType.SINGLE_CHOICE,
+                score: Number(q.score) || 1,
+                sortOrder: q.sortOrder ?? qIdx + 1,
+                solutionText: q.solutionText || null,
+                solutionFileUrl: q.solutionFileUrl || null,
+                options: q.options?.length
+                  ? {
+                      create: q.options.map((opt, optIdx) => ({
+                        content: opt.content || '',
+                        isCorrect: Boolean(opt.isCorrect),
+                        sortOrder: opt.sortOrder ?? optIdx + 1,
+                      })),
+                    }
+                  : undefined,
+              })),
+            }
+          : undefined,
+      },
+    });
+
+    return this.getAssessmentById(userId, created.id, role);
+  }
+
+  async updateAssessment(
+    userId: string,
+    assessmentId: string,
+    data: UpdateAssessmentDto,
+    role?: string,
+  ): Promise<LecturerAssessmentItem> {
+    const existing = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { course: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Không tìm thấy bài tập hoặc bài kiểm tra.');
+    }
+    if (role !== 'ADMIN' && existing.course.teacherId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa bài tập này.');
+    }
+
+    if (data.courseId && data.courseId !== existing.courseId) {
+      const targetCourse = await this.prisma.course.findUnique({
+        where: { id: data.courseId },
+      });
+      if (!targetCourse) {
+        throw new NotFoundException('Khóa học mới không tồn tại.');
+      }
+      if (role !== 'ADMIN' && targetCourse.teacherId !== userId) {
+        throw new ForbiddenException(
+          'Bạn không có quyền chuyển bài sang khóa học này.',
+        );
+      }
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.assessment.update({
+        where: { id: assessmentId },
+        data: {
+          ...(data.title !== undefined
+            ? { title: data.title.trim() || 'Bài tập' }
+            : {}),
+          ...(data.type !== undefined ? { type: data.type } : {}),
+          ...(data.courseId !== undefined ? { courseId: data.courseId } : {}),
+          ...(data.lessonId !== undefined
+            ? { lessonId: data.lessonId || null }
+            : {}),
+          ...(data.durationMinutes !== undefined
+            ? {
+                durationMinutes: data.durationMinutes
+                  ? Number(data.durationMinutes)
+                  : null,
+              }
+            : {}),
+          ...(data.startDate !== undefined
+            ? { startDate: data.startDate ? new Date(data.startDate) : null }
+            : {}),
+          ...(data.dueDate !== undefined
+            ? { dueDate: data.dueDate ? new Date(data.dueDate) : null }
+            : {}),
+        },
+      });
+
+      if (data.questions !== undefined) {
+        await tx.question.deleteMany({
+          where: { assessmentId },
+        });
+
+        for (let qIdx = 0; qIdx < data.questions.length; qIdx++) {
+          const q = data.questions[qIdx];
+          await tx.question.create({
+            data: {
+              assessmentId,
+              content: q.content || '',
+              type: q.type || QuestionType.SINGLE_CHOICE,
+              score: Number(q.score) || 1,
+              sortOrder: qIdx + 1,
+              solutionText: q.solutionText || null,
+              solutionFileUrl: q.solutionFileUrl || null,
+              options: q.options?.length
+                ? {
+                    create: q.options.map((opt, optIdx) => ({
+                      content: opt.content || '',
+                      isCorrect: Boolean(opt.isCorrect),
+                      sortOrder: optIdx + 1,
+                    })),
+                  }
+                : undefined,
+            },
+          });
+        }
+      }
+    });
+
+    return this.getAssessmentById(userId, assessmentId, role);
+  }
+
+  async deleteAssessment(
+    userId: string,
+    assessmentId: string,
+    role?: string,
+  ): Promise<{ success: boolean }> {
+    const existing = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: { course: true },
+    });
+    if (!existing) {
+      throw new NotFoundException('Không tìm thấy bài tập.');
+    }
+    if (role !== 'ADMIN' && existing.course.teacherId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền xóa bài tập này.');
+    }
+
+    await this.prisma.assessment.delete({
+      where: { id: assessmentId },
+    });
+
+    return { success: true };
   }
 }

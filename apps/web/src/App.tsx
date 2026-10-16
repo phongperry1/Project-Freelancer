@@ -30,6 +30,12 @@ const LecturerLayout = lazy(() => import('./pages/lecturer/LecturerLayout'));
 const LecturerDashboardPage = lazy(() => import('./pages/lecturer/LecturerDashboardPage'));
 const LecturerCoursesPage = lazy(() => import('./pages/lecturer/LecturerCoursesPage'));
 const LecturerCourseCurriculumPage = lazy(() => import('./pages/lecturer/LecturerCourseCurriculumPage'));
+const LecturerAssignmentsPage = lazy(() => import('./pages/lecturer/LecturerAssignmentsPage'));
+const LecturerCreateAssignmentPage = lazy(() => import('./pages/lecturer/LecturerCreateAssignmentPage'));
+const LecturerEditAssignmentPage = lazy(() => import('./pages/lecturer/LecturerEditAssignmentPage'));
+const LecturerQuestionAuthoringPage = lazy(() => import('./pages/lecturer/LecturerQuestionAuthoringPage'));
+const LecturerScoringPage = lazy(() => import('./pages/lecturer/LecturerScoringPage'));
+const LecturerAssignPage = lazy(() => import('./pages/lecturer/LecturerAssignPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -116,6 +122,12 @@ export const App: React.FC = () => {
                 <Route path="dashboard" element={<LecturerDashboardPage />} />
                 <Route path="courses" element={<LecturerCoursesPage />} />
                 <Route path="courses/:id/curriculum" element={<LecturerCourseCurriculumPage />} />
+                <Route path="assignments" element={<LecturerAssignmentsPage />} />
+                <Route path="assignments/create" element={<LecturerCreateAssignmentPage />} />
+                <Route path="assignments/:id/edit" element={<LecturerEditAssignmentPage />} />
+                <Route path="assignments/:id/questions" element={<LecturerQuestionAuthoringPage />} />
+                <Route path="assignments/:id/scoring" element={<LecturerScoringPage />} />
+                <Route path="assignments/:id/assign" element={<LecturerAssignPage />} />
               </Route>
               <Route
                 path="/teacher/*"

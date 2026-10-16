@@ -4,6 +4,8 @@ type ToastListener = (toast: ToastItem) => void;
 
 class ToastEmitter {
   private listeners: Set<ToastListener> = new Set();
+  private lastToastKey = '';
+  private lastToastTime = 0;
 
   subscribe(listener: ToastListener): () => void {
     this.listeners.add(listener);
@@ -13,7 +15,16 @@ class ToastEmitter {
   }
 
   emit(message: string, type: ToastType, options?: ToastOptions): string {
-    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const now = Date.now();
+    const key = `${type}:${message}`;
+    // Deduplicate identical toast messages fired within 600ms (e.g., React StrictMode or rapid double clicks)
+    if (key === this.lastToastKey && now - this.lastToastTime < 600) {
+      return '';
+    }
+    this.lastToastKey = key;
+    this.lastToastTime = now;
+
+    const id = `${now}-${Math.random().toString(36).substring(2, 9)}`;
     const defaultDuration = type === 'error' ? 4500 : 3800;
 
     const item: ToastItem = {
@@ -22,7 +33,7 @@ class ToastEmitter {
       title: options?.title,
       message,
       duration: options?.duration ?? defaultDuration,
-      createdAt: Date.now(),
+      createdAt: now,
     };
 
     this.listeners.forEach((listener) => {

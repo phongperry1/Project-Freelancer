@@ -1,0 +1,690 @@
+/* ==========================================================================
+   TKU Academic Platform - Lecturer Create Assignment / Exam Page
+   Synchronized with TKU Academic Design System (Plus Jakarta Sans)
+   ========================================================================== */
+
+.tku-create-asg-page {
+  padding: 28px 36px 64px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  animation: tkuFadeIn 0.2s ease-out;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+}
+
+/* 1. Header Navigation Bar */
+.tku-create-asg-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-create-asg-header__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-create-asg-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.18s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.tku-create-asg-back-btn:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-create-asg-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-create-asg-header__titles {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-create-asg-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin: 0;
+  line-height: 1.25;
+}
+
+.tku-create-asg-subtitle {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 860px;
+}
+
+/* 2. Main Layout (Two Columns) */
+.tku-create-asg-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 1080px) {
+  .tku-create-asg-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-create-asg-main {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 3. Cards */
+.tku-create-card {
+  background-color: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+  transition: box-shadow 0.2s ease;
+}
+
+.tku-create-card:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.tku-create-card__header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: #fafbfc;
+}
+
+.tku-create-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-create-card__icon--blue {
+  background-color: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-create-card__icon--emerald {
+  background-color: #ecfdf5;
+  color: #10b981;
+}
+
+.tku-create-card__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.tku-create-card__desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0 0;
+}
+
+.tku-create-card__body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* 4. Form Elements */
+.tku-create-input-lg {
+  height: 46px;
+  font-size: 14.5px !important;
+  font-weight: 500;
+}
+
+.tku-title-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tku-title-suggestions__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.tku-title-suggestions__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tku-title-suggestion-chip {
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  text-align: left;
+}
+
+.tku-title-suggestion-chip:hover {
+  background-color: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-create-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.tku-create-select-icon {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-create-select-wrap select {
+  width: 100%;
+  padding-right: 36px;
+  appearance: none;
+  cursor: pointer;
+}
+
+.tku-form-hint {
+  font-size: 12px;
+  color: #64748b;
+  margin: 4px 0 0 0;
+  line-height: 1.45;
+}
+
+.tku-text-warning {
+  color: #d97706 !important;
+}
+
+/* 5. Assessment Type Cards */
+.tku-type-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 820px) {
+  .tku-type-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-type-card {
+  padding: 18px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  user-select: none;
+}
+
+.tku-type-card:hover {
+  border-color: #93c5fd;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(29, 104, 242, 0.08);
+}
+
+.tku-type-card--selected {
+  border-color: #1d68f2 !important;
+  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  box-shadow: 0 6px 20px rgba(29, 104, 242, 0.12) !important;
+}
+
+.tku-type-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-type-card__icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-type-card--selected .tku-type-card__icon-wrap {
+  background-color: #1d68f2;
+  color: #ffffff;
+}
+
+.tku-type-card__badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #475569;
+  background-color: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.tku-type-card--selected .tku-type-card__badge {
+  background-color: #dbeafe;
+  color: #1d68f2;
+}
+
+.tku-type-card__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.35;
+}
+
+.tku-type-card__desc {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+  flex: 1;
+}
+
+.tku-type-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 10px;
+  margin-top: 2px;
+}
+
+.tku-type-card--selected .tku-type-card__footer {
+  color: #1d68f2;
+  font-weight: 600;
+}
+
+.tku-type-check-icon {
+  color: #cbd5e1;
+}
+
+.tku-type-card--selected .tku-type-check-icon {
+  color: #1d68f2;
+}
+
+/* 6. Duration Controls */
+.tku-duration-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-duration-input-wrap {
+  position: relative;
+  width: 140px;
+}
+
+.tku-duration-input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-duration-input {
+  padding-left: 36px !important;
+  padding-right: 48px !important;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.tku-duration-unit {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.tku-duration-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.tku-duration-preset-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tku-duration-preset-btn:hover {
+  background-color: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.tku-duration-preset-btn--active {
+  background-color: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d68f2 !important;
+  font-weight: 700;
+}
+
+/* 7. Right Sidebar Summary Card */
+.tku-create-asg-sidebar {
+  position: sticky;
+  top: 90px;
+}
+
+.tku-create-summary-card {
+  background-color: #ffffff;
+  border: 1px solid #eef2f6;
+  border-radius: 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+}
+
+.tku-summary-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-summary-preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tku-summary-item__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tku-summary-item__value {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.tku-summary-item__value--highlight {
+  color: #1d68f2;
+  font-size: 14px;
+}
+
+
+/* Roadmap */
+.tku-summary-roadmap {
+  background-color: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-roadmap-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #334155;
+  margin: 0;
+}
+
+.tku-roadmap-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.tku-roadmap-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  opacity: 0.65;
+  transition: opacity 0.2s ease;
+}
+
+.tku-roadmap-step--active {
+  opacity: 1;
+}
+
+.tku-roadmap-step__num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #e2e8f0;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-roadmap-step--active .tku-roadmap-step__num {
+  background-color: #1d68f2;
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.15);
+}
+
+.tku-roadmap-step__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tku-roadmap-step__name {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-roadmap-step__desc {
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+/* Actions */
+.tku-summary-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.tku-btn-submit-create {
+  width: 100%;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(29, 104, 242, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.tku-btn-submit-create:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(29, 104, 242, 0.38);
+}
+
+.tku-btn-submit-create:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tku-btn-secondary-create {
+  width: 100%;
+  padding: 11px 18px;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tku-btn-secondary-create:hover:not(:disabled) {
+  background-color: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d68f2;
+}
+
+.tku-btn-secondary-create:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tku-btn-cancel-create {
+  width: 100%;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  text-align: center;
+}
+
+.tku-btn-cancel-create:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-summary-security-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  justify-content: center;
+}
+
+.tku-spin-icon {
+  animation: tku-spin-smooth 0.8s linear infinite;
+}
+
+@keyframes tku-spin-smooth {
+  to {
+    transform: rotate(360deg);
+  }
+}
+

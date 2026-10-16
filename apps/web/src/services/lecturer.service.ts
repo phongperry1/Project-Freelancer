@@ -23,6 +23,105 @@ export interface ChapterSummary {
 export type LessonItem = LessonSummary;
 export type ChapterItem = ChapterSummary;
 
+export type AssessmentType = 'QUIZ' | 'TEST' | 'EXAM';
+export type QuestionType =
+  | 'SINGLE_CHOICE'
+  | 'MULTIPLE_CHOICE'
+  | 'TRUE_FALSE'
+  | 'TEXT';
+export type AssignmentStatus = 'DRAFT' | 'ASSIGNED' | 'CLOSED';
+
+export interface QuestionOption {
+  id: string;
+  content: string;
+  isCorrect: boolean;
+}
+
+export interface QuestionItem {
+  id: string;
+  content: string;
+  type: QuestionType;
+  score: number;
+  options: QuestionOption[];
+  solutionText: string;
+  solutionFileUrl?: string | null;
+  sortOrder: number;
+}
+
+export interface AssignSettings {
+  targetType: 'ALL' | 'CUSTOM';
+  selectedStudentIds: string[];
+  startDate: string;
+  dueDate: string;
+  durationMinutes: number;
+  shuffleQuestions: boolean;
+  shuffleOptions: boolean;
+  showScoreImmediately: boolean;
+  showSolution: 'IMMEDIATELY' | 'AFTER_DEADLINE' | 'NEVER';
+  maxAttempts: number;
+}
+
+export interface AssignmentItem {
+  id: string;
+  title: string;
+  type: AssessmentType;
+  courseId: string;
+  courseTitle: string;
+  lessonId?: string | null;
+  lessonTitle?: string | null;
+  chapterTitle?: string | null;
+  durationMinutes: number | null;
+  status: AssignmentStatus;
+  statusText?: string;
+  totalScore: number;
+  questionCount: number;
+  assignedStudentsCount: number;
+  submittedCount: number;
+  startDate: string | null;
+  dueDate: string | null;
+  createdAt: string;
+  updatedAt: string;
+  questions: QuestionItem[];
+  assignSettings?: AssignSettings;
+}
+
+/**
+ * Automatically distributes totalTarget points (default: 10.0) equally among questions,
+ * adjusting minor rounding remainders so the sum is guaranteed to equal exactly 10.00.
+ */
+export function distributeScoresEqually(
+  questions: QuestionItem[],
+  totalTarget = 10,
+): QuestionItem[] {
+  const count = questions.length;
+  if (count === 0) return [];
+
+  // Calculate base score with 2 decimal places
+  const baseScore = Math.floor((totalTarget / count) * 100) / 100;
+  // Calculate remainder to distribute cent by cent
+  let remainderCents = Math.round((totalTarget - baseScore * count) * 100);
+
+  return questions.map((q) => {
+    let score = baseScore;
+    if (remainderCents > 0) {
+      score = Math.round((score + 0.01) * 100) / 100;
+      remainderCents -= 1;
+    }
+    return {
+      ...q,
+      score,
+    };
+  });
+}
+
+export interface CourseStudentItem {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
+  enrolledAt?: string;
+}
+
 export interface LecturerCourseItem {
   id: string;
   title: string;
@@ -181,6 +280,10 @@ class LecturerService {
     }
   }
 
+  async getMyCourses(): Promise<LecturerCoursesResponse> {
+    return this.getAssignedCourses();
+  }
+
   async getCourseDetail(courseId: string): Promise<LecturerCourseItem> {
     const token = authService.getStoredToken();
     if (!token) {
@@ -331,6 +434,289 @@ class LecturerService {
       throw new Error(err.message || 'Không thể tải lên video bài giảng.');
     }
     return await res.json();
+  }
+
+  // ============================================================
+  // ASSESSMENTS & EXAMS (POSTGRESQL DATABASE VIA NESTJS API)
+  // ============================================================
+
+  private mapApiToAssignment(item: {
+    id: string;
+    title?: string;
+    type?: AssessmentType;
+    courseId: string;
+    courseTitle?: string;
+    course?: { title?: string };
+    lessonId?: string | null;
+    lessonTitle?: string | null;
+    lesson?: { title?: string; chapter?: { title?: string } };
+    chapterTitle?: string | null;
+    durationMinutes?: number | null;
+    status?: AssignmentStatus;
+    statusText?: string;
+    totalScore?: number;
+    questionCount?: number;
+    assignedStudentsCount?: number;
+    submittedCount?: number;
+    startDate?: string | null;
+    dueDate?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
+    questions?: Array<{
+      id?: string;
+      content?: string;
+      type?: QuestionType;
+      score?: number;
+      sortOrder?: number;
+      solutionText?: string | null;
+      solutionFileUrl?: string | null;
+      options?: Array<{
+        id?: string;
+        content?: string;
+        isCorrect?: boolean;
+      }>;
+    }>;
+  }): AssignmentItem {
+    const questions: QuestionItem[] = (item.questions || []).map((q, idx) => ({
+      id: q.id || `q-${idx + 1}`,
+      content: q.content || '',
+      type: q.type || 'SINGLE_CHOICE',
+      score: Number(q.score) || 1,
+      sortOrder: q.sortOrder || idx + 1,
+      solutionText: q.solutionText || '',
+      solutionFileUrl: q.solutionFileUrl || null,
+      options: (q.options || []).map((opt, optIdx) => ({
+        id: opt.id || `opt-${optIdx + 1}`,
+        content: opt.content || '',
+        isCorrect: Boolean(opt.isCorrect),
+      })),
+    }));
+
+    const rawTotal = questions.reduce(
+      (sum, q) => sum + (Number(q.score) || 0),
+      0,
+    );
+    const totalScore = Math.round(rawTotal * 100) / 100;
+
+    return {
+      id: item.id,
+      title: item.title || '',
+      type: item.type || 'QUIZ',
+      courseId: item.courseId,
+      courseTitle: item.courseTitle || item.course?.title || 'Khóa học',
+      lessonId: item.lessonId || null,
+      lessonTitle: item.lessonTitle || item.lesson?.title || null,
+      chapterTitle: item.chapterTitle || item.lesson?.chapter?.title || null,
+      durationMinutes: item.durationMinutes ?? 15,
+      status: item.status || 'DRAFT',
+      statusText:
+        item.statusText ||
+        (item.status === 'ASSIGNED'
+          ? 'Đang mở'
+          : item.status === 'CLOSED'
+            ? 'Đã đóng'
+            : 'Bản nháp'),
+      totalScore: item.totalScore ?? totalScore,
+      questionCount: item.questionCount ?? questions.length,
+      assignedStudentsCount: item.assignedStudentsCount ?? 0,
+      submittedCount: item.submittedCount ?? 0,
+      startDate: item.startDate || null,
+      dueDate: item.dueDate || null,
+      createdAt: item.createdAt || new Date().toISOString(),
+      updatedAt: item.updatedAt || new Date().toISOString(),
+      questions,
+    };
+  }
+
+  async getAssessments(courseId?: string): Promise<AssignmentItem[]> {
+    const token = authService.getStoredToken();
+    const url = `${API_BASE_URL}/lecturer/assessments${
+      courseId ? `?courseId=${encodeURIComponent(courseId)}` : ''
+    }`;
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      return [];
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data.map((d) => this.mapApiToAssignment(d)) : [];
+  }
+
+  async getAssessmentById(id: string): Promise<AssignmentItem | null> {
+    if (!id) return null;
+    const token = authService.getStoredToken();
+    const res = await fetch(`${API_BASE_URL}/lecturer/assessments/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const data = await res.json();
+    return data ? this.mapApiToAssignment(data) : null;
+  }
+
+  async getCourseStudents(courseId: string): Promise<CourseStudentItem[]> {
+    if (!courseId) return [];
+    const token = authService.getStoredToken();
+    try {
+      const res = await fetch(`${API_BASE_URL}/lecturer/courses/${courseId}/students`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) return [];
+      const data = await res.json();
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async createAssessment(data: {
+    title: string;
+    type: AssessmentType;
+    courseId: string;
+    lessonId?: string | null;
+    durationMinutes?: number | null;
+  }): Promise<AssignmentItem> {
+    const token = authService.getStoredToken();
+    const payload = {
+      title: data.title.trim(),
+      type: data.type,
+      courseId: data.courseId,
+      lessonId: data.lessonId || null,
+      durationMinutes: data.durationMinutes ?? 15,
+      questions: [
+        {
+          content: 'Nội dung câu hỏi số 1...',
+          type: 'SINGLE_CHOICE',
+          score: 10,
+          sortOrder: 1,
+          solutionText: '',
+          options: [
+            { content: 'Lựa chọn A', isCorrect: true, sortOrder: 1 },
+            { content: 'Lựa chọn B', isCorrect: false, sortOrder: 2 },
+            { content: 'Lựa chọn C', isCorrect: false, sortOrder: 3 },
+            { content: 'Lựa chọn D', isCorrect: false, sortOrder: 4 },
+          ],
+        },
+      ],
+    };
+
+    const res = await fetch(`${API_BASE_URL}/lecturer/assessments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tạo bài tập.');
+    }
+
+    const created = await res.json();
+    return this.mapApiToAssignment(created);
+  }
+
+  async saveAssessment(assignment: AssignmentItem): Promise<AssignmentItem> {
+    const token = authService.getStoredToken();
+    const payload = {
+      title: assignment.title.trim(),
+      type: assignment.type,
+      courseId: assignment.courseId,
+      lessonId: assignment.lessonId || null,
+      durationMinutes: assignment.durationMinutes,
+      startDate: assignment.startDate,
+      dueDate: assignment.dueDate,
+      questions: assignment.questions.map((q, idx) => ({
+        content: q.content,
+        type: q.type,
+        score: Number(q.score) || 1,
+        sortOrder: idx + 1,
+        solutionText: q.solutionText || null,
+        solutionFileUrl: q.solutionFileUrl || null,
+        options: q.options.map((opt, optIdx) => ({
+          content: opt.content,
+          isCorrect: Boolean(opt.isCorrect),
+          sortOrder: optIdx + 1,
+        })),
+      })),
+    };
+
+    const res = await fetch(
+      `${API_BASE_URL}/lecturer/assessments/${assignment.id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể lưu bài tập.');
+    }
+
+    const updated = await res.json();
+    return this.mapApiToAssignment(updated);
+  }
+
+  async updateAssessment(
+    id: string,
+    data: {
+      title?: string;
+      type?: AssessmentType;
+      courseId?: string;
+      lessonId?: string | null;
+      durationMinutes?: number | null;
+      startDate?: string | null;
+      dueDate?: string | null;
+    },
+  ): Promise<AssignmentItem> {
+    const token = authService.getStoredToken();
+    const res = await fetch(`${API_BASE_URL}/lecturer/assessments/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể cập nhật bài tập.');
+    }
+
+    const updated = await res.json();
+    return this.mapApiToAssignment(updated);
+  }
+
+  async deleteAssessment(id: string): Promise<boolean> {
+    if (!id) return false;
+    const token = authService.getStoredToken();
+    try {
+      const res = await fetch(`${API_BASE_URL}/lecturer/assessments/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      return res.ok;
+    } catch {
+      return false;
+    }
   }
 }
 

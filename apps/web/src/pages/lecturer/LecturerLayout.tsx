@@ -112,12 +112,114 @@ export const LecturerLayout: React.FC = () => {
         <>
           <Link
             to="/lecturer/courses"
-            style={{ color: '#64748b', textDecoration: 'none' }}
+            className="tku-lecturer-breadcrumbs__parent"
           >
             Khóa học của tôi
           </Link>
-          <span className="tku-lecturer-breadcrumbs__sep" style={{ margin: '0 6px' }}>/</span>
-          <span style={{ color: '#1d68f2', fontWeight: 700 }}>Biên soạn giáo trình</span>
+          <span className="tku-lecturer-breadcrumbs__sep">/</span>
+          <span className="tku-lecturer-breadcrumbs__current">Biên soạn giáo trình</span>
+        </>
+      );
+    }
+    if (location.pathname.includes('/assignments/')) {
+      const stepMatch = location.pathname.match(
+        /\/assignments\/([^/]+)\/(questions|scoring|assign)/
+      );
+
+      if (stepMatch) {
+        const assignmentId = stepMatch[1];
+        const stepKey = stepMatch[2];
+
+        if (stepKey === 'questions') {
+          return (
+            <>
+              <Link
+                to="/lecturer/assignments"
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Bài tập & kiểm tra
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <span className="tku-lecturer-breadcrumbs__current">
+                Tạo câu hỏi
+              </span>
+            </>
+          );
+        }
+
+        if (stepKey === 'scoring') {
+          return (
+            <>
+              <Link
+                to="/lecturer/assignments"
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Bài tập & kiểm tra
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <Link
+                to={`/lecturer/assignments/${assignmentId}/questions`}
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Tạo câu hỏi
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <span className="tku-lecturer-breadcrumbs__current">
+                Thiết lập đáp án & thang điểm
+              </span>
+            </>
+          );
+        }
+
+        if (stepKey === 'assign') {
+          return (
+            <>
+              <Link
+                to="/lecturer/assignments"
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Bài tập & kiểm tra
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <Link
+                to={`/lecturer/assignments/${assignmentId}/questions`}
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Tạo câu hỏi
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <Link
+                to={`/lecturer/assignments/${assignmentId}/scoring`}
+                className="tku-lecturer-breadcrumbs__parent"
+              >
+                Thiết lập đáp án & thang điểm
+              </Link>
+              <span className="tku-lecturer-breadcrumbs__sep">/</span>
+              <span className="tku-lecturer-breadcrumbs__current">
+                Giao bài cho học sinh
+              </span>
+            </>
+          );
+        }
+      }
+
+      const isCreate = location.pathname.includes('/assignments/create');
+      const isEdit = location.pathname.includes('/edit');
+
+      let stepLabel = 'Chi tiết bài tập';
+      if (isCreate) stepLabel = 'Khởi tạo bài tập & đề thi mới';
+      else if (isEdit) stepLabel = 'Chỉnh sửa thông tin bài tập';
+
+      return (
+        <>
+          <Link
+            to="/lecturer/assignments"
+            className="tku-lecturer-breadcrumbs__parent"
+          >
+            Bài tập & kiểm tra
+          </Link>
+          <span className="tku-lecturer-breadcrumbs__sep">/</span>
+          <span className="tku-lecturer-breadcrumbs__current">{stepLabel}</span>
         </>
       );
     }
@@ -249,9 +351,13 @@ export const LecturerLayout: React.FC = () => {
               Không gian giảng dạy
             </span>
             <span className="tku-lecturer-breadcrumbs__sep">/</span>
-            <span className="tku-lecturer-breadcrumbs__current">
-              {breadcrumbCurrent}
-            </span>
+            {typeof breadcrumbCurrent === 'string' ? (
+              <span className="tku-lecturer-breadcrumbs__current">
+                {breadcrumbCurrent}
+              </span>
+            ) : (
+              breadcrumbCurrent
+            )}
           </div>
 
           <div className="tku-lecturer-header__right">

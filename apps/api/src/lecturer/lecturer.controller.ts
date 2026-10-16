@@ -13,6 +13,7 @@ import {
   ForbiddenException,
   UseInterceptors,
   UploadedFile,
+  Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -32,6 +33,9 @@ import {
   LecturerService,
   type LecturerCoursesResponse,
   type LecturerCourseItem,
+  type LecturerAssessmentItem,
+  type CreateAssessmentDto,
+  type UpdateAssessmentDto,
 } from './lecturer.service.js';
 
 @ApiTags('Lecturer')
@@ -113,6 +117,24 @@ export class LecturerController {
   ): Promise<LecturerCourseItem> {
     const { userId, role } = await this.verifyLecturer(authorization);
     return this.lecturerService.getCourseDetail(userId, courseId, role);
+  }
+
+  @Get('courses/:id/students')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách học viên đăng ký của khóa học',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách học viên theo học khóa học.',
+  })
+  async getCourseStudents(
+    @Param('id') courseId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getCourseStudents(userId, courseId, role);
   }
 
   @Get('dashboard')
@@ -235,5 +257,75 @@ export class LecturerController {
     await this.verifyLecturer(authorization);
     const url = await this.cloudinaryService.uploadVideo(file, 'lessons');
     return { url };
+  }
+
+  // ============================================================
+  // ASSESSMENT & ASSIGNMENT ENDPOINTS
+  // ============================================================
+
+  @Get('assessments')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách bài tập / bài kiểm tra của giảng viên' })
+  @ApiResponse({ status: 200, description: 'Danh sách bài tập.' })
+  async getAssessments(
+    @Query('courseId') courseId?: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<LecturerAssessmentItem[]> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getAssessments(userId, role, courseId);
+  }
+
+  @Get('assessments/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy chi tiết đề thi và câu hỏi của một bài tập' })
+  @ApiResponse({ status: 200, description: 'Chi tiết bài tập và danh sách câu hỏi.' })
+  async getAssessmentDetail(
+    @Param('id') assessmentId: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<LecturerAssessmentItem> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getAssessmentById(userId, assessmentId, role);
+  }
+
+  @Post('assessments')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tạo bài tập / bài kiểm tra mới trong database' })
+  @ApiResponse({ status: 201, description: 'Bài tập đã được tạo thành công.' })
+  async createAssessment(
+    @Body() body: CreateAssessmentDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<LecturerAssessmentItem> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.createAssessment(userId, body, role);
+  }
+
+  @Put('assessments/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật đề thi, thang điểm, đáp án hoặc lịch giao' })
+  @ApiResponse({ status: 200, description: 'Bài tập đã được cập nhật thành công.' })
+  async updateAssessment(
+    @Param('id') assessmentId: string,
+    @Body() body: UpdateAssessmentDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<LecturerAssessmentItem> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.updateAssessment(userId, assessmentId, body, role);
+  }
+
+  @Delete('assessments/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xóa bài tập' })
+  @ApiResponse({ status: 200, description: 'Xóa bài tập thành công.' })
+  async deleteAssessment(
+    @Param('id') assessmentId: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ success: boolean }> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.deleteAssessment(userId, assessmentId, role);
   }
 }
