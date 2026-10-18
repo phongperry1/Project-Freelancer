@@ -122,6 +122,83 @@ export interface CourseStudentItem {
   enrolledAt?: string;
 }
 
+export interface StudentSubmissionAnswer {
+  questionId: string;
+  questionNumber: number;
+  questionContent: string;
+  selectedOptionId?: string | null;
+  selectedOptionContent?: string | null;
+  correctOptionId?: string | null;
+  correctOptionContent?: string | null;
+  isCorrect: boolean;
+  scoreAwarded: number;
+  questionScore: number;
+  solutionText?: string | null;
+}
+
+export interface StudentSubmissionDetail {
+  id: string;
+  studentId: string;
+  studentName: string;
+  studentEmail: string;
+  studentCode?: string;
+  studentClass?: string;
+  avatarUrl?: string | null;
+  attemptNumber: number;
+  score: number;
+  totalScore: number;
+  percentage: number;
+  correctCount: number;
+  totalQuestions: number;
+  timeSpentMinutes: number;
+  submittedAt: string;
+  isLate: boolean;
+  status: 'SUBMITTED' | 'GRADED' | 'NOT_SUBMITTED';
+  statusText: string;
+  gradeTier: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'AVERAGE' | 'WEAK';
+  gradeTierText: string;
+  feedback?: string;
+  answers: StudentSubmissionAnswer[];
+}
+
+export interface QuestionAccuracyStat {
+  questionId: string;
+  questionNumber: number;
+  content: string;
+  score: number;
+  type: QuestionType;
+  correctCount: number;
+  totalAttempts: number;
+  correctRate: number; // 0 - 100
+  difficulty: 'EASY' | 'MEDIUM' | 'HARD';
+  difficultyText: string;
+}
+
+export interface GradeDistributionItem {
+  range: string;
+  label: string;
+  count: number;
+  percent: number;
+  color: string;
+}
+
+export interface AssessmentResultsSummary {
+  assessment: AssignmentItem;
+  totalStudents: number;
+  submittedCount: number;
+  unsubmittedCount: number;
+  submissionRate: number; // 0 - 100
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  passRate: number; // 0 - 100
+  passedCount: number;
+  failedCount: number;
+  gradeDistribution: GradeDistributionItem[];
+  questionStats: QuestionAccuracyStat[];
+  submissions: StudentSubmissionDetail[];
+}
+
 export interface LecturerCourseItem {
   id: string;
   title: string;
@@ -234,50 +311,76 @@ const emptyCoursesResponse: LecturerCoursesResponse = {
 };
 
 class LecturerService {
-  async getDashboardData(): Promise<LecturerDashboardData> {
-    try {
-      const token = authService.getStoredToken();
-      if (!token) return emptyDashboardData;
+  /**
+   * Helper fetch with automatic retry on network errors (e.g., when NestJS backend is still booting up).
+   */
+  private async fetchWithBootRetry(
+    input: string,
+    init?: RequestInit,
+    maxRetries = 6,
+    delayMs = 1500,
+  ): Promise<Response> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const res = await fetch(input, init);
+        if ([502, 503, 504].includes(res.status) && attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+        return res;
+      } catch (err) {
+        if (attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, delayMs));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('Connection timeout to backend server');
+  }
 
-      const res = await fetch(`${API_BASE_URL}/lecturer/dashboard`, {
+  async getDashboardData(): Promise<LecturerDashboardData> {
+    const token = authService.getStoredToken();
+    if (!token) return emptyDashboardData;
+
+    const res = await this.fetchWithBootRetry(
+      `${API_BASE_URL}/lecturer/dashboard`,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-      });
+      },
+    );
 
-      if (!res.ok) {
-        return emptyDashboardData;
-      }
-
-      const json = await res.json();
-      return json || emptyDashboardData;
-    } catch {
+    if (!res.ok) {
       return emptyDashboardData;
     }
+
+    const json = await res.json();
+    return json || emptyDashboardData;
   }
 
   async getAssignedCourses(): Promise<LecturerCoursesResponse> {
-    try {
-      const token = authService.getStoredToken();
-      if (!token) return emptyCoursesResponse;
+    const token = authService.getStoredToken();
+    if (!token) return emptyCoursesResponse;
 
-      const res = await fetch(`${API_BASE_URL}/lecturer/courses`, {
+    const res = await this.fetchWithBootRetry(
+      `${API_BASE_URL}/lecturer/courses`,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-      });
+      },
+    );
 
-      if (!res.ok) {
-        return emptyCoursesResponse;
-      }
-
-      const json = await res.json();
-      return json || emptyCoursesResponse;
-    } catch {
+    if (!res.ok) {
       return emptyCoursesResponse;
     }
+
+    const json = await res.json();
+    return json || emptyCoursesResponse;
   }
 
   async getMyCourses(): Promise<LecturerCoursesResponse> {
@@ -290,12 +393,15 @@ class LecturerService {
       throw new Error('Bạn chưa đăng nhập hoặc phiên làm việc đã hết hạn.');
     }
 
-    const res = await fetch(`${API_BASE_URL}/lecturer/courses/${courseId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+    const res = await this.fetchWithBootRetry(
+      `${API_BASE_URL}/lecturer/courses/${courseId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -530,41 +636,50 @@ class LecturerService {
 
   async getAssessments(courseId?: string): Promise<AssignmentItem[]> {
     const token = authService.getStoredToken();
+    if (!token) return [];
     const url = `${API_BASE_URL}/lecturer/assessments${
       courseId ? `?courseId=${encodeURIComponent(courseId)}` : ''
     }`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) {
+    try {
+      const res = await this.fetchWithBootRetry(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        return [];
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data.map((d) => this.mapApiToAssignment(d)) : [];
+    } catch {
       return [];
     }
-    const data = await res.json();
-    return Array.isArray(data) ? data.map((d) => this.mapApiToAssignment(d)) : [];
   }
 
   async getAssessmentById(id: string): Promise<AssignmentItem | null> {
     if (!id) return null;
     const token = authService.getStoredToken();
-    const res = await fetch(`${API_BASE_URL}/lecturer/assessments/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!res.ok) {
+    try {
+      const res = await this.fetchWithBootRetry(`${API_BASE_URL}/lecturer/assessments/${id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        return null;
+      }
+      const data = await res.json();
+      return data ? this.mapApiToAssignment(data) : null;
+    } catch {
       return null;
     }
-    const data = await res.json();
-    return data ? this.mapApiToAssignment(data) : null;
   }
 
   async getCourseStudents(courseId: string): Promise<CourseStudentItem[]> {
     if (!courseId) return [];
     const token = authService.getStoredToken();
     try {
-      const res = await fetch(`${API_BASE_URL}/lecturer/courses/${courseId}/students`, {
+      const res = await this.fetchWithBootRetry(`${API_BASE_URL}/lecturer/courses/${courseId}/students`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -714,6 +829,49 @@ class LecturerService {
         },
       });
       return res.ok;
+    } catch {
+      return false;
+    }
+  }
+
+  // ============================================================
+  // ASSESSMENT RESULTS & ANALYTICS
+  // ============================================================
+
+  async getAssessmentResults(
+    assessmentId: string,
+  ): Promise<AssessmentResultsSummary | null> {
+    if (!assessmentId) return null;
+    const token = authService.getStoredToken();
+    if (!token) return null;
+
+    try {
+      const res = await this.fetchWithBootRetry(
+        `${API_BASE_URL}/lecturer/assessments/${assessmentId}/results`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        },
+      );
+      if (!res.ok) {
+        return null;
+      }
+      const data = await res.json();
+      return data as AssessmentResultsSummary;
+    } catch {
+      return null;
+    }
+  }
+
+  async saveSubmissionFeedback(
+    submissionId: string,
+    feedback: string,
+  ): Promise<boolean> {
+    try {
+      localStorage.setItem(`tku_feedback_${submissionId}`, feedback.trim());
+      return true;
     } catch {
       return false;
     }

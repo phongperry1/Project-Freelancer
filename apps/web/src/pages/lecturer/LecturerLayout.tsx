@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   BookOpen,
   FilePenLine,
-  ClipboardCheck,
+  BarChart3,
   Users,
   Bell,
   Settings,
@@ -48,11 +48,14 @@ const TEACHING_NAV_ITEMS: NavItemConfig[] = [
       p.startsWith('/teacher/assignments'),
   },
   {
-    to: '/lecturer/grading',
-    label: 'Chấm bài',
-    icon: ClipboardCheck,
+    to: '/lecturer/results',
+    label: 'Kết quả và thống kê',
+    icon: BarChart3,
     isActive: (p) =>
-      p.startsWith('/lecturer/grading') || p.startsWith('/teacher/grading'),
+      p.startsWith('/lecturer/results') ||
+      p.startsWith('/lecturer/grading') ||
+      p.startsWith('/teacher/results') ||
+      p.startsWith('/teacher/grading'),
   },
   {
     to: '/lecturer/students',

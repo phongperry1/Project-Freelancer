@@ -1,13 +1,15 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   FolderKanban,
   Users,
-  PenLine,
   TrendingUp,
   ArrowRight,
   BookOpen,
   ClipboardCheck,
+  Loader2,
+  RotateCw,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
 import {
@@ -27,30 +29,55 @@ const DashboardLoading: React.FC = () => (
 
 export const LecturerDashboardPage: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState<LecturerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await lecturerService.getDashboardData();
+      setData(res);
+      setIsConnecting(false);
+      setIsLoading(false);
+      return true;
+    } catch {
+      setIsConnecting(true);
+      return false;
+    }
+  }, []);
+
+  const handleManualRetry = useCallback(async () => {
+    if (isRetrying) return;
+    setIsRetrying(true);
+    setIsLoading(true);
+    try {
+      await fetchData();
+    } finally {
+      setIsRetrying(false);
+    }
+  }, [fetchData, isRetrying]);
 
   useEffect(() => {
     let isMounted = true;
+    let pollTimer: ReturnType<typeof setTimeout> | null = null;
 
-    lecturerService
-      .getDashboardData()
-      .then((res) => {
-        if (isMounted) {
-          setData(res);
-          setIsLoading(false);
-        }
-      })
-      .catch(() => {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      });
+    const run = async () => {
+      const success = await fetchData();
+      if (!success && isMounted) {
+        // Tự động kết nối lại sau 2.5s nếu backend đang khởi động
+        pollTimer = setTimeout(run, 2500);
+      }
+    };
+
+    run();
 
     return () => {
       isMounted = false;
+      if (pollTimer) clearTimeout(pollTimer);
     };
-  }, []);
+  }, [fetchData]);
 
   // Display Name / Greeting
   const teacherFullName = user?.fullName || 'Giảng viên';
@@ -86,6 +113,25 @@ export const LecturerDashboardPage: React.FC = () => {
         </div>
       </section>
 
+      {/* Banner cảnh báo khi máy chủ đang boot */}
+      {isConnecting && (
+        <div className="tku-lecturer-conn-warning">
+          <div className="tku-lecturer-conn-warning__left">
+            <Loader2 size={16} className="tku-lecturer-spin-icon" />
+            <span>Máy chủ đang khởi động. Hệ thống đang tự động kết nối và tải dữ liệu lên màn hình...</span>
+          </div>
+          <button
+            type="button"
+            className="tku-lecturer-retry-btn"
+            disabled={isRetrying}
+            onClick={handleManualRetry}
+          >
+            <RotateCw size={13} className={isRetrying ? 'tku-lecturer-spin-icon' : ''} />
+            <span>{isRetrying ? 'Đang kết nối...' : 'Thử lại ngay'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Row 1: 4 Quick Stat Cards */}
       <section className="tku-lecturer-stats-grid">
         {/* Card 1 */}
@@ -99,10 +145,18 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {stats ? stats.totalCourses : 0}
+            {isLoading ? (
+              <Loader2 size={20} className="tku-lecturer-spin-icon" />
+            ) : stats ? (
+              stats.totalCourses
+            ) : (
+              0
+            )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {stats && stats.totalCourses > 0 ? (
+            {isLoading ? (
+              'Đang tải số liệu...'
+            ) : stats && stats.totalCourses > 0 ? (
               <>
                 <span className="tku-lecturer-stat-highlight--blue">
                   {stats.publishedCourses} đang xuất bản
@@ -124,10 +178,18 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {stats ? stats.totalStudents.toLocaleString('vi-VN') : 0}
+            {isLoading ? (
+              <Loader2 size={20} className="tku-lecturer-spin-icon" />
+            ) : stats ? (
+              stats.totalStudents.toLocaleString('vi-VN')
+            ) : (
+              0
+            )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {stats && stats.newStudentsThisMonth > 0 ? (
+            {isLoading ? (
+              'Đang tải số liệu...'
+            ) : stats && stats.newStudentsThisMonth > 0 ? (
               <>
                 <span className="tku-lecturer-stat-pill--green">
                   +{stats.newStudentsThisMonth} học sinh
@@ -141,20 +203,35 @@ export const LecturerDashboardPage: React.FC = () => {
         </div>
 
         {/* Card 3 */}
-        <div className="tku-lecturer-stat-card">
+        <div
+          className="tku-lecturer-stat-card"
+          onClick={() => navigate('/lecturer/results')}
+          style={{ cursor: 'pointer' }}
+          title="Bấm để xem kết quả và thống kê bài làm"
+        >
           <div className="tku-lecturer-stat-card__top">
-            <span className="tku-lecturer-stat-card__title">Bài cần chấm</span>
+            <span className="tku-lecturer-stat-card__title">Kết quả & Bài cần chấm</span>
             <div className="tku-lecturer-stat-card__icon-box tku-lecturer-stat-card__icon-box--amber">
-              <PenLine size={18} />
+              <BarChart3 size={18} />
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {stats ? stats.pendingGrading : 0}
+            {isLoading ? (
+              <Loader2 size={20} className="tku-lecturer-spin-icon" />
+            ) : stats ? (
+              stats.pendingGrading
+            ) : (
+              0
+            )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {stats && stats.pendingGrading > 0
-              ? `${stats.essayCount} bài tự luận • ${stats.quizCount} bài kiểm tra`
-              : 'Không có bài cần chấm'}
+            {isLoading ? (
+              'Đang tải số liệu...'
+            ) : stats && stats.pendingGrading > 0 ? (
+              `${stats.essayCount} bài tự luận • ${stats.quizCount} bài kiểm tra`
+            ) : (
+              'Xem kết quả & thống kê'
+            )}
           </div>
         </div>
 
@@ -169,10 +246,18 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {stats ? `${stats.averageProgress}%` : '0%'}
+            {isLoading ? (
+              <Loader2 size={20} className="tku-lecturer-spin-icon" />
+            ) : stats ? (
+              `${stats.averageProgress}%`
+            ) : (
+              '0%'
+            )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {stats && stats.progressChange !== 0 ? (
+            {isLoading ? (
+              'Đang tải số liệu...'
+            ) : stats && stats.progressChange !== 0 ? (
               <>
                 <span className="tku-lecturer-stat-highlight--green">
                   {stats.progressChange > 0 ? '↑' : '↓'}{' '}
@@ -270,7 +355,7 @@ export const LecturerDashboardPage: React.FC = () => {
               </p>
             </div>
             {submissions.length > 0 && (
-              <Link to="/lecturer/grading" className="tku-lecturer-card__link">
+              <Link to="/lecturer/results" className="tku-lecturer-card__link">
                 <span>Xem tất cả</span>
                 <ArrowRight size={14} />
               </Link>
@@ -343,8 +428,10 @@ export const LecturerDashboardPage: React.FC = () => {
                         <button
                           type="button"
                           className="tku-lecturer-grade-btn"
+                          onClick={() => navigate('/lecturer/results')}
+                          title="Xem kết quả & thống kê bài làm chi tiết"
                         >
-                          Chấm ngay
+                          Xem kết quả
                         </button>
                       </td>
                     </tr>

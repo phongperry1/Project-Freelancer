@@ -19,6 +19,7 @@ import {
   Loader2,
   Layers,
   Award,
+  BarChart3,
 } from 'lucide-react';
 import {
   lecturerService,
@@ -394,7 +395,14 @@ export const LecturerAssignmentsPage: React.FC = () => {
 
                         {/* Tiến độ học sinh nộp bài */}
                         {asg.assignedStudentsCount > 0 ? (
-                          <div className="tku-asg-submit-meter">
+                          <div
+                            className="tku-asg-submit-meter"
+                            onClick={() =>
+                              navigate(`/lecturer/results?assessmentId=${asg.id}`)
+                            }
+                            title="Bấm để xem chi tiết thống kê kết quả & danh sách bài làm"
+                            style={{ cursor: 'pointer' }}
+                          >
                             <div className="tku-asg-submit-meter-info">
                               <span className="tku-asg-submit-meter-text">
                                 <Users size={12} className="tku-asg-submit-meter-icon" />
@@ -482,6 +490,19 @@ export const LecturerAssignmentsPage: React.FC = () => {
 
                     <td className="tku-asg-td-actions">
                       <div className="tku-asg-row-actions">
+                        {/* Xem kết quả & thống kê */}
+                        <button
+                          type="button"
+                          className="tku-row-btn tku-row-btn--results"
+                          title="Xem kết quả làm bài & thống kê phổ điểm"
+                          onClick={() =>
+                            navigate(`/lecturer/results?assessmentId=${asg.id}`)
+                          }
+                        >
+                          <BarChart3 size={14} />
+                          <span>Thống kê kết quả</span>
+                        </button>
+
                         {/* Quy trình biên soạn & thiết lập đề thi 3 bước (chỉ hiển thị khi chưa mở / bản nháp) */}
                         {asg.status !== 'ASSIGNED' && (
                           <button
