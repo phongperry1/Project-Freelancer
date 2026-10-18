@@ -745,6 +745,434 @@ export class LecturerService {
     };
   }
 
+  async getAssessmentResults(
+    userId: string,
+    assessmentId: string,
+    role?: string,
+  ) {
+    const a = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            teacherId: true,
+            enrollments: {
+              include: {
+                student: {
+                  select: {
+                    id: true,
+                    fullName: true,
+                    email: true,
+                    avatarUrl: true,
+                  },
+                },
+              },
+              orderBy: { enrolledAt: 'desc' },
+            },
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            chapter: { select: { id: true, title: true } },
+          },
+        },
+        questions: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            options: {
+              orderBy: { sortOrder: 'asc' },
+            },
+          },
+        },
+        submissions: {
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                email: true,
+                avatarUrl: true,
+              },
+            },
+            answers: {
+              select: {
+                id: true,
+                questionId: true,
+                selectedOptionId: true,
+                answerText: true,
+                score: true,
+                selectedOption: {
+                  select: {
+                    id: true,
+                    content: true,
+                    isCorrect: true,
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { submittedAt: 'desc' },
+        },
+      },
+    });
+
+    if (!a) {
+      throw new NotFoundException('Không tìm thấy bài tập hoặc bài kiểm tra.');
+    }
+
+    if (role !== 'ADMIN' && a.course.teacherId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền xem bài tập này.');
+    }
+
+    const { status, statusText } = this.computeAssessmentStatus(
+      a.startDate,
+      a.dueDate,
+    );
+    const totalScore =
+      Math.round(
+        a.questions.reduce((sum, q) => sum + (q.score || 0), 0) * 100,
+      ) / 100;
+
+    const mappedAssessment: LecturerAssessmentItem = {
+      id: a.id,
+      title: a.title,
+      type: a.type,
+      courseId: a.courseId,
+      courseTitle: a.course.title,
+      lessonId: a.lessonId,
+      lessonTitle: a.lesson?.title,
+      chapterTitle: a.lesson?.chapter?.title,
+      durationMinutes: a.durationMinutes,
+      startDate: a.startDate ? a.startDate.toISOString() : null,
+      dueDate: a.dueDate ? a.dueDate.toISOString() : null,
+      status,
+      statusText,
+      totalScore,
+      questionCount: a.questions.length,
+      assignedStudentsCount: a.course.enrollments.length,
+      submittedCount: a.submissions.length,
+      createdAt: a.createdAt.toISOString(),
+      updatedAt: a.updatedAt.toISOString(),
+      questions: a.questions.map((q) => ({
+        id: q.id,
+        content: q.content,
+        type: q.type,
+        score: q.score,
+        sortOrder: q.sortOrder,
+        solutionText: q.solutionText,
+        solutionFileUrl: q.solutionFileUrl,
+        options: q.options.map((opt) => ({
+          id: opt.id,
+          content: opt.content,
+          isCorrect: opt.isCorrect,
+          sortOrder: opt.sortOrder,
+        })),
+      })),
+    };
+
+    // Submissions from real database records
+    const studentSubmissionMap = new Map<string, typeof a.submissions[0]>();
+    for (const sub of a.submissions) {
+      if (!studentSubmissionMap.has(sub.studentId)) {
+        studentSubmissionMap.set(sub.studentId, sub);
+      }
+    }
+
+    const enrolledStudents = a.course.enrollments.map((en) => en.student);
+    const allStudentIds = new Set<string>();
+    const studentList: Array<{ id: string; fullName: string; email: string; avatarUrl?: string | null }> = [];
+
+    for (const st of enrolledStudents) {
+      allStudentIds.add(st.id);
+      studentList.push(st);
+    }
+
+    for (const sub of a.submissions) {
+      if (!allStudentIds.has(sub.studentId)) {
+        allStudentIds.add(sub.studentId);
+        studentList.push(sub.student);
+      }
+    }
+
+    const submissions = studentList.map((student) => {
+      const sub = studentSubmissionMap.get(student.id);
+
+      if (!sub) {
+        return {
+          id: `unsub-${student.id}`,
+          studentId: student.id,
+          studentName: student.fullName,
+          studentEmail: student.email,
+          avatarUrl: student.avatarUrl,
+          attemptNumber: 0,
+          score: 0,
+          totalScore,
+          percentage: 0,
+          correctCount: 0,
+          totalQuestions: a.questions.length,
+          timeSpentMinutes: 0,
+          submittedAt: '--',
+          isLate: false,
+          status: 'NOT_SUBMITTED' as const,
+          statusText: 'Chưa nộp bài',
+          gradeTier: 'WEAK' as const,
+          gradeTierText: 'Chưa dự thi',
+          feedback: '',
+          answers: [],
+        };
+      }
+
+      const studentAnsMap = new Map(sub.answers.map((ans) => [ans.questionId, ans]));
+
+      const answers = a.questions.map((q, qIdx) => {
+        const studentAns = studentAnsMap.get(q.id);
+        const correctOpt = q.options.find((opt) => opt.isCorrect);
+        const isCorrect = studentAns?.selectedOption?.isCorrect ?? false;
+        const scoreAwarded =
+          studentAns?.score !== null && studentAns?.score !== undefined
+            ? studentAns.score
+            : isCorrect
+            ? q.score
+            : 0;
+
+        return {
+          questionId: q.id,
+          questionNumber: qIdx + 1,
+          questionContent: q.content,
+          selectedOptionId: studentAns?.selectedOptionId || null,
+          selectedOptionContent:
+            studentAns?.selectedOption?.content || studentAns?.answerText || null,
+          correctOptionId: correctOpt?.id || null,
+          correctOptionContent: correctOpt?.content || null,
+          isCorrect,
+          scoreAwarded,
+          questionScore: q.score,
+          solutionText: q.solutionText || null,
+        };
+      });
+
+      const correctCount = answers.filter((ans) => ans.isCorrect).length;
+      const finalScore =
+        sub.score !== null && sub.score !== undefined
+          ? sub.score
+          : answers.reduce((sum, ans) => sum + ans.scoreAwarded, 0);
+      const roundedScore = Math.round(finalScore * 10) / 10;
+      const percentage =
+        totalScore > 0 ? Math.round((roundedScore / totalScore) * 100) : 0;
+
+      let gradeTier: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'AVERAGE' | 'WEAK';
+      let gradeTierText: string;
+      if (roundedScore >= 9.0) {
+        gradeTier = 'EXCELLENT';
+        gradeTierText = 'Xuất sắc';
+      } else if (roundedScore >= 8.0) {
+        gradeTier = 'GOOD';
+        gradeTierText = 'Giỏi';
+      } else if (roundedScore >= 6.5) {
+        gradeTier = 'FAIR';
+        gradeTierText = 'Khá';
+      } else if (roundedScore >= 5.0) {
+        gradeTier = 'AVERAGE';
+        gradeTierText = 'Trung bình';
+      } else {
+        gradeTier = 'WEAK';
+        gradeTierText = 'Cần cố gắng';
+      }
+
+      const isLate =
+        a.dueDate && sub.submittedAt
+          ? new Date(sub.submittedAt) > new Date(a.dueDate)
+          : false;
+
+      return {
+        id: sub.id,
+        studentId: student.id,
+        studentName: student.fullName,
+        studentEmail: student.email,
+        avatarUrl: student.avatarUrl,
+        attemptNumber: sub.attemptNumber,
+        score: roundedScore,
+        totalScore,
+        percentage,
+        correctCount,
+        totalQuestions: a.questions.length,
+        timeSpentMinutes: a.durationMinutes || 0,
+        submittedAt: sub.submittedAt
+          ? new Date(sub.submittedAt).toLocaleString('vi-VN')
+          : 'Đã nộp bài',
+        isLate,
+        status: 'GRADED' as const,
+        statusText: isLate ? 'Nộp muộn' : 'Đã nộp bài',
+        gradeTier,
+        gradeTierText,
+        feedback: '',
+        answers,
+      };
+    });
+
+    const submittedSubmissions = submissions.filter((s) => s.status === 'GRADED');
+    const totalStudents = studentList.length;
+    const submittedCount = submittedSubmissions.length;
+    const unsubmittedCount = totalStudents - submittedCount;
+    const submissionRate =
+      totalStudents > 0 ? Math.round((submittedCount / totalStudents) * 100) : 0;
+
+    const scores = submittedSubmissions.map((s) => s.score);
+    const averageScore =
+      scores.length > 0
+        ? Math.round(
+            (scores.reduce((sum, sc) => sum + sc, 0) / scores.length) * 100,
+          ) / 100
+        : 0;
+    const highestScore = scores.length > 0 ? Math.max(...scores) : 0;
+    const lowestScore = scores.length > 0 ? Math.min(...scores) : 0;
+
+    let passedCount = 0;
+    let failedCount = 0;
+    let distExcellent = 0;
+    let distGood = 0;
+    let distFair = 0;
+    let distAverage = 0;
+    let distWeak = 0;
+
+    for (const s of submittedSubmissions) {
+      if (s.score >= 5.0) {
+        passedCount++;
+      } else {
+        failedCount++;
+      }
+
+      if (s.score >= 9.0) distExcellent++;
+      else if (s.score >= 8.0) distGood++;
+      else if (s.score >= 6.5) distFair++;
+      else if (s.score >= 5.0) distAverage++;
+      else distWeak++;
+    }
+
+    const passRate =
+      submittedCount > 0 ? Math.round((passedCount / submittedCount) * 100) : 0;
+
+    const gradeDistribution = [
+      {
+        range: '9.0 - 10.0',
+        label: 'Xuất sắc',
+        count: distExcellent,
+        percent:
+          submittedCount > 0
+            ? Math.round((distExcellent / submittedCount) * 100)
+            : 0,
+        color: '#10b981',
+      },
+      {
+        range: '8.0 - 8.9',
+        label: 'Giỏi',
+        count: distGood,
+        percent:
+          submittedCount > 0
+            ? Math.round((distGood / submittedCount) * 100)
+            : 0,
+        color: '#1d68f2',
+      },
+      {
+        range: '6.5 - 7.9',
+        label: 'Khá',
+        count: distFair,
+        percent:
+          submittedCount > 0
+            ? Math.round((distFair / submittedCount) * 100)
+            : 0,
+        color: '#06b6d4',
+      },
+      {
+        range: '5.0 - 6.4',
+        label: 'Trung bình',
+        count: distAverage,
+        percent:
+          submittedCount > 0
+            ? Math.round((distAverage / submittedCount) * 100)
+            : 0,
+        color: '#f59e0b',
+      },
+      {
+        range: '< 5.0',
+        label: 'Cần cố gắng',
+        count: distWeak,
+        percent:
+          submittedCount > 0
+            ? Math.round((distWeak / submittedCount) * 100)
+            : 0,
+        color: '#ef4444',
+      },
+    ];
+
+    // Single-pass question statistics aggregation: O(S * A + Q) instead of O(Q * S * A)
+    const questionStatMap = new Map<string, { correct: number; total: number }>();
+    for (const sub of submittedSubmissions) {
+      for (const ans of sub.answers) {
+        let stat = questionStatMap.get(ans.questionId);
+        if (!stat) {
+          stat = { correct: 0, total: 0 };
+          questionStatMap.set(ans.questionId, stat);
+        }
+        stat.total += 1;
+        if (ans.isCorrect) stat.correct += 1;
+      }
+    }
+
+    const questionStats = a.questions.map((q, qIdx) => {
+      const stat = questionStatMap.get(q.id) || { correct: 0, total: 0 };
+      const correctAttempts = stat.correct;
+      const totalAttempts = stat.total;
+
+      const correctRate =
+        totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+      let difficulty: 'EASY' | 'MEDIUM' | 'HARD' = 'MEDIUM';
+      let difficultyText = 'Vừa sức';
+
+      if (correctRate >= 80) {
+        difficulty = 'EASY';
+        difficultyText = 'Dễ - Nắm vững';
+      } else if (correctRate < 50) {
+        difficulty = 'HARD';
+        difficultyText = 'Khó - Cần ôn tập lại';
+      }
+
+      return {
+        questionId: q.id,
+        questionNumber: qIdx + 1,
+        content: q.content,
+        score: q.score,
+        type: q.type,
+        correctCount: correctAttempts,
+        totalAttempts,
+        correctRate,
+        difficulty,
+        difficultyText,
+      };
+    });
+
+    return {
+      assessment: mappedAssessment,
+      totalStudents,
+      submittedCount,
+      unsubmittedCount,
+      submissionRate,
+      averageScore,
+      highestScore,
+      lowestScore,
+      passRate,
+      passedCount,
+      failedCount,
+      gradeDistribution,
+      questionStats,
+      submissions,
+    };
+  }
+
   async createAssessment(
     userId: string,
     data: CreateAssessmentDto,
