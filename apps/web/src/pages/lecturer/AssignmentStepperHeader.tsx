@@ -8,6 +8,7 @@ import {
   BookOpen,
   Clock,
   Loader2,
+  BarChart3,
 } from 'lucide-react';
 import type { AssignmentItem } from '../../services/lecturer.service';
 
@@ -124,6 +125,18 @@ export const AssignmentStepperHeader: React.FC<AssignmentStepperHeaderProps> = m
         </div>
 
         <div className="tku-stepper-top-bar__right">
+          {assignment.status === 'ASSIGNED' && (
+            <button
+              type="button"
+              className="tku-stepper-results-btn"
+              onClick={() => navigate(`/lecturer/results?assessmentId=${assignment.id}`)}
+              title="Xem thống kê kết quả bài làm của học sinh"
+            >
+              <BarChart3 size={14} />
+              <span>Xem thống kê kết quả</span>
+            </button>
+          )}
+
           <div
             className={`tku-stepper-autosave-badge ${
               isSaving || isStepSwitching ? 'tku-stepper-autosave-badge--saving' : ''

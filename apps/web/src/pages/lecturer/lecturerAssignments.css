@@ -811,6 +811,19 @@
   border-color: #1d68f2;
 }
 
+.tku-row-btn--results {
+  background-color: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #15803d;
+  font-weight: 700;
+}
+
+.tku-row-btn--results:hover {
+  background-color: #16a34a;
+  color: #ffffff;
+  border-color: #16a34a;
+}
+
 .tku-row-btn-icon {
   width: 30px;
   height: 30px;
@@ -2944,4 +2957,31 @@ input:checked + .tku-slider:before {
     flex-direction: column;
     align-items: stretch;
   }
+}
+
+.tku-stepper-results-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  background: #eff6ff;
+  color: #1d68f2;
+  border: 1px solid #bfdbfe;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-stepper-results-btn:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.2);
+}
+
+.tku-asg-submit-meter[style*="cursor: pointer"]:hover {
+  opacity: 0.9;
+  filter: brightness(0.96);
 }

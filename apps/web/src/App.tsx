@@ -36,6 +36,7 @@ const LecturerEditAssignmentPage = lazy(() => import('./pages/lecturer/LecturerE
 const LecturerQuestionAuthoringPage = lazy(() => import('./pages/lecturer/LecturerQuestionAuthoringPage'));
 const LecturerScoringPage = lazy(() => import('./pages/lecturer/LecturerScoringPage'));
 const LecturerAssignPage = lazy(() => import('./pages/lecturer/LecturerAssignPage'));
+const LecturerResultsPage = lazy(() => import('./pages/lecturer/LecturerResultsPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -128,6 +129,9 @@ export const App: React.FC = () => {
                 <Route path="assignments/:id/questions" element={<LecturerQuestionAuthoringPage />} />
                 <Route path="assignments/:id/scoring" element={<LecturerScoringPage />} />
                 <Route path="assignments/:id/assign" element={<LecturerAssignPage />} />
+                <Route path="results" element={<LecturerResultsPage />} />
+                <Route path="results/:id" element={<LecturerResultsPage />} />
+                <Route path="grading" element={<Navigate to="/lecturer/results" replace />} />
               </Route>
               <Route
                 path="/teacher/*"

@@ -1,0 +1,1444 @@
+/* ==========================================================================
+   TKU Academic Platform - Lecturer Results & Statistics (Xem kết quả bài làm)
+   Synchronized with TKU Academic Design System (Admin & Lecturer Pages)
+   ========================================================================== */
+
+.tku-results-page {
+  padding: 28px 36px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  animation: tkuResultsFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+}
+
+@keyframes tkuResultsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 1. Academic Header Banner */
+.tku-results-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  border-radius: 18px;
+  padding: 28px 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -4px rgba(29, 104, 242, 0.22);
+  position: relative;
+  overflow: hidden;
+  gap: 24px;
+}
+
+.tku-results-banner::after {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -50px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-results-banner::before {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: 20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-results-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 860px;
+  position: relative;
+  z-index: 1;
+}
+
+.tku-results-banner__title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.tku-results-banner__desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0;
+  line-height: 1.55;
+  font-weight: 450;
+}
+
+
+
+/* 2. Assessment Context & Filter Selector Bar */
+.tku-results-context-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.tku-results-context-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 16px;
+}
+
+.tku-results-selectors {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 320px;
+  flex-wrap: wrap;
+}
+
+.tku-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.tku-select-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-select-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tku-results-select {
+  width: 100%;
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 9px 36px 9px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tku-results-select:hover {
+  border-color: #94a3b8;
+  background: #ffffff;
+}
+
+.tku-results-select:focus {
+  border-color: #1d68f2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-results-select-icon {
+  position: absolute;
+  right: 12px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Active Assessment Meta Pill Badge Row */
+.tku-results-assessment-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tku-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-meta-chip--exam {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.tku-meta-chip--test {
+  background: #f0fdf4;
+  color: #15803d;
+  border-color: #bbf7d0;
+}
+
+.tku-meta-chip--quiz {
+  background: #faf5ff;
+  color: #7e22ce;
+  border-color: #e9d5ff;
+}
+
+/* Secondary Filter Row */
+.tku-results-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-results-search {
+  position: relative;
+  flex: 2;
+  min-width: 240px;
+}
+
+.tku-results-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-results-search-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 9px 36px 9px 36px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.tku-results-search-input:focus {
+  background: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-results-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.tku-results-search-clear:hover {
+  color: #0f172a;
+}
+
+.tku-results-filter-select {
+  flex: 1;
+  min-width: 170px;
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 9px 32px 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tku-results-filter-select:hover {
+  background: #ffffff;
+  border-color: #94a3b8;
+}
+
+.tku-results-filter-select:focus {
+  border-color: #1d68f2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+
+/* 3. Executive KPI Metric Cards */
+.tku-results-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.tku-results-stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+
+.tku-results-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.tku-results-stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-results-stat-icon--blue {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-results-stat-icon--emerald {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.tku-results-stat-icon--amber {
+  background: #fffbeb;
+  color: #f59e0b;
+}
+
+.tku-results-stat-icon--purple {
+  background: #faf5ff;
+  color: #8b5cf6;
+}
+
+.tku-results-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tku-results-stat-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tku-results-stat-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.tku-results-stat-sub {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* 4. Grade Distribution & Pedagogical Insights Card */
+.tku-distribution-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 26px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tku-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-card-title {
+  font-size: 16.5px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.015em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-card-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0;
+  font-weight: 500;
+}
+
+/* Distribution Bars Grid */
+.tku-distribution-bars {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.tku-dist-bar-item {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.2s ease;
+}
+
+.tku-dist-bar-item:hover {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+  border-color: #cbd5e1;
+}
+
+.tku-dist-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.tku-dist-tier-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-dist-range {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.tku-dist-meter-bg {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.tku-dist-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tku-dist-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.tku-dist-count {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tku-dist-percent {
+  font-weight: 800;
+}
+
+
+
+/* 5. View Mode Tabs (Danh sách sinh viên vs Phân tích câu hỏi) */
+.tku-results-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0;
+}
+
+.tku-results-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 10px 18px;
+  margin-bottom: -2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tku-results-tab-btn:hover {
+  color: #1d68f2;
+}
+
+.tku-results-tab-btn--active {
+  color: #1d68f2;
+  border-bottom-color: #1d68f2;
+}
+
+.tku-results-tab-badge {
+  background: #e2e8f0;
+  color: #334155;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.tku-results-tab-btn--active .tku-results-tab-badge {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+/* 6. Submissions Table Card */
+.tku-results-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.tku-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.tku-results-table th {
+  background: #f8fafc;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.tku-results-table td {
+  padding: 16px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 13.5px;
+  color: #1e293b;
+  vertical-align: middle;
+}
+
+.tku-results-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.tku-results-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Student Profile Cell */
+.tku-student-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-student-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #bfdbfe;
+  flex-shrink: 0;
+  text-transform: uppercase;
+  overflow: hidden;
+  user-select: none;
+}
+
+.tku-student-avatar img,
+.tku-modal-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tku-student-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.tku-student-sub {
+  font-size: 12px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+
+/* Score Badge Cell */
+.tku-score-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-score-number {
+  font-size: 17px;
+  font-weight: 800;
+  padding: 4px 10px;
+  border-radius: 8px;
+  min-width: 46px;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.tku-score-number--excellent {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-score-number--good {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-score-number--fair {
+  background: #ecfeff;
+  color: #0e7490;
+  border: 1px solid #a5f3fc;
+}
+
+.tku-score-number--average {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.tku-score-number--weak {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.tku-tier-tag {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tku-tier-tag--excellent {
+  color: #059669;
+}
+
+.tku-tier-tag--good {
+  color: #2563eb;
+}
+
+.tku-tier-tag--fair {
+  color: #0891b2;
+}
+
+.tku-tier-tag--average {
+  color: #d97706;
+}
+
+.tku-tier-tag--weak {
+  color: #dc2626;
+}
+
+/* Accuracy Mini Bar */
+.tku-accuracy-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 110px;
+}
+
+.tku-accuracy-text {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tku-accuracy-bar {
+  width: 100%;
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tku-accuracy-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1d68f2 0%, #10b981 100%);
+  border-radius: 999px;
+}
+
+/* Submission Status Pill */
+.tku-submission-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tku-submission-status-pill--graded {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.tku-submission-status-pill--late {
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.tku-submission-status-pill--unsubmitted {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+/* Action Buttons in Row */
+.tku-row-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-row-action-btn:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.2);
+}
+
+.tku-row-action-btn--primary {
+  background: #eff6ff;
+  color: #1d68f2;
+  border-color: #bfdbfe;
+}
+
+.tku-row-action-btn--primary:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+}
+
+/* 7. Question Analysis Cards (Tab 2) */
+.tku-question-analysis-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tku-q-analysis-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  transition: all 0.2s ease;
+}
+
+.tku-q-analysis-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.tku-q-main-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 1;
+}
+
+.tku-q-number-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: #f1f5f9;
+  color: #1e293b;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-q-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-q-content-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.45;
+}
+
+.tku-q-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.tku-q-rate-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: 180px;
+  flex-shrink: 0;
+}
+
+.tku-q-rate-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-q-rate-number {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tku-difficulty-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.tku-difficulty-badge--easy {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-difficulty-badge--medium {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-difficulty-badge--hard {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.tku-q-rate-bar {
+  width: 100%;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tku-q-rate-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.5s ease;
+}
+
+/* 8. Detailed Submission Modal */
+.tku-submission-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: tkuModalFadeIn 0.2s ease-out;
+}
+
+@keyframes tkuModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tku-submission-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
+  animation: tkuModalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+@keyframes tkuModalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal Header */
+.tku-modal-header-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  color: #ffffff;
+  padding: 22px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  position: relative;
+}
+
+.tku-modal-student-summary {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tku-modal-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #1d68f2;
+  font-size: 18px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  flex-shrink: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.tku-modal-student-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-modal-student-name {
+  font-size: 18px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.tku-modal-student-sub {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-modal-close-btn {
+  background: rgba(255, 255, 255, 0.16);
+  border: none;
+  color: #ffffff;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+/* Modal Score Bar */
+.tku-modal-score-strip {
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-modal-strip-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #475569;
+}
+
+.tku-modal-strip-item strong {
+  color: #0f172a;
+}
+
+.tku-modal-strip-score {
+  font-size: 17px;
+  font-weight: 800;
+  color: #1d68f2;
+}
+
+/* Modal Scrollable Body */
+.tku-modal-scroll-body {
+  padding: 24px 28px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Question Review Card */
+.tku-review-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.tku-review-card--correct {
+  border-left: 4px solid #10b981;
+}
+
+.tku-review-card--incorrect {
+  border-left: 4px solid #ef4444;
+}
+
+.tku-review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-review-q-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tku-review-q-result-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tku-review-q-result-badge--correct {
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-review-q-result-badge--incorrect {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.tku-review-q-content {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.5;
+}
+
+.tku-review-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tku-review-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #334155;
+}
+
+.tku-review-option--selected-correct {
+  background: #ecfdf5;
+  border-color: #10b981;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.tku-review-option--selected-wrong {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #991b1b;
+  font-weight: 600;
+}
+
+.tku-review-option--correct-answer {
+  background: #f0fdf4;
+  border-color: #34d399;
+  color: #047857;
+  font-weight: 600;
+}
+
+.tku-review-solution-box {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #166534;
+  line-height: 1.5;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+/* Modal Teacher Feedback Box */
+.tku-modal-feedback-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-feedback-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-feedback-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  min-height: 70px;
+  box-sizing: border-box;
+}
+
+.tku-feedback-textarea:focus {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-modal-actions-footer {
+  padding: 16px 28px;
+  border-top: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.tku-modal-btn-secondary {
+  padding: 9px 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-modal-btn-secondary:hover {
+  background: #f1f5f9;
+}
+
+.tku-modal-btn-primary {
+  padding: 9px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #1d68f2;
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.25);
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-modal-btn-primary:hover {
+  background: #1558d6;
+  transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Results Empty State Card (Synchronized with TKU Platform Design System)
+   ========================================================================== */
+.tku-results-empty-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 68px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
+  margin: 8px 0;
+  animation: tkuResultsFadeIn 0.25s ease-out;
+}
+
+.tku-results-empty-graphic {
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+  box-shadow: 0 8px 20px -2px rgba(29, 104, 242, 0.16);
+  border: 1px solid #bfdbfe;
+  transition: transform 0.25s ease;
+}
+
+.tku-results-empty-card:hover .tku-results-empty-graphic {
+  transform: translateY(-2px) scale(1.03);
+}
+
+.tku-results-empty-icon {
+  color: #1d68f2;
+}
+
+.tku-results-empty-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+
+.tku-results-empty-desc {
+  font-size: 14.5px;
+  color: #64748b;
+  max-width: 580px;
+  margin: 0;
+  line-height: 1.6;
+  font-weight: 450;
+}
+
+.tku-results-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(29, 104, 242, 0.28);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.tku-results-empty-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(29, 104, 242, 0.38);
+  background: linear-gradient(135deg, #1859d6 0%, #104bbb 100%);
+}
+
+.tku-results-empty-btn:active {
+  transform: translateY(0);
+}
+
+/* Responsive Breakpoints */
+@media (max-width: 1200px) {
+  .tku-results-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .tku-distribution-bars {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tku-results-page {
+    padding: 18px 16px 36px 16px;
+  }
+  .tku-results-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px 20px;
+  }
+  .tku-results-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-distribution-bars {
+    grid-template-columns: 1fr;
+  }
+  .tku-results-context-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

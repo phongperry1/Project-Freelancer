@@ -289,6 +289,19 @@ export class LecturerController {
     return this.lecturerService.getAssessmentById(userId, assessmentId, role);
   }
 
+  @Get('assessments/:id/results')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy kết quả bài làm và thống kê của học sinh từ database' })
+  @ApiResponse({ status: 200, description: 'Dữ liệu kết quả bài làm và thống kê.' })
+  async getAssessmentResults(
+    @Param('id') assessmentId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getAssessmentResults(userId, assessmentId, role);
+  }
+
   @Post('assessments')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()

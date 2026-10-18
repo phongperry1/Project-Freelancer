@@ -43,6 +43,57 @@
   font-weight: 500;
 }
 
+/* Connection warning & Auto-retry banner */
+.tku-lecturer-conn-warning {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(29, 104, 242, 0.04);
+  flex-wrap: wrap;
+}
+
+.tku-lecturer-conn-warning__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-lecturer-retry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #ffffff;
+  border: 1px solid #93c5fd;
+  color: #1d4ed8;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-lecturer-retry-btn:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  color: #ffffff;
+  border-color: #1d4ed8;
+}
+
+.tku-lecturer-retry-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* 4 Quick Stat Cards Grid */
 .tku-lecturer-stats-grid {
   display: grid;
