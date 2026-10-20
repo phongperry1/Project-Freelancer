@@ -122,6 +122,110 @@ export interface CourseStudentItem {
   enrolledAt?: string;
 }
 
+export interface MonitoredStudentItem {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  courseId: string;
+  courseTitle: string;
+  enrolledAt: string;
+  enrolledAtText: string;
+  completedAt?: string | null;
+  progressPercent: number;
+  completedLessonsCount: number;
+  totalLessonsCount: number;
+  assessmentsSubmitted: number;
+  totalAssessments: number;
+  averageScore: number | null;
+  learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED';
+  learningStatusText: string;
+}
+
+export interface MonitoredStudentsSummary {
+  totalStudents: number;
+  activeStudents: number;
+  completedStudents: number;
+  atRiskStudents: number;
+  averageProgress: number;
+}
+
+export interface MonitoredStudentsResponse {
+  summary: MonitoredStudentsSummary;
+  students: MonitoredStudentItem[];
+}
+
+export interface LessonProgressItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  videoUrl?: string | null;
+  durationMinutes?: number | null;
+  isCompleted: boolean;
+  progressPercent: number;
+  completedAt?: string | null;
+}
+
+export interface ChapterProgressItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;
+  lessons: LessonProgressItem[];
+}
+
+export interface AssessmentProgressItem {
+  id: string;
+  title: string;
+  type: string;
+  typeText: string;
+  totalScore: number;
+  durationMinutes?: number | null;
+  attemptsCount: number;
+  bestScore: number | null;
+  lastSubmittedAt?: string | null;
+  status: 'SUBMITTED' | 'PASSED' | 'FAILED' | 'NOT_SUBMITTED';
+  statusText: string;
+}
+
+export interface StudentProgressDetailResponse {
+  student: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string | null;
+    phoneNumber?: string | null;
+  };
+  course: {
+    id: string;
+    title: string;
+    description?: string | null;
+    thumbnailUrl?: string | null;
+  };
+  enrollment: {
+    enrolledAt: string;
+    enrolledAtText: string;
+    completedAt?: string | null;
+    progressPercent: number;
+    learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED';
+    learningStatusText: string;
+  };
+  metrics: {
+    totalLessons: number;
+    completedLessons: number;
+    lessonsProgressPercent: number;
+    totalAssessments: number;
+    submittedAssessments: number;
+    averageScore: number | null;
+    passedAssessments: number;
+  };
+  chapters: ChapterProgressItem[];
+  assessments: AssessmentProgressItem[];
+}
+
 export interface StudentSubmissionAnswer {
   questionId: string;
   questionNumber: number;
@@ -280,25 +384,6 @@ export interface LecturerDashboardData {
   tasks: LecturerTaskItem[];
 }
 
-const emptyDashboardData: LecturerDashboardData = {
-  stats: {
-    totalCourses: 0,
-    publishedCourses: 0,
-    draftCourses: 0,
-    totalStudents: 0,
-    newStudentsThisMonth: 0,
-    pendingGrading: 0,
-    essayCount: 0,
-    quizCount: 0,
-    averageProgress: 0,
-    progressChange: 0,
-  },
-  courses: [],
-  activities: [],
-  submissions: [],
-  tasks: [],
-};
-
 const emptyCoursesResponse: LecturerCoursesResponse = {
   stats: {
     totalCourses: 0,
@@ -323,7 +408,8 @@ class LecturerService {
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const res = await fetch(input, init);
-        if ([502, 503, 504].includes(res.status) && attempt < maxRetries) {
+        // Retry on 500 (transient DB connection/pool initialization during boot) and 502/503/504 gateway errors
+        if ([500, 502, 503, 504].includes(res.status) && attempt < maxRetries) {
           await new Promise((resolve) => setTimeout(resolve, delayMs));
           continue;
         }
@@ -341,7 +427,9 @@ class LecturerService {
 
   async getDashboardData(): Promise<LecturerDashboardData> {
     const token = authService.getStoredToken();
-    if (!token) return emptyDashboardData;
+    if (!token) {
+      throw new Error('Chưa có token xác thực');
+    }
 
     const res = await this.fetchWithBootRetry(
       `${API_BASE_URL}/lecturer/dashboard`,
@@ -354,16 +442,22 @@ class LecturerService {
     );
 
     if (!res.ok) {
-      return emptyDashboardData;
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải dữ liệu bảng điều khiển.');
     }
 
     const json = await res.json();
-    return json || emptyDashboardData;
+    if (!json) {
+      throw new Error('Dữ liệu bảng điều khiển không hợp lệ.');
+    }
+    return json;
   }
 
   async getAssignedCourses(): Promise<LecturerCoursesResponse> {
     const token = authService.getStoredToken();
-    if (!token) return emptyCoursesResponse;
+    if (!token) {
+      throw new Error('Chưa có token xác thực');
+    }
 
     const res = await this.fetchWithBootRetry(
       `${API_BASE_URL}/lecturer/courses`,
@@ -376,7 +470,8 @@ class LecturerService {
     );
 
     if (!res.ok) {
-      return emptyCoursesResponse;
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải danh sách khóa học.');
     }
 
     const json = await res.json();
@@ -863,6 +958,71 @@ class LecturerService {
     } catch {
       return null;
     }
+  }
+
+  async getMonitoredStudents(
+    courseId?: string,
+  ): Promise<MonitoredStudentsResponse> {
+    const token = authService.getStoredToken();
+    const emptyResponse: MonitoredStudentsResponse = {
+      summary: {
+        totalStudents: 0,
+        activeStudents: 0,
+        completedStudents: 0,
+        atRiskStudents: 0,
+        averageProgress: 0,
+      },
+      students: [],
+    };
+    if (!token) return emptyResponse;
+
+    const url = `${API_BASE_URL}/lecturer/students${
+      courseId && courseId !== 'ALL'
+        ? `?courseId=${encodeURIComponent(courseId)}`
+        : ''
+    }`;
+
+    const res = await this.fetchWithBootRetry(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải danh sách học sinh.');
+    }
+    const data = await res.json();
+    return data || emptyResponse;
+  }
+
+  async getStudentProgress(
+    studentId: string,
+    courseId: string,
+  ): Promise<StudentProgressDetailResponse | null> {
+    const token = authService.getStoredToken();
+    if (!token || !studentId || !courseId) return null;
+
+    const res = await this.fetchWithBootRetry(
+      `${API_BASE_URL}/lecturer/students/${encodeURIComponent(
+        studentId,
+      )}/progress?courseId=${encodeURIComponent(courseId)}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(
+        err.message || 'Không thể tải tiến độ học tập của học sinh.',
+      );
+    }
+
+    return res.json();
   }
 
   async saveSubmissionFeedback(

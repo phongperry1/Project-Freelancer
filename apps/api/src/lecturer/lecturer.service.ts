@@ -112,6 +112,110 @@ export interface LecturerCoursesResponse {
   courses: LecturerCourseItem[];
 }
 
+export interface MonitoredStudentItem {
+  id: string;
+  fullName: string;
+  email: string;
+  avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  courseId: string;
+  courseTitle: string;
+  enrolledAt: string;
+  enrolledAtText: string;
+  completedAt?: string | null;
+  progressPercent: number;
+  completedLessonsCount: number;
+  totalLessonsCount: number;
+  assessmentsSubmitted: number;
+  totalAssessments: number;
+  averageScore: number | null;
+  learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED';
+  learningStatusText: string;
+}
+
+export interface MonitoredStudentsSummary {
+  totalStudents: number;
+  activeStudents: number;
+  completedStudents: number;
+  atRiskStudents: number;
+  averageProgress: number;
+}
+
+export interface MonitoredStudentsResponse {
+  summary: MonitoredStudentsSummary;
+  students: MonitoredStudentItem[];
+}
+
+export interface LessonProgressItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  videoUrl?: string | null;
+  durationMinutes?: number | null;
+  isCompleted: boolean;
+  progressPercent: number;
+  completedAt?: string | null;
+}
+
+export interface ChapterProgressItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;
+  lessons: LessonProgressItem[];
+}
+
+export interface AssessmentProgressItem {
+  id: string;
+  title: string;
+  type: string;
+  typeText: string;
+  totalScore: number;
+  durationMinutes?: number | null;
+  attemptsCount: number;
+  bestScore: number | null;
+  lastSubmittedAt?: string | null;
+  status: 'SUBMITTED' | 'PASSED' | 'FAILED' | 'NOT_SUBMITTED';
+  statusText: string;
+}
+
+export interface StudentProgressDetailResponse {
+  student: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string | null;
+    phoneNumber?: string | null;
+  };
+  course: {
+    id: string;
+    title: string;
+    description?: string | null;
+    thumbnailUrl?: string | null;
+  };
+  enrollment: {
+    enrolledAt: string;
+    enrolledAtText: string;
+    completedAt?: string | null;
+    progressPercent: number;
+    learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED';
+    learningStatusText: string;
+  };
+  metrics: {
+    totalLessons: number;
+    completedLessons: number;
+    lessonsProgressPercent: number;
+    totalAssessments: number;
+    submittedAssessments: number;
+    averageScore: number | null;
+    passedAssessments: number;
+  };
+  chapters: ChapterProgressItem[];
+  assessments: AssessmentProgressItem[];
+}
+
 @Injectable()
 export class LecturerService {
   constructor(private readonly prisma: PrismaService) {}
@@ -347,6 +451,494 @@ export class LecturerService {
       avatarUrl: en.student.avatarUrl,
       enrolledAt: en.enrolledAt.toISOString(),
     }));
+  }
+
+  async getMonitoredStudents(
+    userId: string,
+    role?: string,
+    courseId?: string,
+  ): Promise<MonitoredStudentsResponse> {
+    const whereCourse: { teacherId?: string; id?: string } = {};
+    if (role !== 'ADMIN') {
+      whereCourse.teacherId = userId;
+    }
+    if (courseId && courseId !== 'ALL') {
+      whereCourse.id = courseId;
+    }
+
+    const teacherCourses = await this.prisma.course.findMany({
+      where: whereCourse,
+      select: {
+        id: true,
+        title: true,
+        chapters: {
+          select: {
+            _count: {
+              select: { lessons: true },
+            },
+          },
+        },
+        _count: {
+          select: { assessments: true },
+        },
+      },
+    });
+
+    const allowedCourseIds = teacherCourses.map((c) => c.id);
+    if (allowedCourseIds.length === 0) {
+      return {
+        summary: {
+          totalStudents: 0,
+          activeStudents: 0,
+          completedStudents: 0,
+          atRiskStudents: 0,
+          averageProgress: 0,
+        },
+        students: [],
+      };
+    }
+
+    const courseMetaMap = new Map<
+      string,
+      { title: string; totalLessons: number; totalAssessments: number }
+    >();
+    for (const c of teacherCourses) {
+      const totalLessons = c.chapters.reduce(
+        (acc, ch) => acc + (ch._count?.lessons || 0),
+        0,
+      );
+      courseMetaMap.set(c.id, {
+        title: c.title,
+        totalLessons,
+        totalAssessments: c._count.assessments,
+      });
+    }
+
+    const enrollments = await this.prisma.courseEnrollment.findMany({
+      where: {
+        courseId: { in: allowedCourseIds },
+      },
+      include: {
+        student: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+            phoneNumber: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            title: true,
+          },
+        },
+      },
+      orderBy: { enrolledAt: 'desc' },
+    });
+
+    if (enrollments.length === 0) {
+      return {
+        summary: {
+          totalStudents: 0,
+          activeStudents: 0,
+          completedStudents: 0,
+          atRiskStudents: 0,
+          averageProgress: 0,
+        },
+        students: [],
+      };
+    }
+
+    // Extract enrolled student IDs to avoid unconstrained submission queries
+    const enrolledStudentIds = Array.from(
+      new Set(enrollments.map((en) => en.studentId)),
+    );
+
+    // Submissions for assessment metrics scoped to enrolled students and allowed courses
+    const submissions = await this.prisma.assessmentSubmission.findMany({
+      where: {
+        studentId: { in: enrolledStudentIds },
+        assessment: {
+          courseId: { in: allowedCourseIds },
+        },
+      },
+      select: {
+        studentId: true,
+        assessmentId: true,
+        score: true,
+        assessment: {
+          select: { courseId: true },
+        },
+      },
+    });
+
+    // Map: key: `${studentId}_${courseId}` -> Map<assessmentId, bestScore>
+    // Deduplicates multiple attempts per assessment so assessmentsSubmitted <= totalAssessments
+    const studentAssessmentScores = new Map<
+      string,
+      Map<string, number | null>
+    >();
+    for (const s of submissions) {
+      const key = `${s.studentId}_${s.assessment.courseId}`;
+      let assessMap = studentAssessmentScores.get(key);
+      if (!assessMap) {
+        assessMap = new Map<string, number | null>();
+        studentAssessmentScores.set(key, assessMap);
+      }
+
+      const existingScore = assessMap.get(s.assessmentId);
+      if (s.score !== null && s.score !== undefined) {
+        if (
+          existingScore === undefined ||
+          existingScore === null ||
+          s.score > existingScore
+        ) {
+          assessMap.set(s.assessmentId, s.score);
+        }
+      } else if (!assessMap.has(s.assessmentId)) {
+        assessMap.set(s.assessmentId, null);
+      }
+    }
+
+    let completedCount = 0;
+    let atRiskCount = 0;
+    let activeCount = 0;
+    let totalProgressSum = 0;
+
+    const students: MonitoredStudentItem[] = enrollments.map((en) => {
+      const meta = courseMetaMap.get(en.courseId) || {
+        title: en.course.title,
+        totalLessons: 0,
+        totalAssessments: 0,
+      };
+
+      const assessMap = studentAssessmentScores.get(
+        `${en.studentId}_${en.courseId}`,
+      );
+      const assessmentsSubmitted = assessMap ? assessMap.size : 0;
+
+      let averageScore: number | null = null;
+      if (assessMap && assessMap.size > 0) {
+        let scoredCount = 0;
+        let scoreSum = 0;
+        for (const score of assessMap.values()) {
+          if (score !== null && score !== undefined) {
+            scoredCount++;
+            scoreSum += score;
+          }
+        }
+        if (scoredCount > 0) {
+          averageScore = Math.round((scoreSum / scoredCount) * 10) / 10;
+        }
+      }
+
+      const progressPercent = Math.min(100, Math.max(0, en.progressPercent || 0));
+      totalProgressSum += progressPercent;
+      const completedLessonsCount = Math.round(
+        (progressPercent / 100) * meta.totalLessons,
+      );
+
+      let learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED';
+      let learningStatusText: string;
+
+      if (progressPercent >= 100 || en.completedAt) {
+        learningStatus = 'COMPLETED';
+        learningStatusText = 'Đã hoàn thành';
+        completedCount++;
+        activeCount++;
+      } else if (progressPercent === 0 && assessmentsSubmitted === 0) {
+        learningStatus = 'NOT_STARTED';
+        learningStatusText = 'Chưa bắt đầu';
+      } else if (
+        progressPercent < 30 ||
+        (averageScore !== null && averageScore < 5.0)
+      ) {
+        learningStatus = 'NEEDS_ATTENTION';
+        learningStatusText = 'Cần nhắc nhở';
+        atRiskCount++;
+        activeCount++;
+      } else {
+        learningStatus = 'ON_TRACK';
+        learningStatusText = 'Đang học';
+        activeCount++;
+      }
+
+      const enrolledDate = new Date(en.enrolledAt);
+      const enrolledAtText = enrolledDate.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+
+      return {
+        id: en.student.id,
+        fullName: en.student.fullName,
+        email: en.student.email,
+        avatarUrl: en.student.avatarUrl,
+        phoneNumber: en.student.phoneNumber,
+        courseId: en.courseId,
+        courseTitle: meta.title,
+        enrolledAt: en.enrolledAt.toISOString(),
+        enrolledAtText,
+        completedAt: en.completedAt ? en.completedAt.toISOString() : null,
+        progressPercent,
+        completedLessonsCount,
+        totalLessonsCount: meta.totalLessons,
+        assessmentsSubmitted,
+        totalAssessments: meta.totalAssessments,
+        averageScore,
+        learningStatus,
+        learningStatusText,
+      };
+    });
+
+    const totalStudents = enrollments.length;
+    const averageProgress =
+      totalStudents > 0 ? Math.round(totalProgressSum / totalStudents) : 0;
+
+    return {
+      summary: {
+        totalStudents,
+        activeStudents: activeCount,
+        completedStudents: completedCount,
+        atRiskStudents: atRiskCount,
+        averageProgress,
+      },
+      students,
+    };
+  }
+
+  async getStudentProgress(
+    userId: string,
+    studentId: string,
+    courseId: string,
+    role?: string,
+  ): Promise<StudentProgressDetailResponse> {
+    if (!studentId || !studentId.trim()) {
+      throw new BadRequestException('Mã học sinh (studentId) không được để trống.');
+    }
+    if (!courseId || !courseId.trim()) {
+      throw new BadRequestException('Mã khóa học (courseId) không được để trống.');
+    }
+
+    const whereCourse: { teacherId?: string; id?: string } = { id: courseId };
+    if (role !== 'ADMIN') {
+      whereCourse.teacherId = userId;
+    }
+
+    const [course, student, enrollment, chapters, assessments] =
+      await Promise.all([
+        this.prisma.course.findFirst({
+          where: whereCourse,
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            thumbnailUrl: true,
+          },
+        }),
+        this.prisma.user.findUnique({
+          where: { id: studentId },
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+            phoneNumber: true,
+          },
+        }),
+        this.prisma.courseEnrollment.findUnique({
+          where: {
+            courseId_studentId: {
+              courseId,
+              studentId,
+            },
+          },
+        }),
+        this.prisma.chapter.findMany({
+          where: { courseId },
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            lessons: {
+              orderBy: { sortOrder: 'asc' },
+              include: {
+                progresses: {
+                  where: { studentId },
+                },
+              },
+            },
+          },
+        }),
+        this.prisma.assessment.findMany({
+          where: { courseId },
+          orderBy: { createdAt: 'asc' },
+          include: {
+            submissions: {
+              where: { studentId },
+              orderBy: { attemptNumber: 'desc' },
+            },
+          },
+        }),
+      ]);
+
+    if (!course) {
+      throw new NotFoundException('Không tìm thấy khóa học hoặc bạn không có quyền truy cập.');
+    }
+
+    if (!student) {
+      throw new NotFoundException('Không tìm thấy thông tin học sinh.');
+    }
+
+    let totalLessons = 0;
+    let completedLessons = 0;
+
+    const chapterList: ChapterProgressItem[] = chapters.map((ch) => {
+      let chCompleted = 0;
+      const lessonItems: LessonProgressItem[] = ch.lessons.map((l) => {
+        totalLessons++;
+        const prog = l.progresses[0];
+        const isCompleted = prog?.isCompleted || (prog?.progressPercent ?? 0) >= 100;
+        if (isCompleted) {
+          completedLessons++;
+          chCompleted++;
+        }
+        return {
+          id: l.id,
+          title: l.title,
+          sortOrder: l.sortOrder,
+          videoUrl: l.videoUrl,
+          durationMinutes: null,
+          isCompleted: Boolean(isCompleted),
+          progressPercent: prog ? Math.min(100, Math.max(0, prog.progressPercent)) : 0,
+          completedAt: prog?.completedAt ? prog.completedAt.toISOString() : null,
+        };
+      });
+
+      const chTotal = ch.lessons.length;
+      const chPct = chTotal > 0 ? Math.round((chCompleted / chTotal) * 100) : 0;
+
+      return {
+        id: ch.id,
+        title: ch.title,
+        sortOrder: ch.sortOrder,
+        totalLessons: chTotal,
+        completedLessons: chCompleted,
+        progressPercent: chPct,
+        lessons: lessonItems,
+      };
+    });
+
+    let submittedCount = 0;
+    let passedCount = 0;
+    let totalScoreSum = 0;
+
+    const assessmentList: AssessmentProgressItem[] = assessments.map((a) => {
+      const bestScore = a.submissions.reduce<number | null>((max, s) => {
+        if (s.score !== null && s.score !== undefined) {
+          return max === null ? s.score : Math.max(max, s.score);
+        }
+        return max;
+      }, null);
+
+      const hasSubmitted = a.submissions.length > 0;
+      if (hasSubmitted) {
+        submittedCount++;
+        if (bestScore !== null) {
+          totalScoreSum += bestScore;
+          if (bestScore >= 5.0) passedCount++;
+        }
+      }
+
+      const lastSub = a.submissions[0];
+      let status: 'SUBMITTED' | 'PASSED' | 'FAILED' | 'NOT_SUBMITTED' = 'NOT_SUBMITTED';
+      let statusText = 'Chưa làm bài';
+
+      if (hasSubmitted) {
+        if (bestScore !== null && bestScore >= 5.0) {
+          status = 'PASSED';
+          statusText = 'Đạt yêu cầu';
+        } else if (bestScore !== null && bestScore < 5.0) {
+          status = 'FAILED';
+          statusText = 'Chưa đạt';
+        } else {
+          status = 'SUBMITTED';
+          statusText = 'Đã nộp bài';
+        }
+      }
+
+      const typeLabels: Record<string, string> = {
+        QUIZ: 'Trắc nghiệm ngắn',
+        TEST: 'Bài kiểm tra',
+        EXAM: 'Đề thi kết thúc môn',
+      };
+
+      return {
+        id: a.id,
+        title: a.title,
+        type: a.type,
+        typeText: typeLabels[a.type] || 'Bài tập',
+        totalScore: 10,
+        durationMinutes: a.durationMinutes,
+        attemptsCount: a.submissions.length,
+        bestScore: bestScore !== null ? Math.round(bestScore * 10) / 10 : null,
+        lastSubmittedAt: lastSub?.submittedAt ? lastSub.submittedAt.toISOString() : null,
+        status,
+        statusText,
+      };
+    });
+
+    const averageScore = submittedCount > 0 ? Math.round((totalScoreSum / submittedCount) * 10) / 10 : null;
+    const progressPercent = enrollment?.progressPercent ?? (totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0);
+
+    let learningStatus: 'COMPLETED' | 'ON_TRACK' | 'NEEDS_ATTENTION' | 'NOT_STARTED' = 'NOT_STARTED';
+    let learningStatusText = 'Chưa bắt đầu';
+
+    if (progressPercent >= 100 || enrollment?.completedAt) {
+      learningStatus = 'COMPLETED';
+      learningStatusText = 'Đã hoàn thành';
+    } else if (progressPercent === 0 && submittedCount === 0) {
+      learningStatus = 'NOT_STARTED';
+      learningStatusText = 'Chưa bắt đầu';
+    } else if (progressPercent < 30 || (averageScore !== null && averageScore < 5.0)) {
+      learningStatus = 'NEEDS_ATTENTION';
+      learningStatusText = 'Cần nhắc nhở';
+    } else {
+      learningStatus = 'ON_TRACK';
+      learningStatusText = 'Đang học';
+    }
+
+    const enrolledDate = enrollment ? new Date(enrollment.enrolledAt) : new Date();
+    const enrolledAtText = enrolledDate.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    return {
+      student,
+      course,
+      enrollment: {
+        enrolledAt: enrollment ? enrollment.enrolledAt.toISOString() : new Date().toISOString(),
+        enrolledAtText,
+        completedAt: enrollment?.completedAt ? enrollment.completedAt.toISOString() : null,
+        progressPercent,
+        learningStatus,
+        learningStatusText,
+      },
+      metrics: {
+        totalLessons,
+        completedLessons,
+        lessonsProgressPercent: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+        totalAssessments: assessments.length,
+        submittedAssessments: submittedCount,
+        averageScore,
+        passedAssessments: passedCount,
+      },
+      chapters: chapterList,
+      assessments: assessmentList,
+    };
   }
 
   async getDashboardData(userId: string, role?: string) {

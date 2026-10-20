@@ -4,7 +4,6 @@ import {
   LayoutDashboard,
   BookOpen,
   FilePenLine,
-  BarChart3,
   Users,
   Bell,
   Settings,
@@ -48,21 +47,16 @@ const TEACHING_NAV_ITEMS: NavItemConfig[] = [
       p.startsWith('/teacher/assignments'),
   },
   {
-    to: '/lecturer/results',
-    label: 'Kết quả và thống kê',
-    icon: BarChart3,
-    isActive: (p) =>
-      p.startsWith('/lecturer/results') ||
-      p.startsWith('/lecturer/grading') ||
-      p.startsWith('/teacher/results') ||
-      p.startsWith('/teacher/grading'),
-  },
-  {
     to: '/lecturer/students',
-    label: 'Học sinh',
+    label: 'Theo dõi học sinh',
     icon: Users,
     isActive: (p) =>
-      p.startsWith('/lecturer/students') || p.startsWith('/teacher/students'),
+      p.startsWith('/lecturer/students') ||
+      p.startsWith('/teacher/students') ||
+      p.startsWith('/lecturer/results') ||
+      p.startsWith('/teacher/results') ||
+      p.startsWith('/lecturer/grading') ||
+      p.startsWith('/teacher/grading'),
   },
 ];
 
@@ -226,6 +220,47 @@ export const LecturerLayout: React.FC = () => {
         </>
       );
     }
+
+    if (
+      location.pathname.includes('/students') &&
+      location.pathname.includes('/progress')
+    ) {
+      return (
+        <>
+          <Link
+            to="/lecturer/students"
+            className="tku-lecturer-breadcrumbs__parent"
+          >
+            Theo dõi học sinh
+          </Link>
+          <span className="tku-lecturer-breadcrumbs__sep">/</span>
+          <span className="tku-lecturer-breadcrumbs__current">
+            Tiến độ học tập
+          </span>
+        </>
+      );
+    }
+
+    if (
+      location.pathname.startsWith('/lecturer/results') ||
+      location.pathname.startsWith('/teacher/results')
+    ) {
+      return (
+        <>
+          <Link
+            to="/lecturer/students"
+            className="tku-lecturer-breadcrumbs__parent"
+          >
+            Theo dõi học sinh
+          </Link>
+          <span className="tku-lecturer-breadcrumbs__sep">/</span>
+          <span className="tku-lecturer-breadcrumbs__current">
+            Kết quả học tập
+          </span>
+        </>
+      );
+    }
+
     const all = [...TEACHING_NAV_ITEMS, ...PERSONAL_NAV_ITEMS];
     const match = all.find((item) => item.isActive(location.pathname));
     if (match) return match.label;

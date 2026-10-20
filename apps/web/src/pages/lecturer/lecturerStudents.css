@@ -1,0 +1,1056 @@
+/* ==========================================================================
+   TKU Academic Platform - Theo Dõi Học Sinh (Student Monitoring & Progress)
+   Synchronized with TKU Academic Design System (Admin & Lecturer Pages)
+   ========================================================================== */
+
+.tku-students-page {
+  padding: 28px 36px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  animation: tkuStudentsFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+}
+
+@keyframes tkuStudentsFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 1. Academic Header Banner */
+.tku-students-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  border-radius: 18px;
+  padding: 28px 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+  box-shadow: 0 10px 25px -4px rgba(29, 104, 242, 0.22);
+  position: relative;
+  overflow: hidden;
+  gap: 24px;
+}
+
+.tku-students-banner::after {
+  content: '';
+  position: absolute;
+  top: -80px;
+  right: -50px;
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.22) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-students-banner::before {
+  content: '';
+  position: absolute;
+  bottom: -60px;
+  left: 20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-students-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 860px;
+  position: relative;
+  z-index: 1;
+}
+
+.tku-banner-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(8px);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #ffffff;
+  width: fit-content;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.tku-students-banner__title {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  line-height: 1.25;
+}
+
+.tku-students-banner__desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.92);
+  margin: 0;
+  line-height: 1.55;
+  font-weight: 450;
+}
+
+/* Sub Navigation Tabs */
+.tku-students-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+}
+
+.tku-students-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.tku-students-nav-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.tku-students-nav-tab--active {
+  color: #1d68f2 !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-weight: 700;
+}
+
+/* 2. KPI Summary Grid */
+.tku-students-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+}
+
+.tku-students-kpi-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 20px 22px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+}
+
+.tku-students-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+  border-color: #cbd5e1;
+}
+
+.tku-students-kpi-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-students-kpi-icon--blue {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-students-kpi-icon--emerald {
+  background: #f0fdf4;
+  color: #10b981;
+}
+
+.tku-students-kpi-icon--cyan {
+  background: #ecfeff;
+  color: #06b6d4;
+}
+
+.tku-students-kpi-icon--rose {
+  background: #fff1f2;
+  color: #f43f5e;
+}
+
+.tku-students-kpi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.tku-students-kpi-label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.tku-students-kpi-value {
+  font-size: 24px;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.tku-students-kpi-sub {
+  font-size: 12px;
+  color: #94a3b8;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* 3. Filter Card */
+.tku-students-filter-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.tku-students-filter-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-students-select-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 240px;
+}
+
+.tku-students-select-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-students-select-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tku-students-select {
+  width: 100%;
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 36px 10px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tku-students-select:hover {
+  background: #ffffff;
+  border-color: #94a3b8;
+}
+
+.tku-students-select:focus {
+  border-color: #1d68f2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-students-select-icon {
+  position: absolute;
+  right: 12px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* Secondary Filter Row */
+.tku-students-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-students-search {
+  position: relative;
+  flex: 2;
+  min-width: 260px;
+}
+
+.tku-students-search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #94a3b8;
+  pointer-events: none;
+}
+
+.tku-students-search-input {
+  width: 100%;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 9px 36px 9px 36px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #0f172a;
+  outline: none;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+.tku-students-search-input:focus {
+  background: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-students-search-clear {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+}
+
+.tku-students-search-clear:hover {
+  color: #0f172a;
+}
+
+.tku-students-filter-select {
+  flex: 1;
+  min-width: 180px;
+  appearance: none;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 9px 32px 9px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+}
+
+.tku-students-filter-select:hover {
+  background: #ffffff;
+  border-color: #94a3b8;
+}
+
+.tku-students-filter-select:focus {
+  border-color: #1d68f2;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+/* 4. Action Bar (Toolbar) */
+.tku-students-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-students-count-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.tku-students-count-number {
+  background: #eff6ff;
+  color: #1d68f2;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+/* 5. Main Table Card */
+.tku-students-table-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.tku-students-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.tku-students-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13.5px;
+}
+
+.tku-students-table thead th {
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.tku-students-table tbody td {
+  padding: 15px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: middle;
+  color: #1e293b;
+}
+
+.tku-students-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.tku-students-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Student Profile Cell */
+.tku-student-profile-cell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-student-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13.5px;
+  flex-shrink: 0;
+  overflow: hidden;
+  user-select: none;
+}
+
+.tku-student-avatar--has-img {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.tku-student-avatar--initials {
+  background: #eff6ff;
+  color: #1d68f2;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-student-avatar-img,
+.tku-student-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-student-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tku-student-name {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 14px;
+}
+
+.tku-student-sub {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 450;
+}
+
+.tku-student-phone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+/* Course Tag */
+.tku-course-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Progress Cell */
+.tku-progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 130px;
+  max-width: 180px;
+}
+
+.tku-progress-text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #475569;
+}
+
+.tku-progress-pct {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-progress-track {
+  width: 100%;
+  height: 7px;
+  background: #f1f5f9;
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.tku-progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.3s ease;
+}
+
+.tku-progress-fill--completed {
+  background: #10b981;
+}
+
+.tku-progress-fill--active {
+  background: #1d68f2;
+}
+
+.tku-progress-fill--warning {
+  background: #f59e0b;
+}
+
+.tku-progress-fill--zero {
+  background: #cbd5e1;
+}
+
+/* Assessment Score Cell */
+.tku-score-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tku-score-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.tku-score-tag--excellent {
+  color: #10b981;
+}
+
+.tku-score-tag--good {
+  color: #1d68f2;
+}
+
+.tku-score-tag--fair {
+  color: #06b6d4;
+}
+
+.tku-score-tag--weak {
+  color: #ef4444;
+}
+
+.tku-score-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+/* Learning Status Badges */
+.tku-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.tku-status-badge--completed {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.tku-status-badge--on-track {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-status-badge--needs-attention {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+
+.tku-status-badge--not-started {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+/* Row Action Buttons */
+.tku-row-btn-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tku-student-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-student-action-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.tku-student-action-btn--primary {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-student-action-btn--primary:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+}
+
+/* 6. Empty State Card */
+.tku-students-empty-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 48px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.tku-students-empty-graphic {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.tku-students-empty-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.tku-students-empty-desc {
+  font-size: 14px;
+  color: #64748b;
+  max-width: 520px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 7. Student Detail Modal */
+.tku-student-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: tkuModalFade 0.2s ease-out;
+}
+
+@keyframes tkuModalFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tku-student-modal {
+  background: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+  animation: tkuModalPop 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tkuModalPop {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tku-student-modal-header {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  color: #ffffff;
+  padding: 24px 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tku-student-modal-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tku-student-modal-avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.tku-student-modal-avatar.tku-student-avatar--has-img {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.tku-student-modal-avatar.tku-student-avatar--initials {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.tku-student-modal-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.tku-student-modal-name {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  color: #ffffff;
+}
+
+.tku-student-modal-meta {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 3px;
+}
+
+.tku-student-modal-close {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #ffffff;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-student-modal-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.tku-student-modal-body {
+  padding: 24px 26px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Modal Metrics Grid */
+.tku-modal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.tku-modal-stat-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-modal-stat-box__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.tku-modal-stat-box__value {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.tku-modal-stat-box__sub {
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+
+/* Modal Note Section */
+.tku-modal-note-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tku-modal-note-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-modal-textarea {
+  width: 100%;
+  min-height: 90px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.tku-modal-textarea:focus {
+  background: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-student-modal-footer {
+  padding: 16px 26px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-modal-footer-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-modal-footer-btn--secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.tku-modal-footer-btn--secondary:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-modal-footer-btn--primary {
+  background: #1d68f2;
+  border: 1px solid #1d68f2;
+  color: #ffffff;
+}
+
+.tku-modal-footer-btn--primary:hover {
+  background: #1558d6;
+  border-color: #1558d6;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1200px) {
+  .tku-students-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .tku-students-page {
+    padding: 18px 16px 36px 16px;
+  }
+  .tku-students-banner {
+    padding: 22px 20px;
+  }
+  .tku-students-banner__title {
+    font-size: 20px;
+  }
+  .tku-students-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-students-filter-card {
+    padding: 16px;
+  }
+  .tku-modal-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}

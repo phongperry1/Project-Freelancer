@@ -94,7 +94,172 @@
   font-weight: 450;
 }
 
+/* Sub Navigation Tabs */
+.tku-results-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 14px;
+  border: 1px solid #e2e8f0;
+  width: fit-content;
+}
 
+.tku-results-nav-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  font-family: inherit;
+  text-decoration: none;
+}
+
+.tku-results-nav-tab:hover {
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.65);
+}
+
+.tku-results-nav-tab--active {
+  color: #1d68f2 !important;
+  background: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  font-weight: 700;
+}
+
+/* Assessment Hero Overview Card */
+.tku-assessment-hero-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 22px 28px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.tku-assessment-hero-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 320px;
+}
+
+.tku-assessment-hero-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-assessment-hero-details {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-assessment-hero-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.tku-assessment-hero-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.tku-assessment-hero-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.tku-hero-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Quick Filter Pills for Assessment Types */
+.tku-results-type-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+}
+
+.tku-results-type-pill {
+  padding: 5px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-results-type-pill:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.tku-results-type-pill--active {
+  background: #eff6ff !important;
+  border-color: #bfdbfe !important;
+  color: #1d68f2 !important;
+  font-weight: 700;
+}
+
+/* Student Avatar without blue outer border */
+.tku-student-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1d68f2;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.tku-student-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
 /* 2. Assessment Context & Filter Selector Bar */
 .tku-results-context-card {
@@ -116,6 +281,26 @@
   flex-wrap: wrap;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 16px;
+}
+
+.tku-results-context-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-results-context-title-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tku-results-selectors {
@@ -314,90 +499,6 @@
   box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
 }
 
-
-/* 3. Executive KPI Metric Cards */
-.tku-results-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 18px;
-}
-
-.tku-results-stat-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px 22px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-}
-
-.tku-results-stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-}
-
-.tku-results-stat-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 14px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.tku-results-stat-icon--blue {
-  background: #eff6ff;
-  color: #1d68f2;
-}
-
-.tku-results-stat-icon--emerald {
-  background: #ecfdf5;
-  color: #10b981;
-}
-
-.tku-results-stat-icon--amber {
-  background: #fffbeb;
-  color: #f59e0b;
-}
-
-.tku-results-stat-icon--purple {
-  background: #faf5ff;
-  color: #8b5cf6;
-}
-
-.tku-results-stat-info {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.tku-results-stat-label {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-}
-
-.tku-results-stat-value {
-  font-size: 24px;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-  line-height: 1.2;
-}
-
-.tku-results-stat-sub {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-  margin-top: 2px;
-}
 
 /* 4. Grade Distribution & Pedagogical Insights Card */
 .tku-distribution-card {
@@ -622,21 +723,31 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
-  color: #1d68f2;
   font-weight: 800;
   font-size: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #bfdbfe;
   flex-shrink: 0;
   text-transform: uppercase;
   overflow: hidden;
   user-select: none;
 }
 
+.tku-student-avatar--has-img {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.tku-student-avatar--initials {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  border: 1.5px solid #bfdbfe;
+}
+
 .tku-student-avatar img,
+.tku-student-avatar-img,
 .tku-modal-avatar img {
   width: 100%;
   height: 100%;
@@ -1414,9 +1525,6 @@
 
 /* Responsive Breakpoints */
 @media (max-width: 1200px) {
-  .tku-results-stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .tku-distribution-bars {
     grid-template-columns: repeat(3, 1fr);
   }
@@ -1430,9 +1538,6 @@
     flex-direction: column;
     align-items: flex-start;
     padding: 22px 20px;
-  }
-  .tku-results-stats-grid {
-    grid-template-columns: 1fr;
   }
   .tku-distribution-bars {
     grid-template-columns: 1fr;
