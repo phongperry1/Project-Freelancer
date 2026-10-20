@@ -11,6 +11,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   ForbiddenException,
+  BadRequestException,
   UseInterceptors,
   UploadedFile,
   Query,
@@ -36,6 +37,8 @@ import {
   type LecturerAssessmentItem,
   type CreateAssessmentDto,
   type UpdateAssessmentDto,
+  type MonitoredStudentsResponse,
+  type StudentProgressDetailResponse,
 } from './lecturer.service.js';
 
 @ApiTags('Lecturer')
@@ -135,6 +138,51 @@ export class LecturerController {
   ) {
     const { userId, role } = await this.verifyLecturer(authorization);
     return this.lecturerService.getCourseStudents(userId, courseId, role);
+  }
+
+  @Get('students')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách học sinh tham gia các khóa học và các chỉ số theo dõi học tập',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách học sinh kèm tiến độ học tập, bài tập đã làm và tỷ lệ hoàn thành.',
+  })
+  async getMonitoredStudents(
+    @Query('courseId') courseId?: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<MonitoredStudentsResponse> {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getMonitoredStudents(userId, role, courseId);
+  }
+
+  @Get('students/:studentId/progress')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy chi tiết tiến độ học tập của học sinh trong khóa học',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Chi tiết tiến độ bài học, kết quả bài thi và các mốc học tập của học sinh.',
+  })
+  async getStudentProgress(
+    @Param('studentId') studentId: string,
+    @Query('courseId') courseId: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<StudentProgressDetailResponse> {
+    if (!courseId) {
+      throw new BadRequestException('Vui lòng cung cấp mã khóa học (courseId).');
+    }
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getStudentProgress(
+      userId,
+      studentId,
+      courseId,
+      role,
+    );
   }
 
   @Get('dashboard')
