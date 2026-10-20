@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
   Search,
@@ -22,6 +22,8 @@ import {
   MessageSquare,
   Printer,
   FileQuestion,
+  FileCheck2,
+  GraduationCap,
 } from 'lucide-react';
 import {
   lecturerService,
@@ -45,17 +47,22 @@ const StudentAvatar: React.FC<StudentAvatarProps> = React.memo(
 
     const initials = useMemo(() => {
       if (!name) return 'SV';
-      const words = name.trim().split(/\s+/).filter(Boolean);
+      const clean = name.replace(/\s*\([^)]*\)/g, '').trim();
+      const words = clean.split(/\s+/).filter(Boolean);
       if (words.length >= 2) {
         return (words[0][0] + words[words.length - 1][0]).toUpperCase();
       }
-      return name.slice(0, 2).toUpperCase();
+      return clean.slice(0, 2).toUpperCase() || 'SV';
     }, [name]);
 
     const showImg = Boolean(avatarUrl && failedUrl !== avatarUrl);
 
     return (
-      <div className={className}>
+      <div
+        className={`${className} ${
+          showImg ? 'tku-student-avatar--has-img' : 'tku-student-avatar--initials'
+        }`}
+      >
         {showImg ? (
           <img
             key={avatarUrl!}
@@ -77,20 +84,32 @@ StudentAvatar.displayName = 'StudentAvatar';
 export const LecturerResultsPage: React.FC = () => {
   const { id: routeAssessmentId } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Navigation context
   const queryAssessmentId = searchParams.get('assessmentId');
+  const queryCourseId = searchParams.get('courseId');
+  const querySearch = searchParams.get('search');
   const targetAssessmentId = routeAssessmentId || queryAssessmentId;
 
   // Data states
   const [courses, setCourses] = useState<LecturerCourseItem[]>([]);
   const [assessments, setAssessments] = useState<AssignmentItem[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('ALL');
-  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(targetAssessmentId || '');
-  const [resultsCache, setResultsCache] = useState<Record<string, AssessmentResultsSummary>>({});
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(
+    queryCourseId || 'ALL',
+  );
+  const [selectedAssessmentId, setSelectedAssessmentId] = useState<string>(
+    targetAssessmentId || '',
+  );
+  const [typeFilter, setTypeFilter] = useState<string>('ALL');
+  const [resultsCache, setResultsCache] = useState<
+    Record<string, AssessmentResultsSummary>
+  >({});
 
   // Active results data directly from state cache
-  const resultsData = selectedAssessmentId ? resultsCache[selectedAssessmentId] || null : null;
+  const resultsData = selectedAssessmentId
+    ? resultsCache[selectedAssessmentId] || null
+    : null;
 
   // Loading states
   const [isLoadingList, setIsLoadingList] = useState(true);
@@ -102,13 +121,16 @@ export const LecturerResultsPage: React.FC = () => {
   );
 
   // Tab & Filters
-  const [activeTab, setActiveTab] = useState<'SUBMISSIONS' | 'QUESTIONS'>('SUBMISSIONS');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState<'SUBMISSIONS' | 'QUESTIONS'>(
+    'SUBMISSIONS',
+  );
+  const [searchTerm, setSearchTerm] = useState(querySearch || '');
   const [gradeTierFilter, setGradeTierFilter] = useState<string>('ALL');
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   // Submission Review Modal State
-  const [reviewSubmission, setReviewSubmission] = useState<StudentSubmissionDetail | null>(null);
+  const [reviewSubmission, setReviewSubmission] =
+    useState<StudentSubmissionDetail | null>(null);
   const [feedbackInput, setFeedbackInput] = useState('');
   const [isSavingFeedback, setIsSavingFeedback] = useState(false);
 
@@ -116,7 +138,6 @@ export const LecturerResultsPage: React.FC = () => {
   useEffect(() => {
     let isMounted = true;
     const initData = async () => {
-      setIsLoadingList(true);
       try {
         const [coursesRes, assessmentsRes] = await Promise.all([
           lecturerService.getMyCourses(),
@@ -131,20 +152,29 @@ export const LecturerResultsPage: React.FC = () => {
           // Determine which assessment to select initially
           if (assessmentsRes.length > 0) {
             let initialId = assessmentsRes[0].id;
-            let initialCourseId = 'ALL';
+            let initialCourseId = queryCourseId || 'ALL';
+
             if (targetAssessmentId) {
-              const matched = assessmentsRes.find((a) => a.id === targetAssessmentId);
+              const matched = assessmentsRes.find(
+                (a) => a.id === targetAssessmentId,
+              );
               if (matched) {
                 initialId = matched.id;
-                if (matched.courseId) {
+                if (!queryCourseId && matched.courseId) {
                   initialCourseId = matched.courseId;
                 }
               }
+            } else if (queryCourseId && queryCourseId !== 'ALL') {
+              const matchedInCourse = assessmentsRes.find(
+                (a) => a.courseId === queryCourseId,
+              );
+              if (matchedInCourse) {
+                initialId = matchedInCourse.id;
+              }
             }
+
             setSelectedAssessmentId(initialId);
-            if (initialCourseId !== 'ALL') {
-              setSelectedCourseId(initialCourseId);
-            }
+            setSelectedCourseId(initialCourseId);
           }
         }
       } catch {
@@ -195,9 +225,28 @@ export const LecturerResultsPage: React.FC = () => {
 
   // Handle course filter changes for the assessment selector
   const availableAssessments = useMemo(() => {
-    if (selectedCourseId === 'ALL') return assessments;
-    return assessments.filter((a) => a.courseId === selectedCourseId);
-  }, [assessments, selectedCourseId]);
+    let list = assessments;
+    if (selectedCourseId !== 'ALL') {
+      list = list.filter((a) => a.courseId === selectedCourseId);
+    }
+    if (typeFilter !== 'ALL') {
+      list = list.filter((a) => a.type === typeFilter);
+    }
+    return list;
+  }, [assessments, selectedCourseId, typeFilter]);
+
+  const handleAssessmentChange = useCallback(
+    (assessmentId: string) => {
+      if (!assessmentId || assessmentId === selectedAssessmentId) return;
+      setSelectedAssessmentId(assessmentId);
+      setSearchParams((prev) => {
+        const nextParams = new URLSearchParams(prev);
+        nextParams.set('assessmentId', assessmentId);
+        return nextParams;
+      });
+    },
+    [selectedAssessmentId, setSearchParams],
+  );
 
   const handleCourseChange = useCallback(
     (courseId: string) => {
@@ -213,26 +262,36 @@ export const LecturerResultsPage: React.FC = () => {
           (a) => a.id === selectedAssessmentId,
         );
         if (isCurrentStillAvailable) {
+          setSearchParams((prev) => {
+            const nextParams = new URLSearchParams(prev);
+            if (courseId === 'ALL') nextParams.delete('courseId');
+            else nextParams.set('courseId', courseId);
+            return nextParams;
+          });
           return;
         }
 
         const nextId = filtered[0].id;
         setSelectedAssessmentId(nextId);
-        setSearchParams({ assessmentId: nextId });
+        setSearchParams((prev) => {
+          const nextParams = new URLSearchParams(prev);
+          if (courseId === 'ALL') nextParams.delete('courseId');
+          else nextParams.set('courseId', courseId);
+          nextParams.set('assessmentId', nextId);
+          return nextParams;
+        });
       } else {
         setSelectedAssessmentId('');
+        setSearchParams((prev) => {
+          const nextParams = new URLSearchParams(prev);
+          if (courseId === 'ALL') nextParams.delete('courseId');
+          else nextParams.set('courseId', courseId);
+          nextParams.delete('assessmentId');
+          return nextParams;
+        });
       }
     },
     [assessments, selectedAssessmentId, setSearchParams],
-  );
-
-  const handleAssessmentChange = useCallback(
-    (assessmentId: string) => {
-      if (!assessmentId || assessmentId === selectedAssessmentId) return;
-      setSelectedAssessmentId(assessmentId);
-      setSearchParams({ assessmentId });
-    },
-    [selectedAssessmentId, setSearchParams],
   );
 
   // Filtered submissions list
@@ -319,136 +378,202 @@ export const LecturerResultsPage: React.FC = () => {
       <section className="tku-results-banner">
         <div className="tku-results-banner__content">
           <div className="tku-banner-pill">
-            <span>Khảo thí & Đánh giá năng lực sinh viên</span>
+            <GraduationCap size={13} />
+            <span>Khảo thí & Đánh giá kết quả</span>
           </div>
           <h1 className="tku-results-banner__title">
-            Kết quả bài làm & Thống kê điểm số
+            Kết quả học tập & Thống kê khảo thí
           </h1>
           <p className="tku-results-banner__desc">
-            Theo dõi trực quan phổ điểm, phân tích độ phân hóa từng câu hỏi và kiểm tra chi tiết từng bài làm của học sinh trong khóa học.
+            Theo dõi chi tiết phổ điểm, đánh giá mức độ hoàn thành bài thi và
+            kiểm tra chi tiết bài làm của học sinh trong từng lớp học phần.
           </p>
         </div>
       </section>
 
+      {/* Sub Navigation Tabs */}
+      <nav
+        className="tku-results-nav-tabs"
+        aria-label="Phân hệ kết quả học tập"
+      >
+        <button
+          type="button"
+          className="tku-results-nav-tab"
+          onClick={() =>
+            navigate(
+              selectedCourseId && selectedCourseId !== 'ALL'
+                ? `/lecturer/students?courseId=${selectedCourseId}`
+                : '/lecturer/students',
+            )
+          }
+        >
+          <Users size={16} />
+          <span>Danh sách học sinh</span>
+        </button>
+        <button
+          type="button"
+          className="tku-results-nav-tab"
+          onClick={() =>
+            navigate(
+              selectedCourseId && selectedCourseId !== 'ALL'
+                ? `/lecturer/students/progress?courseId=${selectedCourseId}`
+                : '/lecturer/students/progress',
+            )
+          }
+        >
+          <TrendingUp size={16} />
+          <span>Tiến độ học tập</span>
+        </button>
+        <button
+          type="button"
+          className="tku-results-nav-tab tku-results-nav-tab--active"
+        >
+          <BarChart3 size={16} />
+          <span>Kết quả học tập</span>
+        </button>
+      </nav>
+
       {/* 2. Context & Filter Selector Bar */}
       <section className="tku-results-context-card">
-        {/* Top: Select Course & Assessment */}
+        {/* Top: Header Title */}
         <div className="tku-results-context-top">
-          <div className="tku-results-selectors">
-            {/* Course Selector */}
-            <div className="tku-select-group">
-              <label className="tku-select-label">
-                <BookOpen size={13} />
-                <span>Khóa học</span>
-              </label>
-              <div className="tku-select-control">
-                <select
-                  className="tku-results-select"
-                  value={selectedCourseId}
-                  onChange={(e) => handleCourseChange(e.target.value)}
-                >
-                  <option value="ALL">Tất cả các khóa học</option>
-                  {courses.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.title}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="tku-results-select-icon" />
-              </div>
+          <div className="tku-results-context-title">
+            <div className="tku-results-context-title-icon">
+              <BarChart3 size={16} />
             </div>
+            <span>Chọn khóa học & bài kiểm tra cần xem kết quả</span>
+          </div>
+        </div>
 
-            {/* Assessment / Exam Selector */}
-            <div className="tku-select-group" style={{ flex: 1.5 }}>
-              <label className="tku-select-label">
-                <Layers size={13} />
-                <span>Bài tập / Bài kiểm tra</span>
-              </label>
-              <div className="tku-select-control">
-                <select
-                  className="tku-results-select"
-                  value={selectedAssessmentId}
-                  onChange={(e) => handleAssessmentChange(e.target.value)}
-                  disabled={availableAssessments.length === 0}
-                >
-                  {availableAssessments.length === 0 ? (
-                    <option value="">Hiện tại không có bài kiểm tra hay câu hỏi nào</option>
-                  ) : (
-                    availableAssessments.map((a) => (
-                      <option key={a.id} value={a.id}>
-                        {a.title} ({a.type === 'EXAM' ? 'Đề thi' : a.type === 'TEST' ? 'Kiểm tra' : 'Quiz'} - Thang {a.totalScore}đ)
-                      </option>
-                    ))
-                  )}
-                </select>
-                <ChevronDown size={14} className="tku-results-select-icon" />
-              </div>
+        {/* Dual Selectors: Course & Assessment */}
+        <div className="tku-results-selectors">
+          {/* Course Selector */}
+          <div className="tku-select-group">
+            <label className="tku-select-label">
+              <BookOpen size={13} />
+              <span>Khóa học phụ trách</span>
+            </label>
+            <div className="tku-select-control">
+              <select
+                className="tku-results-select"
+                value={selectedCourseId}
+                onChange={(e) => handleCourseChange(e.target.value)}
+              >
+                <option value="ALL">Tất cả các khóa học</option>
+                {courses.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.title} ({c.studentCount} học sinh)
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="tku-results-select-icon" />
+            </div>
+          </div>
+
+          {/* Assessment / Exam Selector */}
+          <div className="tku-select-group" style={{ flex: 1.5 }}>
+            <label className="tku-select-label">
+              <Layers size={13} />
+              <span>Bài tập / Bài kiểm tra</span>
+            </label>
+            <div className="tku-select-control">
+              <select
+                className="tku-results-select"
+                value={selectedAssessmentId}
+                onChange={(e) => handleAssessmentChange(e.target.value)}
+                disabled={availableAssessments.length === 0}
+              >
+                {availableAssessments.length === 0 ? (
+                  <option value="">
+                    Hiện tại không có bài kiểm tra hay câu hỏi nào
+                  </option>
+                ) : (
+                  availableAssessments.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.title} (
+                      {a.type === 'EXAM'
+                        ? 'Đề thi'
+                        : a.type === 'TEST'
+                          ? 'Kiểm tra'
+                          : 'Quiz'}{' '}
+                      - {a.questionCount} câu - Thang {a.totalScore}đ)
+                    </option>
+                  ))
+                )}
+              </select>
+              <ChevronDown size={14} className="tku-results-select-icon" />
             </div>
           </div>
         </div>
 
-        {/* Bottom: Search & Filters for Submissions */}
-        <div className="tku-results-filters-row">
-          <div className="tku-results-search">
-            <Search size={15} className="tku-results-search-icon" />
-            <input
-              type="text"
-              className="tku-results-search-input"
-              placeholder="Tìm sinh viên theo họ tên hoặc email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-            {searchTerm && (
-              <button
-                type="button"
-                className="tku-results-search-clear"
-                onClick={() => setSearchTerm('')}
-                title="Xóa tìm kiếm"
-              >
-                <X size={14} />
-              </button>
-            )}
-          </div>
-
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              className="tku-results-filter-select"
-              value={gradeTierFilter}
-              onChange={(e) => setGradeTierFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả xếp loại điểm</option>
-              <option value="EXCELLENT">Xuất sắc (9.0 - 10.0)</option>
-              <option value="GOOD">Giỏi (8.0 - 8.9)</option>
-              <option value="FAIR">Khá (6.5 - 7.9)</option>
-              <option value="AVERAGE">Trung bình (5.0 - 6.4)</option>
-              <option value="WEAK">Cần cố gắng (&lt; 5.0)</option>
-            </select>
-            <ChevronDown size={14} className="tku-results-select-icon" />
-          </div>
-
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              className="tku-results-filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả tình trạng nộp</option>
-              <option value="GRADED">Đã làm & Đã chấm</option>
-              <option value="LATE">Nộp bài muộn</option>
-              <option value="NOT_SUBMITTED">Chưa nộp bài</option>
-            </select>
-            <ChevronDown size={14} className="tku-results-select-icon" />
-          </div>
+        {/* Quick Type Pills */}
+        <div className="tku-results-type-pills">
+          <span
+            style={{ fontSize: '12px', fontWeight: 600, color: '#64748b' }}
+          >
+            Lọc theo dạng:
+          </span>
+          <button
+            type="button"
+            className={`tku-results-type-pill ${
+              typeFilter === 'ALL' ? 'tku-results-type-pill--active' : ''
+            }`}
+            onClick={() => setTypeFilter('ALL')}
+          >
+            Tất cả bài thi (
+            {
+              assessments.filter(
+                (a) =>
+                  selectedCourseId === 'ALL' ||
+                  a.courseId === selectedCourseId,
+              ).length
+            }
+            )
+          </button>
+          <button
+            type="button"
+            className={`tku-results-type-pill ${
+              typeFilter === 'EXAM' ? 'tku-results-type-pill--active' : ''
+            }`}
+            onClick={() => setTypeFilter('EXAM')}
+          >
+            Đề thi chính thức
+          </button>
+          <button
+            type="button"
+            className={`tku-results-type-pill ${
+              typeFilter === 'TEST' ? 'tku-results-type-pill--active' : ''
+            }`}
+            onClick={() => setTypeFilter('TEST')}
+          >
+            Bài kiểm tra định kỳ
+          </button>
+          <button
+            type="button"
+            className={`tku-results-type-pill ${
+              typeFilter === 'QUIZ' ? 'tku-results-type-pill--active' : ''
+            }`}
+            onClick={() => setTypeFilter('QUIZ')}
+          >
+            Quiz mini
+          </button>
         </div>
       </section>
 
       {/* Main Content Areas */}
       {isLoadingList || isLoadingDetail ? (
-        <div className="tku-lecturer-loading-wrapper" style={{ minHeight: '360px' }}>
+        <div
+          className="tku-lecturer-loading-wrapper"
+          style={{ minHeight: '360px' }}
+        >
           <Loader2 size={38} className="tku-lecturer-spin-icon" />
           <span>Đang tải dữ liệu kết quả & phân tích khảo thí...</span>
         </div>
-      ) : availableAssessments.length === 0 || !resultsData || (resultsData.assessment.questionCount === 0 && (!resultsData.assessment.questions || resultsData.assessment.questions.length === 0)) ? (
+      ) : availableAssessments.length === 0 ||
+        !resultsData ||
+        (resultsData.assessment.questionCount === 0 &&
+          (!resultsData.assessment.questions ||
+            resultsData.assessment.questions.length === 0)) ? (
         <section className="tku-results-empty-card">
           <div className="tku-results-empty-graphic">
             <FileQuestion size={38} className="tku-results-empty-icon" />
@@ -459,95 +584,67 @@ export const LecturerResultsPage: React.FC = () => {
           <p className="tku-results-empty-desc">
             {availableAssessments.length === 0
               ? 'Khóa học này hiện tại chưa có bài kiểm tra hoặc câu hỏi nào. Bạn có thể tạo bài kiểm tra mới để giao cho học sinh và bắt đầu theo dõi kết quả.'
-              : resultsData && resultsData.assessment.questionCount === 0 && (!resultsData.assessment.questions || resultsData.assessment.questions.length === 0)
-              ? 'Bài kiểm tra này hiện tại chưa có câu hỏi nào. Vui lòng biên soạn nội dung câu hỏi để học sinh có thể làm bài.'
-              : 'Hiện tại chưa có bài kiểm tra hay câu hỏi nào được chọn để hiển thị kết quả và thống kê. Vui lòng chọn một bài kiểm tra ở thanh lựa chọn phía trên.'}
+              : resultsData &&
+                  resultsData.assessment.questionCount === 0 &&
+                  (!resultsData.assessment.questions ||
+                    resultsData.assessment.questions.length === 0)
+                ? 'Bài kiểm tra này hiện tại chưa có câu hỏi nào. Vui lòng biên soạn nội dung câu hỏi để học sinh có thể làm bài.'
+                : 'Hiện tại chưa có bài kiểm tra hay câu hỏi nào được chọn để hiển thị kết quả và thống kê. Vui lòng chọn một bài kiểm tra ở thanh lựa chọn phía trên.'}
           </p>
         </section>
       ) : (
         <>
-          {/* 3. Executive KPI Metric Cards */}
-          <section className="tku-results-stats-grid">
-            <div className="tku-results-stat-card">
-              <div className="tku-results-stat-icon tku-results-stat-icon--blue">
-                <Users size={24} />
+          {/* Active Assessment Hero Overview Card */}
+          <section className="tku-assessment-hero-card">
+            <div className="tku-assessment-hero-left">
+              <div className="tku-assessment-hero-icon">
+                <FileCheck2 size={26} />
               </div>
-              <div className="tku-results-stat-info">
-                <span className="tku-results-stat-label">Tỉ lệ nộp bài</span>
-                <span className="tku-results-stat-value">
-                  {resultsData.submissionRate}%
-                </span>
-                <span className="tku-results-stat-sub">
-                  <strong>{resultsData.submittedCount}</strong> / {resultsData.totalStudents} sinh viên
-                </span>
-              </div>
-            </div>
-
-            <div className="tku-results-stat-card">
-              <div className="tku-results-stat-icon tku-results-stat-icon--emerald">
-                <TrendingUp size={24} />
-              </div>
-              <div className="tku-results-stat-info">
-                <span className="tku-results-stat-label">Điểm trung bình (GPA)</span>
-                <span className="tku-results-stat-value">
-                  {resultsData.submittedCount > 0 ? (
-                    <>
-                      {resultsData.averageScore} <span style={{ fontSize: '15px', color: '#64748b' }}>/ 10</span>
-                    </>
-                  ) : (
-                    '--'
+              <div className="tku-assessment-hero-details">
+                <div className="tku-assessment-hero-title-row">
+                  <h2 className="tku-assessment-hero-title">
+                    {resultsData.assessment.title}
+                  </h2>
+                  <span
+                    className={`tku-assessment-type-chip ${
+                      resultsData.assessment.type === 'EXAM'
+                        ? 'tku-assessment-type-chip--exam'
+                        : resultsData.assessment.type === 'TEST'
+                          ? 'tku-assessment-type-chip--test'
+                          : 'tku-assessment-type-chip--quiz'
+                    }`}
+                  >
+                    {resultsData.assessment.type === 'EXAM'
+                      ? 'Đề thi chính thức'
+                      : resultsData.assessment.type === 'TEST'
+                        ? 'Bài kiểm tra định kỳ'
+                        : 'Quiz mini'}
+                  </span>
+                </div>
+                <div className="tku-assessment-hero-meta-row">
+                  <span className="tku-hero-meta-item">
+                    <BookOpen size={13} />
+                    <span>{resultsData.assessment.courseTitle}</span>
+                  </span>
+                  {resultsData.assessment.durationMinutes && (
+                    <span className="tku-hero-meta-item">
+                      <Clock size={13} />
+                      <span>{resultsData.assessment.durationMinutes} phút</span>
+                    </span>
                   )}
-                </span>
-                <span className="tku-results-stat-sub">
-                  {resultsData.submittedCount > 0
-                    ? resultsData.averageScore >= 8.0
-                      ? 'Xếp loại: Giỏi'
-                      : resultsData.averageScore >= 6.5
-                      ? 'Xếp loại: Khá'
-                      : 'Xếp loại: Trung bình'
-                    : 'Chưa có bài nộp'}
-                </span>
-              </div>
-            </div>
-
-            <div className="tku-results-stat-card">
-              <div className="tku-results-stat-icon tku-results-stat-icon--purple">
-                <Award size={24} />
-              </div>
-              <div className="tku-results-stat-info">
-                <span className="tku-results-stat-label">Cao nhất / Thấp nhất</span>
-                <span className="tku-results-stat-value">
-                  {resultsData.submittedCount > 0 ? (
-                    <>
-                      {resultsData.highestScore} <span style={{ fontSize: '16px', color: '#94a3b8' }}>|</span> {resultsData.lowestScore}
-                    </>
-                  ) : (
-                    '--'
-                  )}
-                </span>
-                <span className="tku-results-stat-sub">
-                  {resultsData.submittedCount > 0
-                    ? `Biên độ: ${(resultsData.highestScore - resultsData.lowestScore).toFixed(1)} điểm`
-                    : 'Chưa có dữ liệu'}
-                </span>
-              </div>
-            </div>
-
-            <div className="tku-results-stat-card">
-              <div className="tku-results-stat-icon tku-results-stat-icon--amber">
-                <CheckCircle2 size={24} />
-              </div>
-              <div className="tku-results-stat-info">
-                <span className="tku-results-stat-label">Tỉ lệ đạt (≥ 5.0 đ)</span>
-                <span className="tku-results-stat-value">
-                  {resultsData.submittedCount > 0 ? `${resultsData.passRate}%` : '0%'}
-                </span>
-                <span className="tku-results-stat-sub">
-                  <strong>{resultsData.passedCount}</strong> đạt / <strong>{resultsData.failedCount}</strong> cần hỗ trợ
-                </span>
+                  <span className="tku-hero-meta-item">
+                    <Award size={13} />
+                    <span>
+                      {resultsData.assessment.questionCount} câu hỏi (
+                      {resultsData.assessment.totalScore} điểm)
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
           </section>
+
+
 
           {/* 4. Grade Distribution Bar Chart */}
           <section className="tku-distribution-card">
@@ -631,177 +728,233 @@ export const LecturerResultsPage: React.FC = () => {
 
           {/* 6. Tab Content: Submissions Table OR Question Analysis */}
           {activeTab === 'SUBMISSIONS' ? (
-            filteredSubmissions.length === 0 ? (
-              <section className="tku-assignments-empty-box">
-                <div className="tku-assignments-empty-graphic">
-                  <Search size={36} className="tku-empty-icon" />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Search & Filter Bar */}
+              <div className="tku-results-filters-row">
+                <div className="tku-results-search">
+                  <Search size={16} className="tku-results-search-icon" />
+                  <input
+                    type="text"
+                    className="tku-results-search-input"
+                    placeholder="Tìm sinh viên theo họ tên, email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      className="tku-results-search-clear"
+                      onClick={() => setSearchTerm('')}
+                      title="Xóa tìm kiếm"
+                    >
+                      <X size={15} />
+                    </button>
+                  )}
                 </div>
-                <h3 className="tku-assignments-empty-title">
-                  Không tìm thấy sinh viên nào
-                </h3>
-                <p className="tku-assignments-empty-desc">
-                  Không có kết quả nào khớp với tiêu chí tìm kiếm hoặc bộ lọc hiện tại.
-                </p>
-              </section>
-            ) : (
-              <section className="tku-results-table-card">
-                <div className="tku-table-responsive">
-                  <table className="tku-results-table">
-                    <thead>
-                      <tr>
-                        <th>Sinh viên</th>
-                        <th>Thời gian nộp</th>
-                        <th>Thời lượng làm</th>
-                        <th>Số câu đúng</th>
-                        <th>Điểm số & Xếp loại</th>
-                        <th>Lời phê giảng viên</th>
-                        <th style={{ textAlign: 'right' }}>Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredSubmissions.map((sub) => (
-                        <tr key={sub.id}>
-                          {/* Sinh viên */}
-                          <td>
-                            <div className="tku-student-profile-cell">
-                              <StudentAvatar
-                                name={sub.studentName}
-                                avatarUrl={sub.avatarUrl}
-                              />
-                              <div className="tku-student-info">
-                                <span className="tku-student-name">
-                                  {sub.studentName}
-                                </span>
-                                <span className="tku-student-sub">
-                                  {sub.studentEmail}
-                                </span>
-                              </div>
-                            </div>
-                          </td>
 
-                          {/* Thời gian nộp */}
-                          <td>
-                            {sub.status === 'NOT_SUBMITTED' ? (
-                              <span className="tku-submission-status-pill tku-submission-status-pill--unsubmitted">
-                                Chưa nộp bài
-                              </span>
-                            ) : (
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                <span style={{ fontSize: '13px', color: '#1e293b' }}>
-                                  {sub.submittedAt}
-                                </span>
-                                <span
-                                  className={`tku-submission-status-pill ${
-                                    sub.isLate
-                                      ? 'tku-submission-status-pill--late'
-                                      : 'tku-submission-status-pill--graded'
-                                  }`}
-                                >
-                                  {sub.isLate ? 'Nộp muộn' : 'Nộp đúng hạn'}
-                                </span>
-                              </div>
-                            )}
-                          </td>
+                <div className="tku-select-control" style={{ flex: 1, minWidth: '170px' }}>
+                  <select
+                    className="tku-results-filter-select"
+                    value={gradeTierFilter}
+                    onChange={(e) => setGradeTierFilter(e.target.value)}
+                  >
+                    <option value="ALL">Tất cả xếp loại học lực</option>
+                    <option value="EXCELLENT">Xuất sắc (≥ 9.0 đ)</option>
+                    <option value="GOOD">Giỏi (8.0 - 8.9 đ)</option>
+                    <option value="AVERAGE">Khá / TB (5.0 - 7.9 đ)</option>
+                    <option value="WEAK">Yếu (4.0 - 4.9 đ)</option>
+                    <option value="POOR">Kém (&lt; 4.0 đ)</option>
+                  </select>
+                  <ChevronDown size={14} className="tku-results-select-icon" />
+                </div>
 
-                          {/* Thời lượng làm bài */}
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '13px' }}>
-                              <Clock size={13} style={{ color: '#64748b' }} />
-                              <span>
-                                {sub.status === 'NOT_SUBMITTED'
-                                  ? '--'
-                                  : `${sub.timeSpentMinutes} phút`}
-                              </span>
-                            </div>
-                          </td>
+                <div className="tku-select-control" style={{ flex: 1, minWidth: '170px' }}>
+                  <select
+                    className="tku-results-filter-select"
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="ALL">Tất cả trạng thái nộp</option>
+                    <option value="GRADED">Nộp đúng hạn</option>
+                    <option value="LATE">Nộp muộn</option>
+                    <option value="NOT_SUBMITTED">Chưa nộp bài</option>
+                  </select>
+                  <ChevronDown size={14} className="tku-results-select-icon" />
+                </div>
+              </div>
 
-                          {/* Số câu đúng */}
-                          <td>
-                            {sub.status === 'NOT_SUBMITTED' ? (
-                              <span style={{ color: '#94a3b8' }}>--</span>
-                            ) : (
-                              <div className="tku-accuracy-cell">
-                                <span className="tku-accuracy-text">
-                                  <strong>{sub.correctCount}</strong> / {sub.totalQuestions} câu ({sub.percentage}%)
-                                </span>
-                                <div className="tku-accuracy-bar">
-                                  <div
-                                    className="tku-accuracy-fill"
-                                    style={{ width: `${sub.percentage}%` }}
-                                  />
+              {filteredSubmissions.length === 0 ? (
+                <section className="tku-assignments-empty-box">
+                  <div className="tku-assignments-empty-graphic">
+                    <Search size={36} className="tku-empty-icon" />
+                  </div>
+                  <h3 className="tku-assignments-empty-title">
+                    Không tìm thấy sinh viên nào
+                  </h3>
+                  <p className="tku-assignments-empty-desc">
+                    Không có kết quả nào khớp với tiêu chí tìm kiếm hoặc bộ lọc hiện tại.
+                  </p>
+                </section>
+              ) : (
+                <section className="tku-results-table-card">
+                  <div className="tku-table-responsive">
+                    <table className="tku-results-table">
+                      <thead>
+                        <tr>
+                          <th>Sinh viên</th>
+                          <th>Thời gian nộp</th>
+                          <th>Thời lượng làm</th>
+                          <th>Số câu đúng</th>
+                          <th>Điểm số & Xếp loại</th>
+                          <th>Lời phê giảng viên</th>
+                          <th style={{ textAlign: 'right' }}>Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredSubmissions.map((sub) => (
+                          <tr key={sub.id}>
+                            {/* Sinh viên */}
+                            <td>
+                              <div className="tku-student-profile-cell">
+                                <StudentAvatar
+                                  name={sub.studentName}
+                                  avatarUrl={sub.avatarUrl}
+                                />
+                                <div className="tku-student-info">
+                                  <span className="tku-student-name">
+                                    {sub.studentName}
+                                  </span>
+                                  <span className="tku-student-sub">
+                                    {sub.studentEmail}
+                                  </span>
                                 </div>
                               </div>
-                            )}
-                          </td>
+                            </td>
 
-                          {/* Điểm số & Xếp loại */}
-                          <td>
-                            {sub.status === 'NOT_SUBMITTED' ? (
-                              <span style={{ color: '#94a3b8' }}>Chưa có điểm</span>
-                            ) : (
-                              <div className="tku-score-badge-wrap">
-                                <span
-                                  className={`tku-score-number tku-score-number--${sub.gradeTier.toLowerCase()}`}
-                                >
-                                  {sub.score.toFixed(1)}
+                            {/* Thời gian nộp */}
+                            <td>
+                              {sub.status === 'NOT_SUBMITTED' ? (
+                                <span className="tku-submission-status-pill tku-submission-status-pill--unsubmitted">
+                                  Chưa nộp bài
                                 </span>
-                                <span
-                                  className={`tku-tier-tag tku-tier-tag--${sub.gradeTier.toLowerCase()}`}
-                                >
-                                  {sub.gradeTierText}
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                  <span style={{ fontSize: '13px', color: '#1e293b' }}>
+                                    {sub.submittedAt}
+                                  </span>
+                                  <span
+                                    className={`tku-submission-status-pill ${
+                                      sub.isLate
+                                        ? 'tku-submission-status-pill--late'
+                                        : 'tku-submission-status-pill--graded'
+                                    }`}
+                                  >
+                                    {sub.isLate ? 'Nộp muộn' : 'Nộp đúng hạn'}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Thời lượng làm bài */}
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#475569', fontSize: '13px' }}>
+                                <Clock size={13} style={{ color: '#64748b' }} />
+                                <span>
+                                  {sub.status === 'NOT_SUBMITTED'
+                                    ? '--'
+                                    : `${sub.timeSpentMinutes} phút`}
                                 </span>
                               </div>
-                            )}
-                          </td>
+                            </td>
 
-                          {/* Lời phê giảng viên */}
-                          <td style={{ maxWidth: '220px' }}>
-                            {sub.feedback ? (
-                              <span
-                                style={{
-                                  fontSize: '12.5px',
-                                  color: '#334155',
-                                  display: '-webkit-box',
-                                  WebkitLineClamp: 2,
-                                  WebkitBoxOrient: 'vertical',
-                                  overflow: 'hidden',
-                                }}
-                                title={sub.feedback}
-                              >
-                                "{sub.feedback}"
-                              </span>
-                            ) : (
-                              <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
-                                Chưa có nhận xét
-                              </span>
-                            )}
-                          </td>
+                            {/* Số câu đúng */}
+                            <td>
+                              {sub.status === 'NOT_SUBMITTED' ? (
+                                <span style={{ color: '#94a3b8' }}>--</span>
+                              ) : (
+                                <div className="tku-accuracy-cell">
+                                  <span className="tku-accuracy-text">
+                                    <strong>{sub.correctCount}</strong> / {sub.totalQuestions} câu ({sub.percentage}%)
+                                  </span>
+                                  <div className="tku-accuracy-bar">
+                                    <div
+                                      className="tku-accuracy-fill"
+                                      style={{ width: `${sub.percentage}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </td>
 
-                          {/* Thao tác */}
-                          <td style={{ textAlign: 'right' }}>
-                            {sub.status === 'NOT_SUBMITTED' ? (
-                              <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>
-                                Chưa có bài
-                              </span>
-                            ) : (
-                              <button
-                                type="button"
-                                className="tku-row-action-btn tku-row-action-btn--primary"
-                                onClick={() => handleOpenReview(sub)}
-                                title="Xem chi tiết bài thi & chấm lời giải của sinh viên"
-                              >
-                                <Eye size={14} />
-                                <span>Xem bài làm</span>
-                              </button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )
+                            {/* Điểm số & Xếp loại */}
+                            <td>
+                              {sub.status === 'NOT_SUBMITTED' ? (
+                                <span style={{ color: '#94a3b8' }}>Chưa có điểm</span>
+                              ) : (
+                                <div className="tku-score-badge-wrap">
+                                  <span
+                                    className={`tku-score-number tku-score-number--${sub.gradeTier.toLowerCase()}`}
+                                  >
+                                    {sub.score.toFixed(1)}
+                                  </span>
+                                  <span
+                                    className={`tku-tier-tag tku-tier-tag--${sub.gradeTier.toLowerCase()}`}
+                                  >
+                                    {sub.gradeTierText}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
+
+                            {/* Lời phê giảng viên */}
+                            <td style={{ maxWidth: '220px' }}>
+                              {sub.feedback ? (
+                                <span
+                                  style={{
+                                    fontSize: '12.5px',
+                                    color: '#334155',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden',
+                                  }}
+                                  title={sub.feedback}
+                                >
+                                  "{sub.feedback}"
+                                </span>
+                              ) : (
+                                <span style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
+                                  Chưa có nhận xét
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Thao tác */}
+                            <td style={{ textAlign: 'right' }}>
+                              {sub.status === 'NOT_SUBMITTED' ? (
+                                <span style={{ fontSize: '12.5px', color: '#94a3b8' }}>
+                                  Chưa có bài
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="tku-row-action-btn tku-row-action-btn--primary"
+                                  onClick={() => handleOpenReview(sub)}
+                                  title="Xem chi tiết bài thi & chấm lời giải của sinh viên"
+                                >
+                                  <Eye size={14} />
+                                  <span>Xem bài làm</span>
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              )}
+            </div>
           ) : (
             /* TAB 2: Question-by-Question Accuracy & Item Difficulty Analysis */
             <section className="tku-question-analysis-grid">

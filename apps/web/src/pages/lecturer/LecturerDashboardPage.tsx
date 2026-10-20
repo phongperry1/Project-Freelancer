@@ -28,7 +28,7 @@ const DashboardLoading: React.FC = () => (
 );
 
 export const LecturerDashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<LecturerDashboardData | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -66,8 +66,8 @@ export const LecturerDashboardPage: React.FC = () => {
     const run = async () => {
       const success = await fetchData();
       if (!success && isMounted) {
-        // Tự động kết nối lại sau 2.5s nếu backend đang khởi động
-        pollTimer = setTimeout(run, 2500);
+        // Tự động kết nối lại sau 2.0s nếu backend đang khởi động hoặc chưa sẵn sàng
+        pollTimer = setTimeout(run, 2000);
       }
     };
 
@@ -77,7 +77,7 @@ export const LecturerDashboardPage: React.FC = () => {
       isMounted = false;
       if (pollTimer) clearTimeout(pollTimer);
     };
-  }, [fetchData]);
+  }, [fetchData, token]);
 
   // Display Name / Greeting
   const teacherFullName = user?.fullName || 'Giảng viên';
@@ -95,6 +95,7 @@ export const LecturerDashboardPage: React.FC = () => {
     return 'Chào buổi tối';
   }, []);
 
+  const isWaitingData = isLoading || (isConnecting && !data);
   const stats = data?.stats;
   const courses = data?.courses || [];
   const submissions = data?.submissions || [];
@@ -145,7 +146,7 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {isLoading ? (
+            {isWaitingData ? (
               <Loader2 size={20} className="tku-lecturer-spin-icon" />
             ) : stats ? (
               stats.totalCourses
@@ -154,7 +155,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {isLoading ? (
+            {isWaitingData ? (
               'Đang tải số liệu...'
             ) : stats && stats.totalCourses > 0 ? (
               <>
@@ -178,7 +179,7 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {isLoading ? (
+            {isWaitingData ? (
               <Loader2 size={20} className="tku-lecturer-spin-icon" />
             ) : stats ? (
               stats.totalStudents.toLocaleString('vi-VN')
@@ -187,7 +188,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {isLoading ? (
+            {isWaitingData ? (
               'Đang tải số liệu...'
             ) : stats && stats.newStudentsThisMonth > 0 ? (
               <>
@@ -216,7 +217,7 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {isLoading ? (
+            {isWaitingData ? (
               <Loader2 size={20} className="tku-lecturer-spin-icon" />
             ) : stats ? (
               stats.pendingGrading
@@ -225,7 +226,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {isLoading ? (
+            {isWaitingData ? (
               'Đang tải số liệu...'
             ) : stats && stats.pendingGrading > 0 ? (
               `${stats.essayCount} bài tự luận • ${stats.quizCount} bài kiểm tra`
@@ -246,7 +247,7 @@ export const LecturerDashboardPage: React.FC = () => {
             </div>
           </div>
           <div className="tku-lecturer-stat-card__value">
-            {isLoading ? (
+            {isWaitingData ? (
               <Loader2 size={20} className="tku-lecturer-spin-icon" />
             ) : stats ? (
               `${stats.averageProgress}%`
@@ -255,7 +256,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
           <div className="tku-lecturer-stat-card__sub">
-            {isLoading ? (
+            {isWaitingData ? (
               'Đang tải số liệu...'
             ) : stats && stats.progressChange !== 0 ? (
               <>
@@ -291,7 +292,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
 
-          {isLoading ? (
+          {isWaitingData ? (
             <DashboardLoading />
           ) : courses.length === 0 ? (
             <div className="tku-lecturer-empty-state">
@@ -362,7 +363,7 @@ export const LecturerDashboardPage: React.FC = () => {
             )}
           </div>
 
-          {isLoading ? (
+          {isWaitingData ? (
             <DashboardLoading />
           ) : submissions.length === 0 ? (
             <div className="tku-lecturer-empty-state">
