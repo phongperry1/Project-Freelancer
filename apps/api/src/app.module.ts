@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module.js';
 import { AuthModule } from './auth/auth.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { LecturerModule } from './lecturer/lecturer.module.js';
+import { CourseModule } from './course/course.module.js';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { LecturerModule } from './lecturer/lecturer.module.js';
     AuthModule,
     AdminModule,
     LecturerModule,
+    CourseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
