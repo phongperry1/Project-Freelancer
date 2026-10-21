@@ -1,18 +1,21 @@
-export type GradeLevel = 'all' | '10' | '11' | '12' | 'exam';
+export type GradeLevel = 'all' | '10' | '11' | '12' | 'exam' | 'other';
 
 export interface Course {
   id: string;
   title: string;
   grade: GradeLevel;
   teacher: string;
-  teacherAvatar?: string;
-  rating: number;
+  teacherAvatar?: string | null;
+  rating?: number;
   lessonCount: number;
-  price: number;
+  chapterCount?: number;
+  studentCount?: number;
+  price?: number;
   originalPrice?: number;
-  thumbnailUrl: string;
+  thumbnailUrl?: string | null;
   badge?: string;
-  slug?: string;
+  slug?: string | null;
+  description?: string | null;
 }
 
 export interface CourseFilterTab {

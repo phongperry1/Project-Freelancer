@@ -13,6 +13,7 @@ import { RouteTransitionLoader } from './components/common/RouteTransitionLoader
 import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
+const CourseDetailPage = lazy(() => import('./pages/course/CourseDetailPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
@@ -77,6 +78,7 @@ export const App: React.FC = () => {
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/" element={<HomeRoute />} />
+              <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route
                 path="/login"
                 element={
