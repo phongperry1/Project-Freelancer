@@ -3,10 +3,13 @@ import {
   IsArray,
   IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
@@ -47,6 +50,17 @@ export class CreateCourseDto {
   thumbnailUrl!: string;
 
   @ApiPropertyOptional({
+    description: 'Khối lớp học thuật (10, 11, 12, exam, other)',
+    enum: ['10', '11', '12', 'exam', 'other'],
+    default: '10',
+  })
+  @IsEnum(['10', '11', '12', 'exam', 'other'], {
+    message: 'Khối lớp không hợp lệ (chọn 10, 11, 12, exam hoặc other).',
+  })
+  @IsOptional()
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
+
+  @ApiPropertyOptional({
     enum: ['ACTIVE', 'HIDDEN'],
     default: 'ACTIVE',
   })
@@ -80,6 +94,16 @@ export class UpdateCourseDto {
   @IsNotEmpty({ message: 'Vui lòng chọn giảng viên phụ trách.' })
   @IsOptional()
   teacherId?: string;
+
+  @ApiPropertyOptional({
+    description: 'Khối lớp học thuật (10, 11, 12, exam, other)',
+    enum: ['10', '11', '12', 'exam', 'other'],
+  })
+  @IsEnum(['10', '11', '12', 'exam', 'other'], {
+    message: 'Khối lớp không hợp lệ (chọn 10, 11, 12, exam hoặc other).',
+  })
+  @IsOptional()
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
 
   @ApiPropertyOptional({ description: 'Mô tả khóa học' })
   @IsString({ message: 'Mô tả khóa học phải là chuỗi ký tự.' })
@@ -116,3 +140,28 @@ export class CreateChapterDto {
   @IsOptional()
   sortOrder?: number;
 }
+
+export class CreateActivationKeysDto {
+  @ApiProperty({
+    description: 'Thời hạn hiệu lực của key tính bằng giờ (ví dụ: 24h, 72h, 168h)',
+    example: 72,
+    default: 72,
+  })
+  @IsNotEmpty({ message: 'Thời hạn hiệu lực không được để trống.' })
+  @IsNumber({}, { message: 'Thời hạn hiệu lực phải là một số nguyên giờ.' })
+  @Min(1, { message: 'Thời hạn hiệu lực tối thiểu là 1 giờ.' })
+  @Max(87600, { message: 'Thời hạn hiệu lực tối đa là 87,600 giờ (10 năm).' })
+  expiresInHours!: number;
+
+  @ApiPropertyOptional({
+    description: 'Số lượng key cần tạo đồng loạt (1 - 50 key)',
+    example: 5,
+    default: 1,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Số lượng key phải là số nguyên.' })
+  @Min(1, { message: 'Số lượng key tối thiểu là 1.' })
+  @Max(50, { message: 'Số lượng key tối đa tạo 1 lần là 50 mã.' })
+  quantity?: number;
+}
+

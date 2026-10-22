@@ -6,13 +6,40 @@ import {
 } from '@nestjs/common';
 import argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service.js';
+import { Prisma } from '../generated/prisma/client.js';
 import {
   CreateCourseDto,
   UpdateCourseDto,
   CreateChapterDto,
+  CreateActivationKeysDto,
 } from './dto/course.dto.js';
 import { CreateUserDto, BulkCreateUsersDto } from './dto/user.dto.js';
 
+export interface AdminActivationKeyItem {
+  id: string;
+  key: string;
+  courseId: string;
+  expiresAt: Date;
+  usedById: string | null;
+  createdAt: Date;
+  status: 'ACTIVE' | 'USED' | 'EXPIRED';
+  usedBy?: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string | null;
+  } | null;
+}
+
+export interface AdminActivationKeysResponse {
+  courseId: string;
+  courseTitle: string;
+  totalKeys: number;
+  activeCount: number;
+  usedCount: number;
+  expiredCount: number;
+  keys: AdminActivationKeyItem[];
+}
 
 export interface DashboardStatsResponse {
   totalUsers: number;
@@ -55,8 +82,9 @@ export interface DashboardStatsResponse {
 
 export interface AdminCourseItem {
   id: string;
-  slug?: string;
   title: string;
+  grade: '10' | '11' | '12' | 'exam' | 'other';
+  gradeText: string;
   thumbnailUrl?: string | null;
   teacherName: string;
   teacherId: string;
@@ -128,7 +156,6 @@ export interface AdminUserDeviceItem {
 export interface AdminUserCourseItem {
   id: string;
   title: string;
-  slug?: string;
   status: string;
   statusText: string;
   thumbnailUrl: string | null;
@@ -610,41 +637,25 @@ export class AdminService {
     };
   }
 
-  private generateSlug(text: string): string {
-    return text
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[đĐ]/g, 'd')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .trim()
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-');
-  }
-
-  private async createUniqueSlug(baseTitle: string): Promise<string> {
-    const baseSlug = this.generateSlug(baseTitle) || 'khoa-hoc';
-    const existing = await this.prisma.course.findMany({
-      where: {
-        slug: { startsWith: baseSlug },
-      },
-      select: { slug: true },
-    });
-    const slugSet = new Set(existing.map((c) => c.slug));
-    if (!slugSet.has(baseSlug)) {
-      return baseSlug;
+  private getGradeText(grade?: string): string {
+    switch (grade) {
+      case '10':
+        return 'Hóa học Lớp 10';
+      case '11':
+        return 'Hóa học Lớp 11';
+      case '12':
+        return 'Hóa học Lớp 12';
+      case 'exam':
+        return 'Luyện thi THPT & ĐGNL';
+      default:
+        return 'Chuyên đề khác';
     }
-    let counter = 1;
-    while (slugSet.has(`${baseSlug}-${counter}`)) {
-      counter++;
-    }
-    return `${baseSlug}-${counter}`;
   }
 
   private mapToAdminCourseItem(course: {
     id: string;
-    slug?: string | null;
     title: string;
+    grade?: string | null;
     thumbnailUrl?: string | null;
     teacherName?: string;
     teacherId: string;
@@ -664,11 +675,13 @@ export class AdminService {
 
     const d = course.updatedAt || course.createdAt;
     const dateFormatted = `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+    const gradeVal = (course.grade as '10' | '11' | '12' | 'exam' | 'other') || '10';
 
     return {
       id: course.id,
-      slug: course.slug || undefined,
       title: course.title,
+      grade: gradeVal,
+      gradeText: this.getGradeText(gradeVal),
       thumbnailUrl: course.thumbnailUrl || undefined,
       teacherName:
         course.teacher?.fullName || course.teacherName || 'Chưa phân công',
@@ -724,12 +737,10 @@ export class AdminService {
 
     const courseStatus = dto.status === 'HIDDEN' ? 'HIDDEN' : 'ACTIVE';
 
-    const slug = await this.createUniqueSlug(dto.title);
-
     const course = await this.prisma.course.create({
       data: {
         title: dto.title.trim(),
-        slug,
+        grade: dto.grade || '10',
         teacherId: dto.teacherId.trim(),
         description: dto.description.trim(),
         thumbnailUrl: dto.thumbnailUrl.trim(),
@@ -874,6 +885,7 @@ export class AdminService {
       data: {
         ...(dto.title !== undefined ? { title: dto.title.trim() } : {}),
         ...(dto.teacherId !== undefined ? { teacherId: dto.teacherId.trim() } : {}),
+        ...(dto.grade !== undefined ? { grade: dto.grade } : {}),
         ...(dto.description !== undefined
           ? { description: dto.description.trim() }
           : {}),
@@ -1055,7 +1067,6 @@ export class AdminService {
               select: {
                 id: true,
                 title: true,
-                slug: true,
                 status: true,
                 thumbnailUrl: true,
               },
@@ -1089,7 +1100,6 @@ export class AdminService {
     const formattedTaughtCourses: AdminUserCourseItem[] = user.taughtCourses.map((c) => ({
       id: c.id,
       title: c.title,
-      slug: c.slug || undefined,
       status: c.status,
       statusText: c.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã ẩn',
       thumbnailUrl: c.thumbnailUrl,
@@ -1101,7 +1111,6 @@ export class AdminService {
     const formattedEnrolledCourses: AdminUserCourseItem[] = user.enrollments.map((en) => ({
       id: en.course.id,
       title: en.course.title,
-      slug: en.course.slug || undefined,
       status: en.course.status,
       statusText: en.course.status === 'ACTIVE' ? 'Đang hoạt động' : 'Đã ẩn',
       thumbnailUrl: en.course.thumbnailUrl,
@@ -1283,4 +1292,334 @@ export class AdminService {
       createdUsers,
     };
   }
+
+  /**
+   * Sinh mã key học thuật ngẫu nhiên: TKU-CHEM-XXXX-YYYY
+   * Loại bỏ các ký tự dễ nhầm lẫn như 0, O, 1, I
+   */
+  private generateRandomKeyString(): string {
+    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const segment = (len: number) => {
+      let str = '';
+      for (let i = 0; i < len; i++) {
+        str += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return str;
+    };
+    return `TKU-CHEM-${segment(4)}-${segment(4)}`;
+  }
+
+  /**
+   * Admin tạo mã Key 1 lần cho khóa học với thời hạn hiệu lực cụ thể
+   * Đúng 6 trường Database đã duyệt:
+   * 1. id: UUID
+   * 2. key: string unique
+   * 3. courseId: UUID
+   * 4. expiresAt: DateTime
+   * 5. usedById: UUID (null khi chưa dùng)
+   * 6. createdAt: DateTime
+   */
+  async createCourseActivationKeys(
+    courseId: string,
+    dto: CreateActivationKeysDto,
+  ): Promise<{
+    message: string;
+    totalCreated: number;
+    expiresAt: Date;
+    keys: AdminActivationKeyItem[];
+  }> {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Khóa học không tồn tại trên hệ thống.');
+    }
+
+    const hours = Number(dto.expiresInHours);
+    if (isNaN(hours) || hours <= 0) {
+      throw new BadRequestException(
+        'Thời hạn hiệu lực của key phải là số giờ hợp lệ lớn hơn 0 (ví dụ 24h, 72h).',
+      );
+    }
+
+    const quantity = Math.min(Math.max(1, Number(dto.quantity) || 1), 50);
+    const expiresAt = new Date(Date.now() + hours * 3600 * 1000);
+    const now = new Date();
+
+    // Sinh danh sách mã key ngẫu nhiên không trùng lặp trong bộ nhớ
+    const keysSet = new Set<string>();
+    while (keysSet.size < quantity) {
+      keysSet.add(this.generateRandomKeyString());
+    }
+    const candidateKeys = Array.from(keysSet);
+
+    // Kiểm tra 1 lần duy nhất trong DB xem có mã nào bị trùng không (thay vì lặp n lần)
+    const existingRecords = await this.prisma.courseActivationKey.findMany({
+      where: { key: { in: candidateKeys } },
+      select: { key: true },
+    });
+
+    const existingKeySet = new Set(existingRecords.map((r) => r.key));
+    const finalKeys: string[] = candidateKeys.filter((k) => !existingKeySet.has(k));
+
+    while (finalKeys.length < quantity) {
+      const extraKey = this.generateRandomKeyString();
+      if (!keysSet.has(extraKey) && !existingKeySet.has(extraKey)) {
+        finalKeys.push(extraKey);
+      }
+    }
+
+    // Chèn toàn bộ mã key vào DB trong 1 Transaction nguyên tử duy nhất
+    const newRecords = await this.prisma.$transaction(
+      finalKeys.map((k) =>
+        this.prisma.courseActivationKey.create({
+          data: {
+            key: k,
+            courseId,
+            expiresAt,
+            usedById: null,
+            createdAt: now,
+          },
+        }),
+      ),
+    );
+
+    const createdKeys: AdminActivationKeyItem[] = newRecords.map((newKeyRecord) => ({
+      id: newKeyRecord.id,
+      key: newKeyRecord.key,
+      courseId: newKeyRecord.courseId,
+      expiresAt: newKeyRecord.expiresAt,
+      usedById: newKeyRecord.usedById,
+      createdAt: newKeyRecord.createdAt,
+      status: 'ACTIVE',
+      usedBy: null,
+    }));
+
+    return {
+      message: `Đã tạo thành công ${createdKeys.length} mã key tham gia khóa học (hiệu lực ${hours} giờ).`,
+      totalCreated: createdKeys.length,
+      expiresAt,
+      keys: createdKeys,
+    };
+  }
+
+  /**
+   * Lấy danh sách tất cả mã Key của khóa học kèm trạng thái thực tế
+   */
+  async getCourseActivationKeys(
+    courseId: string,
+  ): Promise<AdminActivationKeysResponse> {
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true },
+    });
+
+    if (!course) {
+      throw new NotFoundException('Khóa học không tồn tại.');
+    }
+
+    const records = await this.prisma.courseActivationKey.findMany({
+      where: { courseId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        usedBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    const now = new Date();
+    let activeCount = 0;
+    let usedCount = 0;
+    let expiredCount = 0;
+
+    const keys: AdminActivationKeyItem[] = records.map((r) => {
+      let status: 'ACTIVE' | 'USED' | 'EXPIRED';
+
+      if (r.usedById) {
+        status = 'USED';
+        usedCount++;
+      } else if (now > new Date(r.expiresAt)) {
+        status = 'EXPIRED';
+        expiredCount++;
+      } else {
+        status = 'ACTIVE';
+        activeCount++;
+      }
+
+      return {
+        id: r.id,
+        key: r.key,
+        courseId: r.courseId,
+        expiresAt: r.expiresAt,
+        usedById: r.usedById,
+        createdAt: r.createdAt,
+        status,
+        usedBy: r.usedBy ?? null,
+      };
+    });
+
+    return {
+      courseId: course.id,
+      courseTitle: course.title,
+      totalKeys: keys.length,
+      activeCount,
+      usedCount,
+      expiredCount,
+      keys,
+    };
+  }
+
+  /**
+   * Xóa hoặc thu hồi mã key chưa sử dụng
+   */
+  async deleteActivationKey(
+    keyId: string,
+  ): Promise<{ message: string; id: string }> {
+    const existing = await this.prisma.courseActivationKey.findUnique({
+      where: { id: keyId },
+    });
+
+    if (!existing) {
+      throw new NotFoundException('Mã key không tồn tại trên hệ thống.');
+    }
+
+    if (existing.usedById) {
+      throw new BadRequestException(
+        'Không thể xóa mã key đã được học sinh sử dụng để bảo toàn dữ liệu đào tạo.',
+      );
+    }
+
+    await this.prisma.courseActivationKey.delete({
+      where: { id: keyId },
+    });
+
+    return {
+      message: 'Xóa mã key thành công.',
+      id: keyId,
+    };
+  }
+
+  /**
+   * Lấy danh sách toàn bộ mã key trên hệ thống cho trang quản trị chuyên biệt
+   * Kèm thống kê, lọc theo khóa học, trạng thái và tìm kiếm
+   */
+  async getAllActivationKeys(options?: {
+    courseId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<{
+    stats: {
+      totalKeys: number;
+      activeCount: number;
+      usedCount: number;
+      expiredCount: number;
+    };
+    courses: Array<{ id: string; title: string }>;
+    keys: Array<AdminActivationKeyItem & { courseTitle: string }>;
+  }> {
+    // 1. Lấy danh sách tất cả các khóa học phục vụ bộ lọc
+    const courses = await this.prisma.course.findMany({
+      select: { id: true, title: true },
+      orderBy: { title: 'asc' },
+    });
+
+    // 2. Xây dựng điều kiện tìm kiếm
+    const where: Prisma.CourseActivationKeyWhereInput = {};
+    if (options?.courseId && options.courseId !== 'ALL') {
+      where.courseId = options.courseId;
+    }
+
+    if (options?.search?.trim()) {
+      const keyword = options.search.trim();
+      where.OR = [
+        { key: { contains: keyword, mode: 'insensitive' } },
+        {
+          usedBy: {
+            OR: [
+              { fullName: { contains: keyword, mode: 'insensitive' } },
+              { email: { contains: keyword, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    const records = await this.prisma.courseActivationKey.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        course: {
+          select: { id: true, title: true },
+        },
+        usedBy: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+
+    const now = new Date();
+    let totalKeys = 0;
+    let activeCount = 0;
+    let usedCount = 0;
+    let expiredCount = 0;
+
+    const allKeys = records.map((r) => {
+      totalKeys++;
+      let status: 'ACTIVE' | 'USED' | 'EXPIRED';
+
+      if (r.usedById) {
+        status = 'USED';
+        usedCount++;
+      } else if (now > new Date(r.expiresAt)) {
+        status = 'EXPIRED';
+        expiredCount++;
+      } else {
+        status = 'ACTIVE';
+        activeCount++;
+      }
+
+      return {
+        id: r.id,
+        key: r.key,
+        courseId: r.courseId,
+        courseTitle: r.course?.title || 'Khóa học',
+        expiresAt: r.expiresAt,
+        usedById: r.usedById,
+        createdAt: r.createdAt,
+        status,
+        usedBy: r.usedBy ?? null,
+      };
+    });
+
+    // Lọc theo trạng thái nếu có
+    const filteredKeys =
+      options?.status && options.status !== 'ALL'
+        ? allKeys.filter((k) => k.status === options.status)
+        : allKeys;
+
+    return {
+      stats: {
+        totalKeys,
+        activeCount,
+        usedCount,
+        expiredCount,
+      },
+      courses,
+      keys: filteredKeys,
+    };
+  }
 }
+

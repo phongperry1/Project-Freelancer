@@ -90,6 +90,7 @@ model User {
   comments              Comment[]
   notifications         Notification[]
   aiHistories           AiHistory[]
+  usedActivationKeys    CourseActivationKey[]  @relation("UsedActivationKeys")
 
   @@index([role])
   @@index([status])
@@ -145,7 +146,7 @@ model Course {
   id           String       @id @default(uuid()) @db.Uuid
   teacherId    String       @db.Uuid
   title        String       @db.VarChar(255)
-  slug         String?      @unique @db.VarChar(255)
+  grade        String       @default("10") @db.VarChar(50)
   description  String?      @db.Text
   thumbnailUrl String?      @db.VarChar(500)
   status       CourseStatus @default(ACTIVE)
@@ -153,13 +154,35 @@ model Course {
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
 
-  teacher     User               @relation(fields: [teacherId], references: [id], onDelete: Restrict)
-  enrollments CourseEnrollment[]
-  chapters    Chapter[]
-  assessments Assessment[]
+  teacher        User                  @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+  enrollments    CourseEnrollment[]
+  chapters       Chapter[]
+  assessments    Assessment[]
+  activationKeys CourseActivationKey[]
 
   @@index([teacherId])
   @@index([status])
+  @@index([grade])
+}
+
+// ============================================================
+// 3.1 COURSE ACTIVATION KEY (MÃ KEY 1 LẦN THAM GIA KHÓA HỌC)
+// ============================================================
+
+model CourseActivationKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  key       String   @unique @db.VarChar(50)
+  courseId  String   @db.Uuid
+  expiresAt DateTime @db.Timestamptz(6)
+  usedById  String?  @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz(6)
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  usedBy User?  @relation("UsedActivationKeys", fields: [usedById], references: [id], onDelete: SetNull)
+
+  @@index([courseId])
+  @@index([key])
+  @@index([expiresAt])
 }
 
 // ============================================================
