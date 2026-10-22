@@ -1,12 +1,12 @@
 import type { FooterColumn, NavItem } from '../types/nav.types';
 
 export const MAIN_NAV_ITEMS: NavItem[] = [
-  { id: 'nav-home', label: 'Trang chủ', href: '#home', isActive: true },
-  { id: 'nav-courses', label: 'Khóa học', href: '#courses' },
-  { id: 'nav-lessons', label: 'Bài giảng', href: '#lessons' },
-  { id: 'nav-roadmap', label: 'Lộ trình', href: '#roadmap' },
-  { id: 'nav-qa', label: 'Hỏi đáp', href: '#qa' },
-  { id: 'nav-support', label: 'Hỗ trợ', href: '#support' },
+  { id: 'nav-home', label: 'Trang chủ', href: '/' },
+  { id: 'nav-courses', label: 'Khóa học', href: '/courses' },
+  { id: 'nav-lessons', label: 'Bài giảng', href: '/#lessons' },
+  { id: 'nav-roadmap', label: 'Lộ trình', href: '/#roadmap' },
+  { id: 'nav-qa', label: 'Hỏi đáp', href: '/#qa' },
+  { id: 'nav-support', label: 'Hỗ trợ', href: '/#support' },
 ];
 
 export const FOOTER_COLUMNS: FooterColumn[] = [

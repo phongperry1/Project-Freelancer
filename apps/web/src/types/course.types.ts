@@ -14,7 +14,6 @@ export interface Course {
   originalPrice?: number;
   thumbnailUrl?: string | null;
   badge?: string;
-  slug?: string | null;
   description?: string | null;
 }
 

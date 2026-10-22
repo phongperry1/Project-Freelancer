@@ -659,28 +659,30 @@ export const AdminContentPage: React.FC = () => {
                           </div>
                         </div>
 
-                        {/* Nút Admin Toggle Ẩn / Hiện */}
-                        <button
-                          type="button"
-                          className={`tku-content-action-btn ${
-                            courseDetail.status === 'ACTIVE'
-                              ? 'tku-content-action-btn--hide'
-                              : 'tku-content-action-btn--show'
-                          }`}
-                          onClick={() => setIsConfirmModalOpen(true)}
-                        >
-                          {courseDetail.status === 'ACTIVE' ? (
-                            <>
-                              <EyeOff size={15} />
-                              <span>Ẩn nội dung khóa học</span>
-                            </>
-                          ) : (
-                            <>
-                              <Eye size={15} />
-                              <span>Hiện nội dung khóa học</span>
-                            </>
-                          )}
-                        </button>
+                        {/* Action buttons */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className={`tku-content-action-btn ${
+                              courseDetail.status === 'ACTIVE'
+                                ? 'tku-content-action-btn--hide'
+                                : 'tku-content-action-btn--show'
+                            }`}
+                            onClick={() => setIsConfirmModalOpen(true)}
+                          >
+                            {courseDetail.status === 'ACTIVE' ? (
+                              <>
+                                <EyeOff size={15} />
+                                <span>Ẩn nội dung khóa học</span>
+                              </>
+                            ) : (
+                              <>
+                                <Eye size={15} />
+                                <span>Hiện nội dung khóa học</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
                       </div>
 
                       {/* Header Giáo Trình */}

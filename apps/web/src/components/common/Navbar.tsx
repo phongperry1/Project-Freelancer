@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useCallback } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { Bell, Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
 import { useAuth } from '../../context/useAuth';
@@ -7,9 +7,46 @@ import { toast } from '../../context/useToast';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeNav, setActiveNav] = useState('nav-home');
+
+  const isNavActive = useCallback(
+    (itemId: string, href: string) => {
+      if (itemId === 'nav-courses') {
+        return (
+          location.pathname.startsWith('/courses') ||
+          location.pathname === '/my-courses'
+        );
+      }
+      if (itemId === 'nav-home') {
+        return location.pathname === '/' && !location.hash;
+      }
+      if (href.startsWith('/#')) {
+        return location.pathname === '/' && location.hash === href.replace('/', '');
+      }
+      return false;
+    },
+    [location.pathname, location.hash],
+  );
+
+  const handleNavClick = useCallback(
+    (href: string) => {
+      setMobileMenuOpen(false);
+      if (href.startsWith('/#')) {
+        const hash = href.replace('/', '');
+        if (location.pathname === '/') {
+          const el = document.querySelector(hash);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        } else {
+          navigate(href);
+        }
+      }
+    },
+    [location.pathname, navigate],
+  );
 
   const handleLogout = () => {
     logout();
@@ -31,7 +68,7 @@ export const Navbar: React.FC = () => {
   return (
     <header className="tku-navbar-wrapper">
       <div className="tku-container tku-navbar">
-        <a href="/" className="tku-brand">
+        <Link to="/" className="tku-brand">
           <img
             src="/assets/logo.png"
             alt="TKU Chemistry Center"
@@ -43,19 +80,39 @@ export const Navbar: React.FC = () => {
             <span className="tku-brand__title">TKU</span>
             <span className="tku-brand__subtitle">TƯ DUY • KIẾN THỨC • ƯỚC MƠ</span>
           </div>
-        </a>
+        </Link>
 
         <nav className="tku-nav-menu" aria-label="Điều hướng chính">
-          {MAIN_NAV_ITEMS.map((item) => (
-            <a
-              key={item.id}
-              href={item.href}
-              onClick={() => setActiveNav(item.id)}
-              className={`tku-nav-item ${activeNav === item.id ? 'is-active' : ''}`}
-            >
-              {item.label}
-            </a>
-          ))}
+          {MAIN_NAV_ITEMS.map((item) => {
+            const active = isNavActive(item.id, item.href);
+            if (item.href.startsWith('/#')) {
+              return (
+                <a
+                  key={item.id}
+                  href={item.href}
+                  onClick={(e) => {
+                    if (location.pathname === '/') {
+                      e.preventDefault();
+                      handleNavClick(item.href);
+                    }
+                  }}
+                  className={`tku-nav-item ${active ? 'is-active' : ''}`}
+                >
+                  {item.label}
+                </a>
+              );
+            }
+
+            return (
+              <Link
+                key={item.id}
+                to={item.href}
+                className={`tku-nav-item ${active ? 'is-active' : ''}`}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="tku-nav-actions">
@@ -128,19 +185,39 @@ export const Navbar: React.FC = () => {
       {mobileMenuOpen && (
         <div className="tku-mobile-drawer">
           <nav className="tku-mobile-nav">
-            {MAIN_NAV_ITEMS.map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={() => {
-                  setActiveNav(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`tku-mobile-nav-item ${activeNav === item.id ? 'is-active' : ''}`}
-              >
-                {item.label}
-              </a>
-            ))}
+            {MAIN_NAV_ITEMS.map((item) => {
+              const active = isNavActive(item.id, item.href);
+              if (item.href.startsWith('/#')) {
+                return (
+                  <a
+                    key={item.id}
+                    href={item.href}
+                    onClick={(e) => {
+                      if (location.pathname === '/') {
+                        e.preventDefault();
+                        handleNavClick(item.href);
+                      } else {
+                        setMobileMenuOpen(false);
+                      }
+                    }}
+                    className={`tku-mobile-nav-item ${active ? 'is-active' : ''}`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              }
+
+              return (
+                <Link
+                  key={item.id}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`tku-mobile-nav-item ${active ? 'is-active' : ''}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
 
             <div className="tku-mobile-actions">
               {isAuthenticated && user ? (

@@ -22,6 +22,18 @@ import {
 import { toast } from '../../context/toastService';
 import './adminEditCourse.css';
 
+const GRADE_OPTIONS: Array<{
+  value: '10' | '11' | '12' | 'exam' | 'other';
+  label: string;
+  desc: string;
+}> = [
+  { value: '10', label: 'Hóa học Lớp 10', desc: 'Chương trình kiến thức chuẩn Lớp 10' },
+  { value: '11', label: 'Hóa học Lớp 11', desc: 'Chương trình kiến thức chuẩn Lớp 11' },
+  { value: '12', label: 'Hóa học Lớp 12', desc: 'Chương trình kiến thức chuẩn Lớp 12' },
+  { value: 'exam', label: 'Luyện thi THPT & ĐGNL', desc: 'Khóa ôn luyện thi tốt nghiệp, TSA, ĐGNL' },
+  { value: 'other', label: 'Chuyên đề khác', desc: 'Các chuyên đề chuyên sâu, bồi dưỡng học sinh' },
+];
+
 interface FormErrors {
   title?: string;
   teacherId?: string;
@@ -51,6 +63,7 @@ export const AdminEditCoursePage: React.FC = () => {
 
   const [title, setTitle] = useState<string>('');
   const [teacherId, setTeacherId] = useState<string>('');
+  const [grade, setGrade] = useState<'10' | '11' | '12' | 'exam' | 'other'>('10');
   const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
   const [description, setDescription] = useState<string>('');
 
@@ -77,6 +90,7 @@ export const AdminEditCoursePage: React.FC = () => {
         setCourse(courseData);
         setTitle(courseData.title);
         setTeacherId(courseData.teacher?.id || '');
+        setGrade((courseData.grade as '10' | '11' | '12' | 'exam' | 'other') || '10');
         setDescription(courseData.description || '');
         setThumbnailUrl(courseData.thumbnailUrl || courseData.thumbnail || '');
 
@@ -108,6 +122,7 @@ export const AdminEditCoursePage: React.FC = () => {
         setCourse(courseData);
         setTitle(courseData.title);
         setTeacherId(courseData.teacher?.id || '');
+        setGrade((courseData.grade as '10' | '11' | '12' | 'exam' | 'other') || '10');
         setDescription(courseData.description || '');
         setThumbnailUrl(courseData.thumbnailUrl || courseData.thumbnail || '');
 
@@ -270,6 +285,7 @@ export const AdminEditCoursePage: React.FC = () => {
         await adminService.updateCourse(id, {
           title: title.trim(),
           teacherId,
+          grade,
           description: description.trim(),
           thumbnailUrl: thumbnailUrl.trim(),
         });
@@ -293,7 +309,7 @@ export const AdminEditCoursePage: React.FC = () => {
         setIsSubmitting(false);
       }
     },
-    [id, isUploadingImage, validateForm, title, teacherId, description, thumbnailUrl, uploadMode, navigate],
+    [id, isUploadingImage, validateForm, title, teacherId, grade, description, thumbnailUrl, uploadMode, navigate],
   );
 
   if (isLoading) {
@@ -429,6 +445,42 @@ export const AdminEditCoursePage: React.FC = () => {
                   {errors.title && (
                     <span className="tku-edit-error-msg">{errors.title}</span>
                   )}
+                </div>
+
+                <div className="tku-edit-form-group">
+                  <label htmlFor="course-grade" className="tku-edit-label">
+                    Khối lớp học thuật <span className="tku-edit-required">*</span>
+                  </label>
+                  <div className="tku-edit-select-wrap">
+                    <GraduationCap size={16} className="tku-edit-input-icon" />
+                    <select
+                      id="course-grade"
+                      className="tku-edit-select"
+                      value={grade}
+                      onChange={(e) =>
+                        setGrade(
+                          e.target.value as '10' | '11' | '12' | 'exam' | 'other',
+                        )
+                      }
+                    >
+                      {GRADE_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown size={14} className="tku-edit-select-arrow" />
+                  </div>
+                  <span
+                    style={{
+                      display: 'block',
+                      marginTop: '5px',
+                      fontSize: '12px',
+                      color: '#64748b',
+                    }}
+                  >
+                    {GRADE_OPTIONS.find((opt) => opt.value === grade)?.desc}
+                  </span>
                 </div>
 
                 <div className="tku-edit-form-group">

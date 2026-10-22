@@ -1,36 +1,38 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
-  BookOpen,
-  Users,
-  Layers,
-  ChevronDown,
-  PlayCircle,
-  FileText,
-  Share2,
-  GraduationCap,
-  FlaskConical,
-  ArrowRight,
-  AlertCircle,
-  RefreshCw,
-  Home,
-  Lock,
-  CheckCircle2,
-  Calendar,
-  Sparkles,
-  KeyRound,
-  Key,
-  X,
+    AlertCircle,
+    ArrowRight,
+    BookOpen,
+    Calendar,
+    CheckCircle2,
+    ChevronDown,
+    ChevronRight,
+    ClipboardPaste,
+    FileText,
+    FlaskConical,
+    GraduationCap,
+    Home,
+    KeyRound,
+    Layers,
+    Lock,
+    PlayCircle,
+    RefreshCw,
+    Share2,
+    ShieldCheck,
+    Sparkles,
+    Users,
+    X,
 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { Navbar } from '../../components/common/Navbar';
-import { Footer } from '../../components/common/Footer';
 import { EmptyState } from '../../components/common/EmptyState';
+import { Footer } from '../../components/common/Footer';
+import { Navbar } from '../../components/common/Navbar';
 import { useAuth } from '../../context/useAuth';
 import { toast } from '../../context/useToast';
 import {
-  courseService,
-  type PublicCourseDetailResponse,
+    courseService,
+    type PublicCourseDetailResponse,
 } from '../../services/course.service';
 
 import './courseDetail.css';
@@ -44,24 +46,48 @@ function getGradeLabel(grade: PublicCourseDetailResponse['grade']): string {
     case '12':
       return 'Hóa học Lớp 12';
     case 'exam':
-      return 'Luyện thi THPT';
+      return 'Luyện thi THPT Quốc Gia';
+    case 'other':
+      return 'Chuyên đề học thuật';
     default:
-      return 'Khóa học trực tuyến';
+      return 'Chương trình Hóa học';
   }
 }
 
-function getGradeBadgeClass(grade: PublicCourseDetailResponse['grade']): string {
+function getCategoryIcon(grade: PublicCourseDetailResponse['grade']) {
   switch (grade) {
     case '10':
-      return 'tku-cd-badge--10';
+      return BookOpen;
     case '11':
-      return 'tku-cd-badge--11';
+      return FlaskConical;
     case '12':
-      return 'tku-cd-badge--12';
+      return GraduationCap;
     case 'exam':
-      return 'tku-cd-badge--exam';
+      return Sparkles;
+    case 'other':
+      return Layers;
     default:
-      return 'tku-cd-badge--other';
+      return BookOpen;
+  }
+}
+
+function getCourseDefaultSubtitle(
+  grade: PublicCourseDetailResponse['grade'],
+  customDesc?: string | null,
+): string {
+  if (customDesc && customDesc.trim()) return customDesc.trim();
+  switch (grade) {
+    case '10':
+      return 'Nền tảng Hóa học THPT: Cấu tạo nguyên tử, Bảng tuần hoàn các nguyên tố, Liên kết hóa học và Phản ứng oxi hóa - khử theo chuẩn GDPT mới.';
+    case '11':
+      return 'Kiến thức trọng tâm nâng cao: Cân bằng hóa học, Thuyết điện li, Nhóm Nitơ - Lưu huỳnh và Mở đầu Hóa học hữu cơ chuyên sâu.';
+    case '12':
+      return 'Khung kiến thức then chốt tốt nghiệp THPT: Este - Lipit, Cacbohiđrat, Amin - Amino axit - Peptit, Polime và Kim loại.';
+    case 'exam':
+      return 'Chuyên đề bứt phá điểm 9+, rèn luyện kỹ năng giải nhanh trắc nghiệm và thực chiến phòng thi với bộ đề thi chuẩn cấu trúc ma trận Bộ GD&ĐT.';
+    case 'other':
+    default:
+      return 'Các khóa học chuyên biệt về phương pháp giải bài tập định lượng, thí nghiệm hóa học mô phỏng và kỹ năng bồi dưỡng học sinh giỏi.';
   }
 }
 
@@ -81,19 +107,19 @@ export const CourseDetailPage: React.FC = () => {
 
   // Quản lý trạng thái ghi danh của học sinh (đồng bộ khi id thay đổi)
   const [prevId, setPrevId] = useState(id);
-  const [isEnrolled, setIsEnrolled] = useState<boolean>(() => {
+  const [hasEnrolledKey, setHasEnrolledKey] = useState<boolean>(() => {
     if (typeof window !== 'undefined' && id) {
       return localStorage.getItem(`tku_enrolled_${id}`) === 'true';
     }
     return false;
   });
+  const isEnrolled = isAuthenticated && hasEnrolledKey;
 
   // Quản lý modal nhập mã key kích hoạt (Admin tạo key dùng 1 lần)
   const [isKeyModalOpen, setIsKeyModalOpen] = useState<boolean>(false);
   const [activationKey, setActivationKey] = useState<string>('');
   const [keyError, setKeyError] = useState<string | null>(null);
   const [isActivating, setIsActivating] = useState<boolean>(false);
-  const activationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   if (id !== prevId) {
     setPrevId(id);
@@ -102,21 +128,12 @@ export const CourseDetailPage: React.FC = () => {
     setActivationKey('');
     setKeyError(null);
     setIsActivating(false);
-    setIsEnrolled(
+    setHasEnrolledKey(
       typeof window !== 'undefined' && id
         ? localStorage.getItem(`tku_enrolled_${id}`) === 'true'
         : false,
     );
   }
-
-  // Dọn dẹp timer khi component unmount
-  useEffect(() => {
-    return () => {
-      if (activationTimerRef.current) {
-        clearTimeout(activationTimerRef.current);
-      }
-    };
-  }, []);
 
   // Lắng nghe phím Escape và khóa cuộn nền khi modal mở
   useEffect(() => {
@@ -232,10 +249,6 @@ export const CourseDetailPage: React.FC = () => {
   // Đóng modal kích hoạt
   const handleCloseModal = useCallback(() => {
     if (isActivating) return;
-    if (activationTimerRef.current) {
-      clearTimeout(activationTimerRef.current);
-      activationTimerRef.current = null;
-    }
     setIsKeyModalOpen(false);
     setKeyError(null);
     setActivationKey('');
@@ -244,8 +257,10 @@ export const CourseDetailPage: React.FC = () => {
   // Hành động kích hoạt / Tham gia khóa học
   const handleEnroll = useCallback(() => {
     if (isEnrolled) {
-      // Đã kích hoạt -> Khám phá bài học
-      const firstChapterWithLesson = course?.chapters?.find((ch) => ch.lessons && ch.lessons.length > 0);
+      // Đã kích hoạt -> Khám phá bài học đầu tiên
+      const firstChapterWithLesson = course?.chapters?.find(
+        (ch) => ch.lessons && ch.lessons.length > 0,
+      );
       const firstLesson = firstChapterWithLesson?.lessons?.[0];
       if (firstLesson) {
         toast.info(`Bắt đầu bài học: "${firstLesson.title}". Chúc bạn học tốt!`);
@@ -267,41 +282,89 @@ export const CourseDetailPage: React.FC = () => {
     setIsKeyModalOpen(true);
   }, [course, isAuthenticated, isEnrolled, navigate, id]);
 
-  // Xử lý xác nhận kích hoạt mã Key (Dùng 1 lần)
+  // Kiểm tra trạng thái ghi danh thực tế từ Backend Database
+  useEffect(() => {
+    if (!id || !isAuthenticated) return;
+    let isMounted = true;
+
+    courseService
+      .checkMyEnrollment(id)
+      .then((res) => {
+        if (isMounted) {
+          if (res.isEnrolled) {
+            setHasEnrolledKey(true);
+            localStorage.setItem(`tku_enrolled_${id}`, 'true');
+          } else {
+            setHasEnrolledKey(false);
+            localStorage.removeItem(`tku_enrolled_${id}`);
+          }
+        }
+      })
+      .catch(() => {
+        // Silent catch
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id, isAuthenticated]);
+
+  // Xử lý xác nhận kích hoạt mã Key thật qua API Backend
   const handleActivateWithKey = useCallback(
-    (e: React.FormEvent) => {
+    async (e: React.FormEvent) => {
       e.preventDefault();
-      const cleanKey = activationKey.trim();
+      if (!id) return;
+      const cleanKey = activationKey.trim().toUpperCase();
 
       if (!cleanKey) {
         setKeyError('Vui lòng nhập mã Key được cấp bởi Quản trị viên.');
         return;
       }
 
-      if (cleanKey.length < 4) {
-        setKeyError('Mã Key kích hoạt không hợp lệ (độ dài tối thiểu 4 ký tự).');
+      if (cleanKey.length < 6) {
+        setKeyError('Mã Key kích hoạt không hợp lệ (độ dài tối thiểu 6 ký tự).');
         return;
       }
 
       setIsActivating(true);
       setKeyError(null);
 
-      // Mô phỏng kích hoạt mã Key (Giai đoạn chuẩn bị UI trước khi Admin tạo key trong DB)
-      activationTimerRef.current = setTimeout(() => {
+      try {
+        const result = await courseService.enrollWithKey(id, cleanKey);
         setIsActivating(false);
-        setIsEnrolled(true);
-        if (id && typeof window !== 'undefined') {
-          localStorage.setItem(`tku_enrolled_${id}`, 'true');
-        }
+        setHasEnrolledKey(true);
+        localStorage.setItem(`tku_enrolled_${id}`, 'true');
         setIsKeyModalOpen(false);
         setActivationKey('');
         toast.success(
-          'Kích hoạt khóa học thành công! Toàn bộ nội dung bài giảng chi tiết đã được mở khóa.',
+          result.message || 'Kích hoạt khóa học thành công! Toàn bộ nội dung bài giảng chi tiết đã được mở khóa.',
         );
-      }, 500);
+      } catch (err: unknown) {
+        setIsActivating(false);
+        const msg =
+          err instanceof Error
+            ? err.message
+            : 'Không thể kích hoạt mã key. Vui lòng kiểm tra lại.';
+        setKeyError(msg);
+        toast.error(msg);
+      }
     },
     [activationKey, id],
   );
+
+  // Dán mã key nhanh từ bộ nhớ tạm
+  const handlePasteKey = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setActivationKey(text.trim().toUpperCase());
+        setKeyError(null);
+        toast.info('Đã dán mã Key từ bộ nhớ tạm!');
+      }
+    } catch {
+      toast.info('Vui lòng cho phép truy cập bộ nhớ tạm hoặc tự nhập mã.');
+    }
+  }, []);
 
   const handleStartLesson = useCallback((lessonTitle: string) => {
     toast.info(`Đang mở bài học: "${lessonTitle}". Chúc bạn có buổi học hiệu quả!`);
@@ -346,15 +409,15 @@ export const CourseDetailPage: React.FC = () => {
             <div className="tku-container">
               <div className="tku-cd-skeleton-line" style={{ width: '220px', height: '18px', marginBottom: '24px' }} />
               <div className="tku-cd-skeleton-line" style={{ width: '120px', height: '28px', marginBottom: '16px', borderRadius: '999px' }} />
-              <div className="tku-cd-skeleton-line" style={{ width: '65%', height: '42px', marginBottom: '20px' }} />
-              <div className="tku-cd-skeleton-line" style={{ width: '50%', height: '20px', marginBottom: '28px' }} />
-              <div className="tku-cd-skeleton-line" style={{ width: '400px', height: '36px' }} />
+              <div className="tku-cd-skeleton-line" style={{ width: '65%', height: '38px', marginBottom: '16px' }} />
+              <div className="tku-cd-skeleton-line" style={{ width: '45%', height: '18px', marginBottom: '24px' }} />
+              <div className="tku-cd-skeleton-line" style={{ width: '380px', height: '32px' }} />
             </div>
           </div>
         ) : errorMessage ? (
           // Error State
-          <div className="tku-section">
-            <div className="tku-container">
+          <div style={{ padding: '60px 0' }}>
+            <div className="tku-cd-container">
               <div className="tku-empty-state" role="alert">
                 <div className="tku-empty-state__icon-wrapper" style={{ color: '#ef4444' }}>
                   <AlertCircle size={44} />
@@ -375,8 +438,8 @@ export const CourseDetailPage: React.FC = () => {
           </div>
         ) : !course ? (
           // Not Found State
-          <div className="tku-section">
-            <div className="tku-container">
+          <div style={{ padding: '60px 0' }}>
+            <div className="tku-cd-container">
               <EmptyState
                 title="Khóa học không tồn tại hoặc đã bị ẩn"
                 description="Khóa học bạn đang tìm kiếm không tồn tại hoặc đã được giảng viên tạm dừng phát hành."
@@ -386,80 +449,125 @@ export const CourseDetailPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Real Data Content
+          // Success State: Render Course Detail
           <>
             {/* HERO SECTION */}
-            <section className="tku-cd-hero">
-              <div className="tku-container">
-                {/* Breadcrumb Navigation */}
-                <nav className="tku-cd-breadcrumb" aria-label="Đường dẫn điều hướng">
-                  <Link to="/">
-                    <Home size={14} />
-                    <span>Trang chủ</span>
-                  </Link>
-                  <span className="tku-cd-breadcrumb-separator">/</span>
-                  <Link to="/#courses">Khóa học</Link>
-                  <span className="tku-cd-breadcrumb-separator">/</span>
-                  <span className="tku-cd-breadcrumb-current">{course.title}</span>
-                </nav>
+            {(() => {
+              const CategoryIcon = getCategoryIcon(course.grade);
+              const heroThemeClass = isEnrolled
+                ? 'tku-cd-hero--enrolled'
+                : 'tku-cd-hero--unenrolled';
 
-                {/* Hero Content */}
-                <div className="tku-cd-hero__info">
-                  <div className="tku-cd-hero__badges">
-                    <span className={`tku-cd-badge ${getGradeBadgeClass(course.grade)}`}>
-                      <GraduationCap size={14} />
-                      <span>{getGradeLabel(course.grade)}</span>
-                    </span>
-                    <span className="tku-cd-badge tku-cd-badge--online">
-                      <Sparkles size={13} />
-                      <span>Khóa học mở</span>
-                    </span>
-                  </div>
-
-                  <h1 className="tku-cd-hero__title">{course.title}</h1>
-
-                  {course.description && (
-                    <p className="tku-cd-hero__desc">{course.description}</p>
-                  )}
-
-                  <div className="tku-cd-hero__stats">
-                    <div className="tku-cd-hero__teacher">
-                      {course.teacher.avatarUrl ? (
-                        <img
-                          src={course.teacher.avatarUrl}
-                          alt={course.teacher.fullName}
-                          className="tku-cd-hero__teacher-avatar"
-                        />
+              return (
+                <section className={`tku-cd-hero ${heroThemeClass}`}>
+                  <div className="tku-container">
+                    {/* Breadcrumbs Trail Nằm Trong Hero Banner Tinh Tế */}
+                    <nav className="tku-hero-breadcrumbs" aria-label="Đường dẫn điều hướng">
+                      <Link to="/" className="tku-hero-breadcrumb-link">
+                        <Home size={14} />
+                        <span>Trang chủ</span>
+                      </Link>
+                      <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
+                      <Link to="/courses" className="tku-hero-breadcrumb-link">
+                        <span>Danh mục tất cả khóa học</span>
+                      </Link>
+                      <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
+                      {isEnrolled ? (
+                        <>
+                          <Link to="/courses/category/my-courses" className="tku-hero-breadcrumb-link">
+                            <span>Khóa học của tôi</span>
+                          </Link>
+                          <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
+                        </>
                       ) : (
-                        <div className="tku-cd-hero__teacher-fallback">
-                          {teacherInitials}
+                        <>
+                          <Link to={`/courses/category/${course.grade}`} className="tku-hero-breadcrumb-link">
+                            <span>{getGradeLabel(course.grade)}</span>
+                          </Link>
+                          <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
+                        </>
+                      )}
+                      <span className="tku-hero-breadcrumb-current">{course.title}</span>
+                    </nav>
+                    {/* Hero Content */}
+                    <div className="tku-cd-hero__info">
+                      {/* Badges Capsule Đồng Bộ Chuẩn 2 Viên Thuốc */}
+                      {isEnrolled ? (
+                        <div className="tku-cd-hero__badge-row">
+                          <span className="tku-cd-hero__badge tku-cd-hero__badge--enrolled">
+                            <CheckCircle2 size={14} />
+                            <span>Khóa học của tôi</span>
+                          </span>
+                          <span className="tku-cd-hero__count-pill">
+                            Đã tham gia
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="tku-cd-hero__badge-row">
+                          <span className="tku-cd-hero__badge">
+                            <CategoryIcon size={14} />
+                            <span>{getGradeLabel(course.grade)}</span>
+                          </span>
+                          <span className="tku-cd-hero__count-pill">
+                            {course.lessonCount > 0 ? `${course.lessonCount} bài giảng` : '1 khóa học'}
+                          </span>
                         </div>
                       )}
-                      <span>{course.teacher.fullName}</span>
-                    </div>
 
-                    <div className="tku-cd-hero__stat-item">
-                      <BookOpen size={16} />
-                      <span>{course.lessonCount} bài giảng</span>
-                    </div>
+                      {/* Course Title */}
+                      <h1 className="tku-cd-hero__title">{course.title}</h1>
 
-                    <div className="tku-cd-hero__stat-item">
-                      <Layers size={16} />
-                      <span>{course.chapterCount} chương mục</span>
-                    </div>
+                      {/* Subtitle / Description - Luôn hiển thị văn bản học thuật chuẩn chỉ */}
+                      <p className="tku-cd-hero__desc">
+                        {getCourseDefaultSubtitle(course.grade, course.description)}
+                      </p>
 
-                    <div className="tku-cd-hero__stat-item">
-                      <Users size={16} />
-                      <span>{course.studentCount} học viên đã tham gia</span>
+                      {/* Quick Stats Bar */}
+                      <div className="tku-cd-hero__stats">
+                        <div className="tku-cd-hero__teacher">
+                          {course.teacher.avatarUrl ? (
+                            <img
+                              src={course.teacher.avatarUrl}
+                              alt={course.teacher.fullName}
+                              className="tku-cd-hero__teacher-avatar"
+                            />
+                          ) : (
+                            <div className="tku-cd-hero__teacher-fallback">
+                              {teacherInitials}
+                            </div>
+                          )}
+                          <span>{course.teacher.fullName}</span>
+                        </div>
+
+                        <div className="tku-cd-hero__stat-item">
+                          <Calendar size={14} />
+                          <span>{formattedCreatedDate || 'Cập nhật gần đây'}</span>
+                        </div>
+
+                        <div className="tku-cd-hero__stat-item">
+                          <BookOpen size={14} />
+                          <span>{course.lessonCount} bài giảng</span>
+                        </div>
+
+                        <div className="tku-cd-hero__stat-item">
+                          <Layers size={14} />
+                          <span>{course.chapterCount} chương mục</span>
+                        </div>
+
+                        <div className="tku-cd-hero__stat-item">
+                          <GraduationCap size={14} />
+                          <span>{course.studentCount} học viên đã tham gia</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            </section>
+                </section>
+              );
+            })()}
 
             {/* MAIN TWO-COLUMN BODY */}
             <div className="tku-cd-body">
-              <div className="tku-container">
+              <div className="tku-cd-container">
                 <div className="tku-cd-layout">
                   {/* LEFT COLUMN: Main Content */}
                   <div className="tku-cd-content-col">
@@ -489,7 +597,7 @@ export const CourseDetailPage: React.FC = () => {
                           <div className="tku-cd-enrolled-banner">
                             <CheckCircle2 size={20} />
                             <div>
-                              <strong>Bạn đã ghi danh thành công!</strong> Toàn bộ bài giảng đã được mở khóa. Hãy chọn một bài học bên dưới để bắt đầu.
+                              <strong>Bạn đã kích hoạt khóa học này!</strong> Toàn bộ bài giảng đã được mở khóa. Hãy chọn một bài học bên dưới để bắt đầu.
                             </div>
                           </div>
 
@@ -636,7 +744,7 @@ export const CourseDetailPage: React.FC = () => {
                                 Nội dung bài giảng chi tiết đang được khóa
                               </h3>
                               <p className="tku-cd-locked-notice-desc">
-                                Khóa học yêu cầu mã Key từ Quản trị viên để kích hoạt và mở khóa toàn bộ bài giảng video, bài tập và tài liệu học tập.
+                                Khóa học yêu cầu mã Key từ Quản trị viên để kích hoạt và mở khóa toàn bộ bài giảng video, bài tập và tài liệu học tập của từng chương.
                               </p>
                             </div>
                           </div>
@@ -702,14 +810,6 @@ export const CourseDetailPage: React.FC = () => {
 
                         {/* Card Body */}
                         <div className="tku-cd-enroll-body">
-                          {/* Trạng thái yêu cầu mã Key (Gọn gàng, không chữ dư thừa) */}
-                          <div className={`tku-cd-key-box ${isEnrolled ? 'tku-cd-key-box--enrolled' : ''}`}>
-                            <span className={`tku-cd-key-badge ${isEnrolled ? 'tku-cd-key-badge--enrolled' : ''}`}>
-                              {isEnrolled ? <CheckCircle2 size={16} /> : <KeyRound size={16} />}
-                              <span>{isEnrolled ? 'Đã kích hoạt' : 'Yêu cầu mã Key'}</span>
-                            </span>
-                          </div>
-
                           {/* CTA Button */}
                           <button
                             type="button"
@@ -830,9 +930,14 @@ export const CourseDetailPage: React.FC = () => {
                       <div className="tku-cd-modal-icon">
                         <KeyRound size={20} />
                       </div>
-                      <h3 id="tku-modal-key-title" className="tku-cd-modal-title">
-                        Kích hoạt khóa học
-                      </h3>
+                      <div>
+                        <h3 id="tku-modal-key-title" className="tku-cd-modal-title">
+                          Kích hoạt khóa học
+                        </h3>
+                        <p className="tku-cd-modal-subtitle">
+                          Nhập mã key để mở khóa toàn bộ bài giảng
+                        </p>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -840,23 +945,34 @@ export const CourseDetailPage: React.FC = () => {
                       className="tku-cd-modal-close-btn"
                       aria-label="Đóng cửa sổ"
                     >
-                      <X size={20} />
+                      <X size={18} />
                     </button>
                   </div>
 
                   <form onSubmit={handleActivateWithKey}>
                     <div className="tku-cd-modal-body">
-                      <div className="tku-cd-modal-course-target">
-                        <span>Đang kích hoạt cho: </span>
-                        <strong className="tku-cd-modal-course-name">{course.title}</strong>
+                      {/* Course Capsule */}
+                      <div className="tku-cd-modal-course-capsule">
+                        <div className="tku-cd-modal-capsule-badge">
+                          <GraduationCap size={13} />
+                          <span>Khóa học</span>
+                        </div>
+                        <span className="tku-cd-modal-capsule-name">{course.title}</span>
                       </div>
 
+                      {/* Input Group */}
                       <div className="tku-cd-modal-form-group">
-                        <label htmlFor="tku-activation-key-input" className="tku-cd-modal-label">
-                          Mã Key tham gia (dùng 1 lần):
-                        </label>
-                        <div className="tku-cd-modal-input-wrap">
-                          <Key size={18} className="tku-cd-modal-input-icon" />
+                        <div className="tku-cd-modal-label-row">
+                          <label htmlFor="tku-activation-key-input" className="tku-cd-modal-label">
+                            Mã Key tham gia (dùng 1 lần):
+                          </label>
+                          <span className="tku-cd-modal-sublabel">VD: TKU-CHEM-XXXX-YYYY</span>
+                        </div>
+
+                        <div className={`tku-cd-modal-hero-input-wrap ${keyError ? 'tku-cd-modal-hero-input-wrap--error' : ''}`}>
+                          <div className="tku-cd-modal-input-icon-box" aria-hidden="true">
+                            <KeyRound size={17} />
+                          </div>
                           <input
                             id="tku-activation-key-input"
                             type="text"
@@ -866,21 +982,51 @@ export const CourseDetailPage: React.FC = () => {
                               setActivationKey(e.target.value.toUpperCase());
                               if (keyError) setKeyError(null);
                             }}
-                            placeholder="VD: TKU-CHEM-XXXX"
-                            className="tku-cd-modal-input"
+                            placeholder="TKU-CHEM-8X92-KL41"
+                            className="tku-cd-modal-hero-input"
                             autoComplete="off"
                             spellCheck={false}
                             disabled={isActivating}
                           />
+                          {activationKey && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActivationKey('');
+                                if (keyError) setKeyError(null);
+                              }}
+                              className="tku-cd-modal-clear-btn"
+                              title="Xóa mã"
+                              disabled={isActivating}
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={handlePasteKey}
+                            className="tku-cd-modal-paste-btn"
+                            title="Dán mã từ bộ nhớ tạm"
+                            disabled={isActivating}
+                          >
+                            <ClipboardPaste size={14} />
+                            <span>Dán</span>
+                          </button>
                         </div>
+
                         {keyError && (
-                          <p style={{ color: '#ef4444', fontSize: '12.5px', margin: '4px 0 0', fontWeight: 600 }}>
-                            {keyError}
-                          </p>
+                          <div className="tku-cd-modal-error-box">
+                            <AlertCircle size={15} style={{ flexShrink: 0 }} />
+                            <span>{keyError}</span>
+                          </div>
                         )}
-                        <p className="tku-cd-modal-hint">
-                          Mã Key được cấp bởi Quản trị viên. Mỗi mã chỉ có hiệu lực kích hoạt một lần duy nhất cho tài khoản của bạn để vào học toàn bộ bài giảng.
-                        </p>
+
+                        <div className="tku-cd-modal-shield-note">
+                          <ShieldCheck size={16} />
+                          <span>
+                            Mã Key do Quản trị viên cấp, chỉ có hiệu lực kích hoạt <strong>1 lần duy nhất</strong> và có <strong>thời hạn cụ thể</strong>.
+                          </span>
+                        </div>
                       </div>
                     </div>
 
@@ -905,7 +1051,7 @@ export const CourseDetailPage: React.FC = () => {
                           </>
                         ) : (
                           <>
-                            <CheckCircle2 size={16} />
+                            <Sparkles size={16} />
                             <span>Kích hoạt ngay</span>
                           </>
                         )}

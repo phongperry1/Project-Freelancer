@@ -13,6 +13,8 @@ import { RouteTransitionLoader } from './components/common/RouteTransitionLoader
 import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
+const CoursesPage = lazy(() => import('./pages/course/CoursesPage'));
+const CategoryCoursesPage = lazy(() => import('./pages/course/CategoryCoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/course/CourseDetailPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
@@ -27,6 +29,7 @@ const AdminCreateCoursePage = lazy(() => import('./pages/admin/AdminCreateCourse
 const AdminCourseDetailPage = lazy(() => import('./pages/admin/AdminCourseDetailPage'));
 const AdminEditCoursePage = lazy(() => import('./pages/admin/AdminEditCoursePage'));
 const AdminContentPage = lazy(() => import('./pages/admin/AdminContentPage'));
+const AdminActivationKeysPage = lazy(() => import('./pages/admin/AdminActivationKeysPage'));
 const LecturerLayout = lazy(() => import('./pages/lecturer/LecturerLayout'));
 const LecturerDashboardPage = lazy(() => import('./pages/lecturer/LecturerDashboardPage'));
 const LecturerCoursesPage = lazy(() => import('./pages/lecturer/LecturerCoursesPage'));
@@ -78,6 +81,9 @@ export const App: React.FC = () => {
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               <Route path="/" element={<HomeRoute />} />
+              <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/courses/category/:categoryKey" element={<CategoryCoursesPage />} />
+              <Route path="/my-courses" element={<CategoryCoursesPage defaultCategory="my-courses" />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route
                 path="/login"
@@ -114,6 +120,7 @@ export const App: React.FC = () => {
                 <Route path="courses/:id" element={<AdminCourseDetailPage />} />
                 <Route path="courses/:id/edit" element={<AdminEditCoursePage />} />
                 <Route path="content" element={<AdminContentPage />} />
+                <Route path="activation-keys" element={<AdminActivationKeysPage />} />
               </Route>
               <Route
                 path="/lecturer"

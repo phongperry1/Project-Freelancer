@@ -48,8 +48,9 @@ export interface DashboardStats {
 
 export interface AdminCourseItem {
   id: string;
-  slug?: string;
   title: string;
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
+  gradeText?: string;
   thumbnailUrl?: string | null;
   teacherName: string;
   teacherId: string;
@@ -77,10 +78,48 @@ export interface CourseChapter {
   lessons: CourseLesson[];
 }
 
+export interface AdminActivationKeyItem {
+  id: string;
+  key: string;
+  courseId: string;
+  expiresAt: string;
+  usedById: string | null;
+  createdAt: string;
+  status: 'ACTIVE' | 'USED' | 'EXPIRED';
+  usedBy?: {
+    id: string;
+    fullName: string;
+    email: string;
+    avatarUrl?: string | null;
+  } | null;
+}
+
+export interface AdminActivationKeysResponse {
+  courseId: string;
+  courseTitle: string;
+  totalKeys: number;
+  activeCount: number;
+  usedCount: number;
+  expiredCount: number;
+  keys: AdminActivationKeyItem[];
+}
+
+export interface AdminAllActivationKeysResponse {
+  stats: {
+    totalKeys: number;
+    activeCount: number;
+    usedCount: number;
+    expiredCount: number;
+  };
+  courses: Array<{ id: string; title: string }>;
+  keys: Array<AdminActivationKeyItem & { courseTitle: string }>;
+}
+
+
 export interface AdminCourseDetail {
   id: string;
   title: string;
-  slug?: string;
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
   description: string | null;
   thumbnailUrl?: string | null;
   thumbnail?: string | null;
@@ -158,7 +197,6 @@ export interface AdminUserDeviceItem {
 export interface AdminUserCourseItem {
   id: string;
   title: string;
-  slug?: string;
   status: string;
   statusText: string;
   thumbnailUrl: string | null;
@@ -229,6 +267,7 @@ export interface BulkCreateUsersResponse {
 export interface CreateCoursePayload {
   title: string;
   teacherId: string;
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
   description: string;
   thumbnailUrl: string;
   status?: 'ACTIVE' | 'HIDDEN';
@@ -238,6 +277,7 @@ export interface CreateCoursePayload {
 export interface UpdateCoursePayload {
   title?: string;
   teacherId?: string;
+  grade?: '10' | '11' | '12' | 'exam' | 'other';
   description?: string;
   thumbnailUrl?: string;
   status?: 'ACTIVE' | 'HIDDEN';
@@ -433,7 +473,62 @@ export const adminService = {
       'Không thể nhập danh sách người dùng.',
     );
   },
+
+  getCourseActivationKeys(courseId: string): Promise<AdminActivationKeysResponse> {
+    return requestWithAuth<AdminActivationKeysResponse>(
+      `/admin/courses/${courseId}/activation-keys`,
+      'GET',
+      undefined,
+      'Không thể tải danh sách mã key của khóa học.',
+    );
+  },
+
+  createCourseActivationKeys(
+    courseId: string,
+    payload: { expiresInHours: number; quantity?: number },
+  ): Promise<{
+    message: string;
+    totalCreated: number;
+    expiresAt: string;
+    keys: AdminActivationKeyItem[];
+  }> {
+    return requestWithAuth(
+      `/admin/courses/${courseId}/activation-keys`,
+      'POST',
+      payload,
+      'Không thể tạo mã key cho khóa học.',
+    );
+  },
+
+  deleteActivationKey(keyId: string): Promise<{ message: string; id: string }> {
+    return requestWithAuth(
+      `/admin/activation-keys/${keyId}`,
+      'DELETE',
+      undefined,
+      'Không thể xóa mã key.',
+    );
+  },
+
+  getAllActivationKeys(params?: {
+    courseId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<AdminAllActivationKeysResponse> {
+    const query = new URLSearchParams();
+    if (params?.courseId && params.courseId !== 'ALL') query.set('courseId', params.courseId);
+    if (params?.status && params.status !== 'ALL') query.set('status', params.status);
+    if (params?.search?.trim()) query.set('search', params.search.trim());
+    const qs = query.toString() ? `?${query.toString()}` : '';
+
+    return requestWithAuth<AdminAllActivationKeysResponse>(
+      `/admin/activation-keys${qs}`,
+      'GET',
+      undefined,
+      'Không thể tải danh sách mã key hệ thống.',
+    );
+  },
 };
+
 
 
 

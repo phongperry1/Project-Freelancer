@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Eye,
   EyeOff,
+  KeyRound,
 } from 'lucide-react';
 import {
   adminService,
@@ -28,6 +29,7 @@ export const AdminCoursesPage: React.FC = () => {
 
   const [searchKeyword, setSearchKeyword] = useState<string>('');
   const [teacherFilter, setTeacherFilter] = useState<string>('ALL');
+  const [gradeFilter, setGradeFilter] = useState<string>('ALL');
 
   useEffect(() => {
     let isMounted = true;
@@ -90,13 +92,17 @@ export const AdminCoursesPage: React.FC = () => {
       const matchTeacher =
         teacherFilter === 'ALL' || course.teacherId === teacherFilter;
 
-      return matchKeyword && matchTeacher;
+      const matchGrade =
+        gradeFilter === 'ALL' || (course.grade || '10') === gradeFilter;
+
+      return matchKeyword && matchTeacher && matchGrade;
     });
-  }, [coursesList, searchKeyword, teacherFilter]);
+  }, [coursesList, searchKeyword, teacherFilter, gradeFilter]);
 
   const handleResetFilters = useCallback(() => {
     setSearchKeyword('');
     setTeacherFilter('ALL');
+    setGradeFilter('ALL');
   }, []);
 
   const [togglingCourseId, setTogglingCourseId] = useState<string | null>(null);
@@ -254,7 +260,23 @@ export const AdminCoursesPage: React.FC = () => {
             <ChevronDown size={14} className="tku-courses-select-icon" />
           </div>
 
-          {(searchKeyword || teacherFilter !== 'ALL') && (
+          <div className="tku-courses-select-wrap">
+            <select
+              className="tku-courses-select"
+              value={gradeFilter}
+              onChange={(e) => setGradeFilter(e.target.value)}
+            >
+              <option value="ALL">Tất cả khối lớp</option>
+              <option value="10">Hóa học Lớp 10</option>
+              <option value="11">Hóa học Lớp 11</option>
+              <option value="12">Hóa học Lớp 12</option>
+              <option value="exam">Luyện thi THPT & ĐGNL</option>
+              <option value="other">Chuyên đề khác</option>
+            </select>
+            <ChevronDown size={14} className="tku-courses-select-icon" />
+          </div>
+
+          {(searchKeyword || teacherFilter !== 'ALL' || gradeFilter !== 'ALL') && (
             <button
               type="button"
               className="tku-courses-filter-reset-btn"
@@ -351,13 +373,69 @@ export const AdminCoursesPage: React.FC = () => {
                               <BookOpen size={18} className="tku-course-thumb-placeholder-icon" />
                             </div>
                           )}
-                          <Link
-                            to={`/admin/courses/${c.id}`}
-                            className="tku-course-item-title-link"
-                            title={c.title}
-                          >
-                            {c.title}
-                          </Link>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+                            <Link
+                              to={`/admin/courses/${c.id}`}
+                              className="tku-course-item-title-link"
+                              title={c.title}
+                            >
+                              {c.title}
+                            </Link>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  fontSize: '11px',
+                                  fontWeight: 600,
+                                  color:
+                                    c.grade === '10'
+                                      ? '#2563eb'
+                                      : c.grade === '11'
+                                        ? '#0d9488'
+                                        : c.grade === '12'
+                                          ? '#7c3aed'
+                                          : c.grade === 'exam'
+                                            ? '#d97706'
+                                            : '#64748b',
+                                  backgroundColor:
+                                    c.grade === '10'
+                                      ? '#eff6ff'
+                                      : c.grade === '11'
+                                        ? '#f0fdfa'
+                                        : c.grade === '12'
+                                          ? '#f5f3ff'
+                                          : c.grade === 'exam'
+                                            ? '#fffbeb'
+                                            : '#f1f5f9',
+                                  padding: '1px 7px',
+                                  borderRadius: '4px',
+                                  width: 'fit-content',
+                                }}
+                              >
+                                {c.grade === '10'
+                                  ? 'Lớp 10'
+                                  : c.grade === '11'
+                                    ? 'Lớp 11'
+                                    : c.grade === '12'
+                                      ? 'Lớp 12'
+                                      : c.grade === 'exam'
+                                        ? 'Luyện thi THPT'
+                                        : 'Chuyên đề'}
+                              </span>
+                              {c.status === 'HIDDEN' && (
+                                <span
+                                  style={{
+                                    fontSize: '10.5px',
+                                    color: '#94a3b8',
+                                    fontStyle: 'italic',
+                                  }}
+                                >
+                                  (Đang ẩn)
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td>{c.teacherName}</td>
@@ -398,6 +476,14 @@ export const AdminCoursesPage: React.FC = () => {
                             title="Xem chi tiết"
                           >
                             <ArrowUpRight size={15} />
+                          </Link>
+                          <Link
+                            to={`/admin/activation-keys?courseId=${c.id}`}
+                            className="tku-courses-action-btn"
+                            title="Quản lý mã Key tham gia"
+                            style={{ color: '#2563eb' }}
+                          >
+                            <KeyRound size={15} />
                           </Link>
                           <Link
                             to={`/admin/courses/${c.id}/edit`}

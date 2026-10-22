@@ -306,7 +306,6 @@ export interface AssessmentResultsSummary {
 export interface LecturerCourseItem {
   id: string;
   title: string;
-  slug?: string;
   description?: string | null;
   thumbnailUrl?: string | null;
   status: 'ACTIVE' | 'HIDDEN';

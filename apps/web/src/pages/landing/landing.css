@@ -333,6 +333,43 @@
   gap: 28px;
 }
 
+/* Nút Xem tất cả khóa học trên Landing Page */
+.tku-courses-view-all-wrap {
+  margin-top: 44px;
+  display: flex;
+  justify-content: center;
+}
+
+.tku-courses-view-all-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(135deg, #1d68f2 0%, #2563eb 100%);
+  color: #ffffff;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(29, 104, 242, 0.28);
+  transition: all 0.25s ease;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tku-courses-view-all-btn:hover {
+  background: linear-gradient(135deg, #1754c5 0%, #1d68f2 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(29, 104, 242, 0.38);
+}
+
+.tku-courses-view-all-btn svg:last-child {
+  transition: transform 0.25s ease;
+}
+
+.tku-courses-view-all-btn:hover svg:last-child {
+  transform: translateX(4px);
+}
+
 /* Modern Student Course Card */
 .tku-course-card {
   background-color: #ffffff;
@@ -495,6 +532,17 @@
   height: 6px;
   border-radius: 50%;
   background-color: #22c55e;
+}
+
+.tku-course-card__status-tag--enrolled {
+  background-color: rgba(6, 78, 59, 0.88);
+  color: #ecfdf5;
+  border: 1px solid rgba(52, 211, 153, 0.4);
+}
+
+.tku-course-card__status-dot--enrolled {
+  background-color: #34d399;
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.8);
 }
 
 /* Card Body */
