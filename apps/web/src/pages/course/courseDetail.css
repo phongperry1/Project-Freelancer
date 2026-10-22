@@ -10,65 +10,58 @@
 }
 
 /* ==========================================================================
-   HERO / HEADER SECTION
+   STANDARDIZED CONTAINER (Giãn nở vừa vặn 1400px, cân đối, đồng bộ hệ thống)
+   ========================================================================== */
+.tku-cd-container {
+  width: 100%;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(20px, 3.5vw, 48px);
+  padding-right: clamp(20px, 3.5vw, 48px);
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   HERO / HEADER SECTION (THEMED DYNAMICALLY - ĐỒNG BỘ CHUẨN)
    ========================================================================== */
 .tku-cd-hero {
-  background: linear-gradient(135deg, #0b132b 0%, #1c2541 60%, #1e3a8a 100%);
-  color: #ffffff;
-  padding: 36px 0 52px;
   position: relative;
+  color: #ffffff;
+  padding: 32px 0 42px;
   overflow: hidden;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #091e42 0%, #0f2744 55%, #1e3a8a 100%);
+  transition: background 0.3s ease;
+}
+
+/* Variant: Khóa học đã tham gia (Emerald / Forest Theme - Đồng bộ hoàn toàn với Ảnh Khóa học của tôi) */
+.tku-cd-hero--enrolled {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%) !important;
+}
+
+/* Variant: Khóa học chưa tham gia (Royal Blue Theme - Đồng bộ hoàn toàn với Ảnh Chương trình Hóa học Lớp 11) */
+.tku-cd-hero--unenrolled,
+.tku-cd-hero--11,
+.tku-cd-hero--other,
+.tku-cd-hero--10,
+.tku-cd-hero--12,
+.tku-cd-hero--exam {
+  background: linear-gradient(135deg, #0f2744 0%, #1e3a8a 50%, #2563eb 100%) !important;
 }
 
 .tku-cd-hero::before {
   content: '';
   position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 480px;
-  height: 480px;
+  top: -30%;
+  right: -5%;
+  width: 460px;
+  height: 460px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(0, 0, 0, 0) 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
   pointer-events: none;
 }
 
-/* Breadcrumb Navigation */
-.tku-cd-breadcrumb {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13.5px;
-  color: #94a3b8;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-}
-
-.tku-cd-breadcrumb a {
-  color: #cbd5e1;
-  transition: color var(--transition-fast);
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.tku-cd-breadcrumb a:hover {
-  color: #ffffff;
-}
-
-.tku-cd-breadcrumb-separator {
-  color: #64748b;
-  font-size: 12px;
-}
-
-.tku-cd-breadcrumb-current {
-  color: #ffffff;
-  font-weight: 600;
-  max-width: 400px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* Hero Content */
 .tku-cd-hero__info {
@@ -76,101 +69,76 @@
   flex-direction: column;
   position: relative;
   z-index: 2;
-  max-width: 860px;
+  max-width: 960px;
 }
 
-.tku-cd-hero__badges {
+/* Badges Row - Capsule Kính Mờ Đồng Bộ */
+.tku-cd-hero__badge-row {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
 }
 
-.tku-cd-badge {
+.tku-cd-hero__badge {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 14px;
-  font-size: 12.5px;
+  padding: 4px 12px;
+  font-size: 11.5px;
   font-weight: 700;
-  border-radius: var(--radius-pill);
-}
-
-.tku-cd-badge--10 {
-  background-color: rgba(5, 150, 105, 0.85);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   color: #ffffff;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-.tku-cd-badge--11 {
-  background-color: rgba(2, 132, 199, 0.85);
-  color: #ffffff;
-  border: 1px solid rgba(56, 189, 248, 0.4);
+.tku-cd-hero__badge--enrolled {
+  background: rgba(16, 185, 129, 0.28);
+  border-color: rgba(52, 211, 153, 0.5);
+  color: #a7f3d0;
 }
 
-.tku-cd-badge--12 {
-  background-color: rgba(99, 102, 241, 0.85);
-  color: #ffffff;
-  border: 1px solid rgba(129, 140, 248, 0.4);
-}
-
-.tku-cd-badge--exam {
-  background-color: rgba(217, 119, 6, 0.9);
-  color: #ffffff;
-  border: 1px solid rgba(245, 158, 11, 0.4);
-}
-
-.tku-cd-badge--other {
-  background-color: rgba(51, 65, 85, 0.85);
-  color: #ffffff;
-  border: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.tku-cd-badge--online {
-  background-color: rgba(16, 185, 129, 0.15);
-  color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.3);
+.tku-cd-hero__count-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
 }
 
 .tku-cd-hero__title {
-  font-size: clamp(24px, 2.5vw, 36px);
+  font-size: clamp(26px, 2.6vw, 36px);
   font-weight: 800;
   line-height: 1.3;
   color: #ffffff;
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   letter-spacing: -0.015em;
-  word-break: break-word;
 }
 
 .tku-cd-hero__desc {
   font-size: 15.5px;
   line-height: 1.65;
   color: #cbd5e1;
-  margin: 0 0 22px;
-  max-width: 740px;
+  margin: 0 0 24px;
 }
 
 /* Quick Stats Bar */
 .tku-cd-hero__stats {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   flex-wrap: wrap;
-  padding-top: 16px;
+  padding-top: 18px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.tku-cd-hero__stat-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13.5px;
-  color: #e2e8f0;
-}
-
-.tku-cd-hero__stat-item svg {
-  color: #38bdf8;
 }
 
 .tku-cd-hero__teacher {
@@ -183,31 +151,43 @@
 }
 
 .tku-cd-hero__teacher-avatar {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
 }
 
 .tku-cd-hero__teacher-fallback {
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1d68f2, #3b82f6);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
 }
 
+.tku-cd-hero__stat-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #e2e8f0;
+}
+
+.tku-cd-hero__stat-item svg {
+  color: #38bdf8;
+}
+
 /* ==========================================================================
-   MAIN TWO-COLUMN LAYOUT
+   MAIN CONTENT LAYOUT (Two columns, 1fr : 380px)
    ========================================================================== */
 .tku-cd-body {
-  padding: 36px 0 80px;
+  padding: 40px 0 80px;
 }
 
 .tku-cd-layout {
@@ -218,8 +198,9 @@
 
 @media (min-width: 1024px) {
   .tku-cd-layout {
-    grid-template-columns: 1fr 380px;
+    grid-template-columns: 1fr 390px;
     align-items: start;
+    gap: 36px;
   }
 }
 
@@ -232,7 +213,6 @@
   gap: 28px;
 }
 
-/* Common Card */
 .tku-cd-card {
   background-color: #ffffff;
   border: 1px solid var(--color-border);
@@ -245,7 +225,7 @@
   font-size: 19px;
   font-weight: 800;
   color: var(--color-text-main);
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -256,24 +236,24 @@
   color: var(--color-primary);
 }
 
-/* Description Content */
+/* Description Section (Real DB Data) */
 .tku-cd-desc-text {
   font-size: 15px;
   line-height: 1.7;
   color: var(--color-text-body);
-  white-space: pre-line;
   margin: 0;
+  white-space: pre-line;
 }
 
 .tku-cd-desc-empty {
   font-size: 14px;
-  color: var(--color-text-muted);
   font-style: italic;
+  color: var(--color-text-muted);
   margin: 0;
 }
 
 /* ==========================================================================
-   CURRICULUM / CHAPTERS OVERVIEW (When NOT Enrolled)
+   CHAPTER SUMMARY LIST (WHEN NOT ENROLLED - Clean Academic Preview)
    ========================================================================== */
 .tku-cd-summary-header {
   margin-bottom: 20px;
@@ -282,14 +262,14 @@
 .tku-cd-summary-subtitle {
   font-size: 14px;
   color: var(--color-text-muted);
-  margin-top: -8px;
-  margin-bottom: 16px;
+  margin: 6px 0 0;
+  line-height: 1.5;
 }
 
 .tku-cd-chapter-summary-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .tku-cd-chapter-summary-item {
@@ -352,10 +332,10 @@
   color: #94a3b8;
 }
 
-/* Locked Content Notice Box (Clean, no redundant CTA button) */
+/* Locked Content Notice Box (No redundant button) */
 .tku-cd-locked-notice {
-  margin-top: 22px;
-  padding: 18px 22px;
+  margin-top: 20px;
+  padding: 16px 20px;
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
   border: 1px dashed var(--color-primary-border);
@@ -365,8 +345,8 @@
 }
 
 .tku-cd-locked-notice-icon {
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-md);
   background-color: #ffffff;
   color: var(--color-primary);
@@ -378,24 +358,24 @@
 }
 
 .tku-cd-locked-notice-title {
-  font-size: 15px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--color-text-main);
-  margin: 0 0 4px;
+  margin: 0 0 3px;
 }
 
 .tku-cd-locked-notice-desc {
-  font-size: 13.5px;
+  font-size: 13px;
   color: var(--color-text-muted);
   margin: 0;
   line-height: 1.5;
 }
 
 /* ==========================================================================
-   CURRICULUM ACCORDION (When ENROLLED)
+   CURRICULUM ACCORDION (WHEN ENROLLED)
    ========================================================================== */
 .tku-cd-enrolled-banner {
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-radius: var(--radius-lg);
   background-color: #ecfdf5;
   border: 1px solid #a7f3d0;
@@ -403,7 +383,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
   font-size: 14px;
 }
 
@@ -565,7 +545,7 @@
 }
 
 /* ==========================================================================
-   INSTRUCTOR SECTION (Real Data Only)
+   INSTRUCTOR SECTION (Real DB Data)
    ========================================================================== */
 .tku-cd-instructor-card {
   display: flex;
@@ -578,8 +558,8 @@
 }
 
 .tku-cd-instructor-avatar {
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   object-fit: cover;
   border: 2px solid #ffffff;
@@ -588,44 +568,46 @@
 }
 
 .tku-cd-instructor-avatar-fallback {
-  width: 72px;
-  height: 72px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: linear-gradient(135deg, #1d68f2, #3b82f6);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 800;
   box-shadow: 0 4px 12px rgba(29, 104, 242, 0.25);
 }
 
+.tku-cd-instructor-info {
+  display: flex;
+  flex-direction: column;
+}
+
 .tku-cd-instructor-name {
-  font-size: 17.5px;
-  font-weight: 800;
+  font-size: 17px;
+  font-weight: 700;
   color: var(--color-text-main);
   margin: 0 0 4px;
 }
 
 .tku-cd-instructor-role {
   font-size: 13px;
-  font-weight: 600;
-  color: var(--color-primary);
-  display: inline-block;
+  color: var(--color-text-muted);
 }
 
 /* ==========================================================================
    RIGHT COLUMN - STICKY ENROLLMENT CARD
    ========================================================================== */
 .tku-cd-sidebar-col {
-  position: relative;
+  width: 100%;
 }
 
 .tku-cd-sidebar-sticky {
   position: sticky;
-  top: 90px;
-  z-index: 10;
+  top: 96px;
 }
 
 .tku-cd-enroll-card {
@@ -633,18 +615,15 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.08);
-  display: flex;
-  flex-direction: column;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
 }
 
-/* Thumbnail */
 .tku-cd-enroll-thumb {
-  position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  overflow: hidden;
   background-color: #0f172a;
+  position: relative;
+  overflow: hidden;
 }
 
 .tku-cd-enroll-thumb-img {
@@ -654,7 +633,6 @@
   display: block;
 }
 
-/* Academic Fallback Banner (No Chibi, Professional Chemistry Theme) */
 .tku-cd-enroll-fallback {
   width: 100%;
   height: 100%;
@@ -705,13 +683,14 @@
   text-overflow: ellipsis;
 }
 
-/* Body */
+/* Card Body */
 .tku-cd-enroll-body {
   padding: 24px;
   display: flex;
   flex-direction: column;
 }
 
+/* Key Requirement Badge (Clean, No redundant text) */
 .tku-cd-key-box {
   display: flex;
   align-items: center;
@@ -746,21 +725,22 @@
   flex-shrink: 0;
 }
 
+/* CTA Buttons */
 .tku-cd-enroll-btn {
   width: 100%;
-  height: 50px;
+  height: 48px;
   border-radius: var(--radius-pill);
   background: linear-gradient(135deg, #1d68f2 0%, #2563eb 100%);
   color: #ffffff;
   border: none;
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  box-shadow: 0 6px 20px rgba(29, 104, 242, 0.35);
+  box-shadow: 0 4px 16px rgba(29, 104, 242, 0.3);
   transition: all var(--transition-normal);
   text-decoration: none;
   margin-bottom: 22px;
@@ -769,22 +749,22 @@
 .tku-cd-enroll-btn:hover {
   background: linear-gradient(135deg, #1555c8 0%, #1d4ed8 100%);
   transform: translateY(-2px);
-  box-shadow: 0 10px 24px rgba(29, 104, 242, 0.45);
+  box-shadow: 0 8px 22px rgba(29, 104, 242, 0.4);
 }
 
 .tku-cd-enroll-btn--enrolled {
   background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
 }
 
 .tku-cd-enroll-btn--enrolled:hover {
   background: linear-gradient(135deg, #047857 0%, #059669 100%);
-  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.45);
+  box-shadow: 0 8px 22px rgba(16, 185, 129, 0.4);
 }
 
 /* Course Metadata Table (Real data from DB) */
 .tku-cd-meta-table-title {
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--color-text-main);
   margin: 0 0 12px;
@@ -800,7 +780,7 @@
   border-radius: var(--radius-lg);
   background-color: var(--color-bg-subtle);
   border: 1px solid var(--color-border);
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
 .tku-cd-meta-row {
@@ -894,11 +874,11 @@
 .tku-cd-mobile-price {
   font-size: 12.5px;
   font-weight: 700;
-  color: #10b981;
+  color: #d97706;
 }
 
 .tku-cd-mobile-btn {
-  padding: 10px 22px;
+  padding: 10px 20px;
   font-size: 13.5px;
   font-weight: 700;
   border-radius: var(--radius-pill);
@@ -918,7 +898,7 @@
 
 /* Skeleton Loading */
 .tku-cd-skeleton-hero {
-  padding: 44px 0 60px;
+  padding: 40px 0 60px;
   background: linear-gradient(135deg, #0b132b 0%, #1c2541 100%);
 }
 
@@ -930,14 +910,14 @@
 }
 
 /* ==========================================================================
-   KEY ACTIVATION MODAL
+   KEY ACTIVATION MODAL - REDESIGNED MODERN ACADEMIC
    ========================================================================== */
 .tku-cd-modal-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: 1000;
   display: flex;
   align-items: center;
@@ -948,143 +928,316 @@
 
 .tku-cd-modal {
   background-color: #ffffff;
-  border-radius: var(--radius-2xl);
+  border-radius: 20px;
   width: 100%;
-  max-width: 480px;
+  max-width: 500px;
   overflow: hidden;
-  box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25);
-  border: 1px solid var(--color-border);
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.25);
+  border: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
   animation: tku-scale-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .tku-cd-modal-header {
-  padding: 24px 24px 16px;
+  padding: 22px 24px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .tku-cd-modal-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .tku-cd-modal-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-lg);
-  background-color: #fef3c7;
-  color: #d97706;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .tku-cd-modal-title {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 800;
-  color: var(--color-text-main);
+  color: #0f172a;
   margin: 0;
+  line-height: 1.25;
+}
+
+.tku-cd-modal-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 3px 0 0 0;
 }
 
 .tku-cd-modal-close-btn {
   background: none;
   border: none;
-  color: var(--color-text-light);
+  color: #64748b;
   cursor: pointer;
   padding: 6px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all var(--transition-fast);
+  transition: all 0.15s ease;
 }
 
 .tku-cd-modal-close-btn:hover {
-  background-color: var(--color-bg-subtle);
-  color: var(--color-text-main);
+  background-color: #f1f5f9;
+  color: #0f172a;
 }
 
 .tku-cd-modal-body {
-  padding: 20px 24px;
+  padding: 22px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 18px;
 }
 
-.tku-cd-modal-course-target {
-  font-size: 13.5px;
-  color: var(--color-text-muted);
-  background-color: var(--color-bg-subtle);
+/* Course Capsule */
+.tku-cd-modal-course-capsule {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 10px 14px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-border-subtle);
 }
 
-.tku-cd-modal-course-name {
+.tku-cd-modal-capsule-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--color-text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #eff6ff;
+  color: #1d68f2;
+  padding: 3px 8px;
+  border-radius: 6px;
+  flex-shrink: 0;
+  border: 1px solid #dbeafe;
 }
 
+.tku-cd-modal-capsule-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Form Group */
 .tku-cd-modal-form-group {
   display: flex;
   flex-direction: column;
+  gap: 10px;
+}
+
+.tku-cd-modal-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .tku-cd-modal-label {
   font-size: 13.5px;
   font-weight: 700;
-  color: var(--color-text-main);
+  color: #1e293b;
 }
 
-.tku-cd-modal-input-wrap {
-  position: relative;
+.tku-cd-modal-sublabel {
+  font-size: 11.5px;
+  color: #64748b;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-cd-modal-hero-input-wrap {
   display: flex;
   align-items: center;
-}
-
-.tku-cd-modal-input-icon {
-  position: absolute;
-  left: 14px;
-  color: #94a3b8;
-  pointer-events: none;
-}
-
-.tku-cd-modal-input {
-  width: 100%;
-  height: 48px;
-  padding: 0 16px 0 44px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  border-radius: var(--radius-md);
-  border: 1.5px solid var(--color-border);
+  gap: 10px;
+  height: 52px;
+  padding: 0 8px 0 10px;
   background-color: #ffffff;
-  color: var(--color-text-main);
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  box-sizing: border-box;
+}
+
+.tku-cd-modal-hero-input-wrap:focus-within {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.tku-cd-modal-hero-input-wrap--error {
+  border-color: #ef4444 !important;
+  background-color: #fffbfb;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.12) !important;
+}
+
+.tku-cd-modal-input-icon-box {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-color: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #dbeafe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.tku-cd-modal-hero-input-wrap:focus-within .tku-cd-modal-input-icon-box {
+  background-color: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.tku-cd-modal-hero-input-wrap--error .tku-cd-modal-input-icon-box {
+  background-color: #fef2f2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.tku-cd-modal-hero-input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
   outline: none;
+  background: transparent;
+  padding: 0 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #0f172a;
   text-transform: uppercase;
-  transition: all var(--transition-fast);
+  box-sizing: border-box;
 }
 
-.tku-cd-modal-input:focus {
-  border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.15);
+.tku-cd-modal-hero-input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.tku-cd-modal-hint {
-  font-size: 12px;
-  color: var(--color-text-muted);
+.tku-cd-modal-clear-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: none;
+  background-color: #e2e8f0;
+  color: #64748b;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  padding: 0;
+}
+
+.tku-cd-modal-clear-btn:hover {
+  background-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.tku-cd-modal-paste-btn {
+  height: 36px;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.tku-cd-modal-paste-btn:hover:not(:disabled) {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.12);
+}
+
+.tku-cd-modal-paste-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.tku-cd-modal-error-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 1.4;
-  margin: 0;
+}
+
+.tku-cd-modal-shield-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  border-radius: 10px;
+  font-size: 12.5px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.tku-cd-modal-shield-note svg {
+  color: #2563eb;
+  margin-top: 2px;
+}
+
+.tku-cd-modal-shield-note strong {
+  color: #1e293b;
 }
 
 .tku-cd-modal-footer {
-  padding: 16px 24px 24px;
+  padding: 16px 24px 20px;
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
   display: flex;
   align-items: center;
   justify-content: flex-end;
@@ -1092,41 +1245,51 @@
 }
 
 .tku-cd-modal-cancel-btn {
-  padding: 10px 20px;
+  height: 42px;
+  padding: 0 20px;
   font-size: 14px;
   font-weight: 600;
-  border-radius: var(--radius-pill);
-  background: none;
-  border: 1px solid var(--color-border);
-  color: var(--color-text-body);
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: all 0.15s ease;
 }
 
 .tku-cd-modal-cancel-btn:hover {
-  background-color: var(--color-bg-subtle);
-  border-color: #cbd5e1;
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+  color: #0f172a;
 }
 
 .tku-cd-modal-submit-btn {
-  padding: 10px 24px;
+  height: 42px;
+  padding: 0 22px;
   font-size: 14px;
-  font-weight: 700;
-  border-radius: var(--radius-pill);
-  background: linear-gradient(135deg, #1d68f2 0%, #2563eb 100%);
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1d68f2 0%, #1e40af 100%);
   color: #ffffff;
   border: none;
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(29, 104, 242, 0.25);
-  transition: all var(--transition-fast);
+  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 8px;
 }
 
-.tku-cd-modal-submit-btn:hover {
-  background: linear-gradient(135deg, #1555c8 0%, #1d4ed8 100%);
+.tku-cd-modal-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #1555c8 0%, #172554 100%);
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(29, 104, 242, 0.35);
+}
+
+.tku-cd-modal-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 @keyframes tku-fade-in {
@@ -1137,10 +1300,11 @@
 @keyframes tku-scale-up {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
     transform: scale(1);
   }
 }
+

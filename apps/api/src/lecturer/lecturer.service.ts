@@ -73,7 +73,6 @@ export interface UpdateAssessmentDto {
 export interface LecturerCourseItem {
   id: string;
   title: string;
-  slug?: string;
   description?: string | null;
   thumbnailUrl?: string | null;
   status: 'ACTIVE' | 'HIDDEN';
@@ -290,7 +289,6 @@ export class LecturerService {
       return {
         id: c.id,
         title: c.title,
-        slug: c.slug || undefined,
         description: c.description,
         thumbnailUrl: c.thumbnailUrl,
         status: (c.status === 'HIDDEN' ? 'HIDDEN' : 'ACTIVE') as
@@ -384,7 +382,6 @@ export class LecturerService {
     return {
       id: course.id,
       title: course.title,
-      slug: course.slug || undefined,
       description: course.description,
       thumbnailUrl: course.thumbnailUrl,
       status: (course.status === 'HIDDEN' ? 'HIDDEN' : 'ACTIVE') as

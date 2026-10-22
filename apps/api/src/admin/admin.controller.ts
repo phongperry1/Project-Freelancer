@@ -11,6 +11,7 @@ import {
   Headers,
   HttpCode,
   HttpStatus,
+  Query,
   UnauthorizedException,
   UploadedFile,
   UseInterceptors,
@@ -33,11 +34,14 @@ import {
   type AdminUsersResponse,
   type AdminUserItem,
   type AdminUserDetailResponse,
+  type AdminActivationKeysResponse,
+  type AdminActivationKeyItem,
 } from './admin.service.js';
 import {
   CreateCourseDto,
   UpdateCourseDto,
   CreateChapterDto,
+  CreateActivationKeysDto,
 } from './dto/course.dto.js';
 import {
   UpdateUserStatusDto,
@@ -236,6 +240,86 @@ export class AdminController {
   ) {
     await this.verifyAdmin(authorization);
     return this.adminService.addChapter(id, body);
+  }
+
+  @Post('courses/:id/activation-keys')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Admin tạo mã Key 1 lần tham gia khóa học với thời hạn hiệu lực cụ thể',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Danh sách mã key mới được tạo thành công.',
+  })
+  async createCourseActivationKeys(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() body: CreateActivationKeysDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{
+    message: string;
+    totalCreated: number;
+    expiresAt: Date;
+    keys: AdminActivationKeyItem[];
+  }> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.createCourseActivationKeys(id, body);
+  }
+
+  @Get('courses/:id/activation-keys')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách và thống kê các mã key của khóa học',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách mã key kèm trạng thái ACTIVE, USED, EXPIRED.',
+  })
+  async getCourseActivationKeys(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<AdminActivationKeysResponse> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.getCourseActivationKeys(id);
+  }
+
+  @Get('activation-keys')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách tất cả mã key trên hệ thống kèm thống kê',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách mã key, danh sách khóa học và thống kê.',
+  })
+  async getAllActivationKeys(
+    @Query('courseId') courseId?: string,
+    @Query('status') status?: string,
+    @Query('search') search?: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    await this.verifyAdmin(authorization);
+    return this.adminService.getAllActivationKeys({ courseId, status, search });
+  }
+
+  @Delete('activation-keys/:keyId')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Xóa hoặc thu hồi mã key chưa sử dụng',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa mã key thành công.',
+  })
+  async deleteActivationKey(
+    @Param('keyId', ParseUUIDPipe) keyId: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string; id: string }> {
+    await this.verifyAdmin(authorization);
+    return this.adminService.deleteActivationKey(keyId);
   }
 
   @Get('users')

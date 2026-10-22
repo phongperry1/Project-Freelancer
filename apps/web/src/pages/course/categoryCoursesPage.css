@@ -1,0 +1,249 @@
+/* ==========================================================================
+   CATEGORY & MY COURSES DEDICATED PAGE STYLING (TINH GỌN & ĐỒNG BỘ)
+   ========================================================================== */
+
+.tku-category-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #f8fafc;
+}
+
+.tku-category-page-main {
+  flex: 1;
+}
+
+/* ==========================================================================
+   HERO BANNER (THEMED BY CATEGORY - STREAMLINED)
+   ========================================================================== */
+.tku-cat-hero {
+  position: relative;
+  color: #ffffff;
+  padding: 32px 0 42px;
+  overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #091e42 0%, #0f2744 55%, #1e3a8a 100%);
+  transition: background 0.3s ease;
+}
+
+/* Variant: Khóa học của tôi (Emerald / Forest Theme) */
+.tku-cat-hero--my-courses {
+  background: linear-gradient(135deg, #064e3b 0%, #065f46 50%, #047857 100%);
+}
+
+/* Variant: Khối 10 (Teal / Emerald) */
+.tku-cat-hero--10 {
+  background: linear-gradient(135deg, #064e3b 0%, #0f3d3e 50%, #0d9488 100%);
+}
+
+/* Variant: Khối 11 (Royal Blue) */
+.tku-cat-hero--11 {
+  background: linear-gradient(135deg, #0f2744 0%, #1e3a8a 50%, #2563eb 100%);
+}
+
+/* Variant: Khối 12 (Purple / Indigo) */
+.tku-cat-hero--12 {
+  background: linear-gradient(135deg, #2e1065 0%, #4c1d95 50%, #6d28d9 100%);
+}
+
+/* Variant: Luyện thi THPT (Amber / Gold) */
+.tku-cat-hero--exam {
+  background: linear-gradient(135deg, #451a03 0%, #78350f 50%, #b45309 100%);
+}
+
+/* Variant: Chuyên đề khác */
+.tku-cat-hero--other {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #475569 100%);
+}
+
+/* Hero Background Glow */
+.tku-cat-hero::before {
+  content: '';
+  position: absolute;
+  top: -30%;
+  right: -5%;
+  width: 460px;
+  height: 460px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+}
+
+
+/* Hero Content Area */
+.tku-cat-hero__content {
+  max-width: 860px;
+}
+
+.tku-cat-hero__badge-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.tku-cat-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.tku-cat-hero__count-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e2e8f0;
+}
+
+.tku-cat-hero__title {
+  font-size: clamp(26px, 3.8vw, 36px);
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.tku-cat-hero__desc {
+  font-size: clamp(14px, 1.6vw, 15px);
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 820px;
+}
+
+/* ==========================================================================
+   CATEGORY CONTAINER & UNIFIED FILTER TOOLBAR
+   ========================================================================== */
+.tku-cat-container {
+  padding-top: 32px;
+  padding-bottom: 72px;
+}
+
+/* Unified Filter Toolbar (Đồng bộ với các trang khác) */
+.tku-category-filter-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 14px 20px;
+  margin-bottom: 28px;
+  box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+  flex-wrap: wrap;
+}
+
+.tku-category-filter-toolbar .tku-courses-search-wrap {
+  flex: 1;
+  min-width: 260px;
+  max-width: 520px;
+  position: relative;
+}
+
+.tku-category-filter-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-category-filter-toolbar__count {
+  font-size: 13.5px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.tku-category-filter-toolbar__count strong {
+  color: #0f172a;
+}
+
+/* Unified Select Dropdown */
+.tku-courses-select-wrap {
+  position: relative;
+  min-width: 175px;
+}
+
+.tku-courses-select {
+  width: 100%;
+  height: 42px;
+  padding: 0 38px 0 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background-color: #f8fafc;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1e293b;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.tku-courses-select:hover {
+  border-color: #94a3b8;
+  background-color: #ffffff;
+}
+
+.tku-courses-select:focus {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.tku-courses-select-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .tku-cat-hero {
+    padding: 24px 0 32px;
+  }
+
+
+  .tku-category-filter-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .tku-category-filter-toolbar .tku-courses-search-wrap {
+    max-width: 100%;
+  }
+
+  .tku-category-filter-toolbar__right {
+    justify-content: space-between;
+  }
+
+  .tku-courses-select-wrap {
+    flex: 1;
+  }
+}

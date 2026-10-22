@@ -5,6 +5,7 @@ import {
   Users,
   BookOpen,
   FileText,
+  KeyRound,
   LogOut,
   Loader2,
 } from 'lucide-react';
@@ -93,6 +94,16 @@ export const AdminLayout: React.FC = () => {
               <div className="tku-admin-nav-item__left">
                 <FileText size={18} />
                 <span>Nội dung</span>
+              </div>
+            </Link>
+
+            <Link
+              to="/admin/activation-keys"
+              className={`tku-admin-nav-item ${location.pathname.startsWith('/admin/activation-keys') ? 'tku-admin-nav-item--active' : ''}`}
+            >
+              <div className="tku-admin-nav-item__left">
+                <KeyRound size={18} />
+                <span>Mã kích hoạt</span>
               </div>
             </Link>
           </div>

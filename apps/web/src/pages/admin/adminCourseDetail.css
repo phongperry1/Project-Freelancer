@@ -477,3 +477,418 @@
     font-size: 21px;
   }
 }
+
+/* ==========================================================================
+   ACTIVATION KEYS MANAGEMENT SECTION
+   ========================================================================== */
+
+.tku-keys-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tku-keys-create-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  padding: 0 16px;
+  background: linear-gradient(135deg, #1d68f2 0%, #1e40af 100%);
+  color: #ffffff;
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(29, 104, 242, 0.25);
+}
+
+.tku-keys-create-btn:hover {
+  background: linear-gradient(135deg, #1b5edb 0%, #172554 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.35);
+}
+
+
+/* Key Stats Summary */
+.tku-keys-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+  .tku-keys-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tku-keys-stat-box {
+  background: #f8fafc;
+  border: 1px solid #eef2f6;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-keys-stat-num {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.tku-keys-stat-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.tku-keys-stat-box--active .tku-keys-stat-num {
+  color: #059669;
+}
+
+.tku-keys-stat-box--used .tku-keys-stat-num {
+  color: #2563eb;
+}
+
+.tku-keys-stat-box--expired .tku-keys-stat-num {
+  color: #dc2626;
+}
+
+/* Key Table */
+.tku-keys-table-container {
+  overflow-x: auto;
+  border: 1px solid #eef2f6;
+  border-radius: 10px;
+}
+
+.tku-keys-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+
+.tku-keys-table th {
+  background: #f8fafc;
+  padding: 12px 14px;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 1px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.tku-keys-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.tku-keys-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tku-keys-table tr:hover td {
+  background-color: #fafbfc;
+}
+
+/* Key code display & copy button */
+.tku-key-code-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-key-code-text {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  background: #f1f5f9;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-key-copy-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-key-copy-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.tku-key-copy-btn--copied {
+  color: #059669;
+}
+
+/* Badges */
+.tku-key-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tku-key-status-badge--active {
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid #a7f3d0;
+}
+
+.tku-key-status-badge--used {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-key-status-badge--expired {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.tku-key-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Used by user chip */
+.tku-key-user-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-key-user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-key-user-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-key-user-name {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 12.5px;
+}
+
+.tku-key-user-email {
+  font-size: 11px;
+  color: #64748b;
+}
+
+/* Delete button */
+.tku-key-delete-btn {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.tku-key-delete-btn:hover {
+  background: #fef2f2;
+  color: #ef4444;
+}
+
+/* Modal Create Keys */
+.tku-keys-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tku-keys-modal-card {
+  background: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+  animation: tku-modal-in 0.2s ease-out;
+}
+
+@keyframes tku-modal-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.tku-keys-modal-header {
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #eef2f6;
+}
+
+.tku-keys-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-keys-modal-close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tku-keys-modal-close-btn:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-keys-modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tku-keys-modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tku-keys-modal-label {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+/* Duration pills */
+.tku-keys-duration-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.tku-keys-duration-pill {
+  padding: 10px 8px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.tku-keys-duration-pill:hover {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d68f2;
+}
+
+.tku-keys-duration-pill--active {
+  background: #eff6ff;
+  border-color: #1d68f2;
+  color: #1d68f2;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px rgba(29, 104, 242, 0.15);
+}
+
+.tku-keys-modal-input {
+  height: 42px;
+  padding: 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #f8fafc;
+  color: #0f172a;
+  transition: all 0.15s ease;
+}
+
+.tku-keys-modal-input:focus {
+  outline: none;
+  background: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-keys-modal-hint {
+  font-size: 12.5px;
+  color: #64748b;
+  line-height: 1.45;
+  margin: 0;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+  padding: 10px 12px;
+  border-radius: 8px;
+}
+
+.tku-keys-modal-footer {
+  padding: 16px 24px;
+  background: #f8fafc;
+  border-top: 1px solid #eef2f6;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+

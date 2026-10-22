@@ -102,6 +102,19 @@
 }
 
 /* ==========================================================================
+   GLOBAL CONTAINER
+   ========================================================================== */
+.tku-container {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(20px, 4vw, 64px);
+  padding-right: clamp(20px, 4vw, 64px);
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
    NAVBAR
    ========================================================================== */
 .tku-navbar-wrapper {
@@ -1064,4 +1077,44 @@
 }
 
 
+/* ==========================================================================
+   GLOBAL HERO BREADCRUMBS TRAIL (TINH TẾ & THANH LỊCH NẰM TRONG HERO BANNER)
+   ========================================================================== */
+.tku-hero-breadcrumbs {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  margin-bottom: 22px;
+  flex-wrap: wrap;
+}
 
+.tku-hero-breadcrumb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #bfdbfe;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.tku-hero-breadcrumb-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.tku-hero-breadcrumb-sep {
+  color: rgba(255, 255, 255, 0.4);
+  display: inline-flex;
+  align-items: center;
+}
+
+.tku-hero-breadcrumb-current {
+  color: #f8fafc;
+  font-weight: 600;
+  max-width: 480px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

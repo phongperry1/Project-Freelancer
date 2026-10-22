@@ -1,21 +1,31 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
 import {
-  BookOpen,
-  Users,
-  AlertCircle,
-  RotateCw,
-  GraduationCap,
-  Calendar,
-  Clock,
-  User as UserIcon,
-  Eye,
-  EyeOff,
-  ExternalLink,
+    AlertCircle,
+    BookOpen,
+    Calendar,
+    Check,
+    Clock,
+    Copy,
+    ExternalLink,
+    Eye,
+    EyeOff,
+    GraduationCap,
+    KeyRound,
+    Plus,
+    RotateCw,
+    Sparkles,
+    Trash2,
+    User as UserIcon,
+    Users,
+    X,
 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { toast } from '../../context/toastService';
 import {
-  adminService,
-  type AdminCourseDetail,
+    adminService,
+    type AdminActivationKeyItem,
+    type AdminActivationKeysResponse,
+    type AdminCourseDetail,
 } from '../../services/admin.service';
 import './adminCourseDetail.css';
 
@@ -32,12 +42,66 @@ const formatDate = (dateString?: string | null): string => {
   }
 };
 
+const formatDateTime = (dateString?: string | null): string => {
+  if (!dateString) return '—';
+  try {
+    return new Date(dateString).toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateString;
+  }
+};
+
+const formatTimeRemaining = (expiresAtStr: string, status: string): string => {
+  if (status === 'USED') return 'Đã sử dụng';
+  const now = new Date().getTime();
+  const exp = new Date(expiresAtStr).getTime();
+  const diffMs = exp - now;
+
+  if (diffMs <= 0) return 'Đã hết hạn';
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffHours / 24);
+  const remHours = diffHours % 24;
+
+  if (diffDays > 0) {
+    return `Còn ${diffDays} ngày ${remHours}h`;
+  }
+  const remMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  return `Còn ${diffHours}h ${remMinutes}m`;
+};
+
 export const AdminCourseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
 
   const [course, setCourse] = useState<AdminCourseDetail | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Quản lý mã key kích hoạt 1 lần
+  const [keysData, setKeysData] = useState<AdminActivationKeysResponse | null>(null);
+  const [isLoadingKeys, setIsLoadingKeys] = useState<boolean>(false);
+  const [isCreateKeyModalOpen, setIsCreateKeyModalOpen] = useState<boolean>(false);
+
+  // Form tạo key
+  const [selectedHours, setSelectedHours] = useState<number>(72);
+  const [customHours, setCustomHours] = useState<string>('');
+  const [isCustomDuration, setIsCustomDuration] = useState<boolean>(false);
+  const [isCreatingKeys, setIsCreatingKeys] = useState<boolean>(false);
+
+  // Copy feedback
+  const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
+
+  // Danh sách key hiển thị
+  const visibleKeys = useMemo<AdminActivationKeyItem[]>(
+    () => keysData?.keys ?? [],
+    [keysData?.keys],
+  );
 
   const fetchCourseData = useCallback(() => {
     if (!id) return;
@@ -48,7 +112,6 @@ export const AdminCourseDetailPage: React.FC = () => {
       .getCourseById(id)
       .then((courseData) => {
         setCourse(courseData);
-        setIsLoading(false);
       })
       .catch((err: unknown) => {
         setError(
@@ -56,6 +119,8 @@ export const AdminCourseDetailPage: React.FC = () => {
             ? err.message
             : 'Không thể tải thông tin chi tiết khóa học.',
         );
+      })
+      .finally(() => {
         setIsLoading(false);
       });
   }, [id]);
@@ -69,7 +134,6 @@ export const AdminCourseDetailPage: React.FC = () => {
       .then((courseData) => {
         if (isMounted) {
           setCourse(courseData);
-          setIsLoading(false);
         }
       })
       .catch((err: unknown) => {
@@ -79,6 +143,10 @@ export const AdminCourseDetailPage: React.FC = () => {
               ? err.message
               : 'Không thể tải thông tin chi tiết khóa học.',
           );
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
           setIsLoading(false);
         }
       });
@@ -87,6 +155,127 @@ export const AdminCourseDetailPage: React.FC = () => {
       isMounted = false;
     };
   }, [id]);
+
+  // Tải danh sách mã key của khóa học khi mount
+  useEffect(() => {
+    if (!id) return;
+    let isMounted = true;
+
+    adminService
+      .getCourseActivationKeys(id)
+      .then((data) => {
+        if (isMounted) {
+          setKeysData(data);
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('Lỗi tải danh sách mã key:', err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingKeys(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [id]);
+
+  // Làm mới danh sách mã key khi tạo hoặc xóa key
+  const fetchKeysData = useCallback(() => {
+    if (!id) return;
+    setIsLoadingKeys(true);
+
+    adminService
+      .getCourseActivationKeys(id)
+      .then((data) => {
+        setKeysData(data);
+      })
+      .catch((err: unknown) => {
+        console.error('Lỗi tải danh sách mã key:', err);
+      })
+      .finally(() => {
+        setIsLoadingKeys(false);
+      });
+  }, [id]);
+
+  useEffect(() => {
+    if (!isLoading && window.location.hash === '#activation-keys') {
+      const el = document.getElementById('activation-keys');
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }, 150);
+      }
+    }
+  }, [isLoading]);
+
+  // Xử lý tạo mã Key 1 lần
+  const handleCreateKeys = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!id) return;
+
+    let hours = selectedHours;
+    if (isCustomDuration) {
+      const parsed = parseInt(customHours, 10);
+      if (isNaN(parsed) || parsed <= 0) {
+        toast.error('Vui lòng nhập số giờ hiệu lực hợp lệ (lớn hơn 0).');
+        return;
+      }
+      hours = parsed;
+    }
+
+    setIsCreatingKeys(true);
+    try {
+      const res = await adminService.createCourseActivationKeys(id, {
+        expiresInHours: hours,
+        quantity: 1,
+      });
+
+      toast.success(res.message || 'Đã tạo mã key thành công!');
+      setIsCreateKeyModalOpen(false);
+      fetchKeysData();
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : 'Không thể tạo mã key cho khóa học.';
+      toast.error(msg);
+    } finally {
+      setIsCreatingKeys(false);
+    }
+  }, [id, selectedHours, isCustomDuration, customHours, fetchKeysData]);
+
+  // Sao chép 1 mã key
+  const handleCopyKey = useCallback((keyCode: string, keyId: string) => {
+    navigator.clipboard
+      .writeText(keyCode)
+      .then(() => {
+        setCopiedKeyId(keyId);
+        toast.success(`Đã sao chép mã: ${keyCode}`);
+        setTimeout(() => setCopiedKeyId(null), 2000);
+      })
+      .catch(() => {
+        toast.info(`Mã key: ${keyCode}`);
+      });
+  }, []);
+
+
+  // Xóa mã key
+  const handleDeleteKey = useCallback(async (keyId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa mã key này không? Mã sẽ bị hủy vĩnh viễn.')) {
+      return;
+    }
+
+    try {
+      await adminService.deleteActivationKey(keyId);
+      toast.success('Đã xóa mã key thành công.');
+      fetchKeysData();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Không thể xóa mã key.';
+      toast.error(msg);
+    }
+  }, [fetchKeysData]);
+
 
   return (
     <div className="tku-detail-page">
@@ -145,6 +334,51 @@ export const AdminCourseDetailPage: React.FC = () => {
                       <GraduationCap size={14} />
                       <span>Khóa học học thuật</span>
                     </span>
+
+                    {course.grade && (
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '4px 10px',
+                          borderRadius: '20px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          backgroundColor:
+                            course.grade === '10'
+                              ? '#eff6ff'
+                              : course.grade === '11'
+                                ? '#f0fdfa'
+                                : course.grade === '12'
+                                  ? '#f5f3ff'
+                                  : course.grade === 'exam'
+                                    ? '#fffbeb'
+                                    : '#f1f5f9',
+                          color:
+                            course.grade === '10'
+                              ? '#2563eb'
+                              : course.grade === '11'
+                                ? '#0d9488'
+                                : course.grade === '12'
+                                  ? '#7c3aed'
+                                  : course.grade === 'exam'
+                                    ? '#d97706'
+                                    : '#64748b',
+                          border: '1px solid currentColor',
+                        }}
+                      >
+                        {course.grade === '10'
+                          ? 'Hóa học Lớp 10'
+                          : course.grade === '11'
+                            ? 'Hóa học Lớp 11'
+                            : course.grade === '12'
+                              ? 'Hóa học Lớp 12'
+                              : course.grade === 'exam'
+                                ? 'Luyện thi THPT & ĐGNL'
+                                : 'Chuyên đề khác'}
+                      </span>
+                    )}
 
                     <span
                       className={`tku-detail-status-pill ${
@@ -253,6 +487,270 @@ export const AdminCourseDetailPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Card 3: Quản lý Mã Key Tham Gia Khóa Học (Dùng 1 Lần & Có Thời Hạn Cụ Thể) */}
+              <div id="activation-keys" className="tku-detail-card">
+                <div
+                  className="tku-detail-section-head"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '12px',
+                  }}
+                >
+                  <div className="tku-detail-section-title-wrap">
+                    <h2
+                      className="tku-detail-section-title-main"
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                    >
+                      <KeyRound size={20} style={{ color: '#1d68f2' }} />
+                      <span>Quản lý Mã Key Tham Gia (Dùng 1 Lần)</span>
+                    </h2>
+                    <p className="tku-detail-section-title-sub">
+                      Tạo và cấp phát mã key kích hoạt khóa học cho học sinh. Mã tự động hết hiệu lực sau khi sử dụng hoặc khi quá thời hạn quy định.
+                    </p>
+                  </div>
+
+                  <div className="tku-keys-header-actions">
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateKeyModalOpen(true)}
+                      className="tku-keys-create-btn"
+                    >
+                      <Plus size={16} />
+                      <span>Tạo mã Key mới</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Thống kê nhanh về mã key */}
+                <div className="tku-keys-summary-grid">
+                  <div className="tku-keys-stat-box">
+                    <span className="tku-keys-stat-num">
+                      {keysData?.totalKeys || 0}
+                    </span>
+                    <span className="tku-keys-stat-label">Tổng mã đã tạo</span>
+                  </div>
+                  <div className="tku-keys-stat-box tku-keys-stat-box--active">
+                    <span className="tku-keys-stat-num">
+                      {keysData?.activeCount || 0}
+                    </span>
+                    <span className="tku-keys-stat-label">Chưa dùng (Còn hạn)</span>
+                  </div>
+                  <div className="tku-keys-stat-box tku-keys-stat-box--used">
+                    <span className="tku-keys-stat-num">
+                      {keysData?.usedCount || 0}
+                    </span>
+                    <span className="tku-keys-stat-label">Đã kích hoạt</span>
+                  </div>
+                  <div className="tku-keys-stat-box tku-keys-stat-box--expired">
+                    <span className="tku-keys-stat-num">
+                      {keysData?.expiredCount || 0}
+                    </span>
+                    <span className="tku-keys-stat-label">Đã hết hạn</span>
+                  </div>
+                </div>
+
+                {/* Bảng danh sách mã key */}
+                {isLoadingKeys ? (
+                  <div
+                    style={{
+                      padding: '36px',
+                      textAlign: 'center',
+                      color: '#64748b',
+                      fontSize: '13.5px',
+                    }}
+                  >
+                    Đang tải danh sách mã key...
+                  </div>
+                ) : !keysData || visibleKeys.length === 0 ? (
+                  <div
+                    style={{
+                      padding: '36px 20px',
+                      textAlign: 'center',
+                      background: '#f8fafc',
+                      borderRadius: '10px',
+                      border: '1px dashed #cbd5e1',
+                    }}
+                  >
+                    <KeyRound
+                      size={32}
+                      style={{ color: '#94a3b8', margin: '0 auto 8px' }}
+                    />
+                    <p
+                      style={{
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        color: '#334155',
+                        margin: '0 0 4px 0',
+                      }}
+                    >
+                      Chưa có mã Key nào được tạo cho khóa học này
+                    </p>
+                    <p
+                      style={{
+                        fontSize: '13px',
+                        color: '#64748b',
+                        margin: '0 0 16px 0',
+                      }}
+                    >
+                      Bấm vào nút "Tạo mã Key mới" phía trên để tạo mã gửi cho học sinh tham gia lớp.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setIsCreateKeyModalOpen(true)}
+                      className="tku-keys-create-btn"
+                      style={{ margin: '0 auto' }}
+                    >
+                      <Plus size={16} />
+                      <span>Tạo mã Key ngay</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="tku-keys-table-container">
+                    <table className="tku-keys-table">
+                      <thead>
+                        <tr>
+                          <th>Mã Key</th>
+                          <th>Thời hạn hiệu lực</th>
+                          <th>Trạng thái</th>
+                          <th>Học sinh kích hoạt</th>
+                          <th>Ngày tạo</th>
+                          <th style={{ textAlign: 'center', width: '60px' }}>Xóa</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleKeys.map((keyItem: AdminActivationKeyItem) => (
+                          <tr key={keyItem.id}>
+                            {/* Cột 1: Mã Key + Copy */}
+                            <td>
+                              <div className="tku-key-code-wrap">
+                                <span className="tku-key-code-text">{keyItem.key}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyKey(keyItem.key, keyItem.id)}
+                                  className={`tku-key-copy-btn ${
+                                    copiedKeyId === keyItem.id
+                                      ? 'tku-key-copy-btn--copied'
+                                      : ''
+                                  }`}
+                                  title="Sao chép mã"
+                                >
+                                  {copiedKeyId === keyItem.id ? (
+                                    <Check size={14} />
+                                  ) : (
+                                    <Copy size={14} />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+
+                            {/* Cột 2: Thời hạn */}
+                            <td>
+                              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontWeight: 600, fontSize: '12.5px' }}>
+                                  {formatDateTime(keyItem.expiresAt)}
+                                </span>
+                                <span
+                                  style={{
+                                    fontSize: '11.5px',
+                                    color:
+                                      keyItem.status === 'EXPIRED'
+                                        ? '#dc2626'
+                                        : keyItem.status === 'USED'
+                                          ? '#64748b'
+                                          : '#059669',
+                                    fontWeight: 500,
+                                  }}
+                                >
+                                  {formatTimeRemaining(keyItem.expiresAt, keyItem.status)}
+                                </span>
+                              </div>
+                            </td>
+
+                            {/* Cột 3: Trạng thái */}
+                            <td>
+                              {keyItem.status === 'ACTIVE' && (
+                                <span className="tku-key-status-badge tku-key-status-badge--active">
+                                  <span className="tku-key-status-dot" />
+                                  <span>Chưa dùng</span>
+                                </span>
+                              )}
+                              {keyItem.status === 'USED' && (
+                                <span className="tku-key-status-badge tku-key-status-badge--used">
+                                  <span className="tku-key-status-dot" />
+                                  <span>Đã dùng</span>
+                                </span>
+                              )}
+                              {keyItem.status === 'EXPIRED' && (
+                                <span className="tku-key-status-badge tku-key-status-badge--expired">
+                                  <span className="tku-key-status-dot" />
+                                  <span>Hết hạn</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Cột 4: Người đã kích hoạt */}
+                            <td>
+                              {keyItem.usedBy ? (
+                                <div className="tku-key-user-chip">
+                                  <div className="tku-key-user-avatar">
+                                    {keyItem.usedBy.fullName.slice(0, 1).toUpperCase()}
+                                  </div>
+                                  <div className="tku-key-user-meta">
+                                    <span className="tku-key-user-name">
+                                      {keyItem.usedBy.fullName}
+                                    </span>
+                                    <span className="tku-key-user-email">
+                                      {keyItem.usedBy.email}
+                                    </span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                                  Chưa có ai dùng
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Cột 5: Ngày tạo */}
+                            <td style={{ color: '#64748b', fontSize: '12px' }}>
+                              {formatDateTime(keyItem.createdAt)}
+                            </td>
+
+                            {/* Cột 6: Xóa (chỉ hiển thị khi chưa dùng) */}
+                            <td style={{ textAlign: 'center' }}>
+                              {keyItem.status !== 'USED' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteKey(keyItem.id)}
+                                  className="tku-key-delete-btn"
+                                  title="Xóa mã key này"
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              ) : (
+                                <span
+                                  style={{
+                                    fontSize: '11px',
+                                    color: '#cbd5e1',
+                                    cursor: 'default',
+                                  }}
+                                  title="Không thể xóa key đã được học sinh sử dụng"
+                                >
+                                  —
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Cột Phải: Ảnh bìa & Giảng viên phụ trách */}
@@ -320,8 +818,123 @@ export const AdminCourseDetailPage: React.FC = () => {
           </div>
         ) : null}
       </div>
+
+      {/* MODAL TẠO MÃ KEY THAM GIA KHÓA HỌC (DÙNG 1 LẦN) */}
+      {isCreateKeyModalOpen && (
+        <div
+          className="tku-keys-modal-backdrop"
+          onClick={() => !isCreatingKeys && setIsCreateKeyModalOpen(false)}
+        >
+          <div
+            className="tku-keys-modal-card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="tku-keys-modal-header">
+              <h3 className="tku-keys-modal-title">
+                <KeyRound size={20} style={{ color: '#1d68f2' }} />
+                <span>Tạo mã Key tham gia khóa học (1 lần)</span>
+              </h3>
+              <button
+                type="button"
+                className="tku-keys-modal-close-btn"
+                onClick={() => !isCreatingKeys && setIsCreateKeyModalOpen(false)}
+                disabled={isCreatingKeys}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateKeys}>
+              <div className="tku-keys-modal-body">
+                {/* 1. Chọn thời hạn hiệu lực */}
+                <div className="tku-keys-modal-field">
+                  <label className="tku-keys-modal-label">
+                    Thời hạn hiệu lực của Key (Tự động hết hạn):
+                  </label>
+                  <div className="tku-keys-duration-grid">
+                    {[
+                      { hours: 24, label: '24 Giờ (1 ngày)' },
+                      { hours: 72, label: '3 Ngày (72h)' },
+                      { hours: 168, label: '7 Ngày (1 tuần)' },
+                      { hours: 336, label: '14 Ngày (2 tuần)' },
+                      { hours: 720, label: '30 Ngày (1 tháng)' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.hours}
+                        type="button"
+                        onClick={() => {
+                          setSelectedHours(opt.hours);
+                          setIsCustomDuration(false);
+                        }}
+                        className={`tku-keys-duration-pill ${
+                          !isCustomDuration && selectedHours === opt.hours
+                            ? 'tku-keys-duration-pill--active'
+                            : ''
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomDuration(true)}
+                      className={`tku-keys-duration-pill ${
+                        isCustomDuration ? 'tku-keys-duration-pill--active' : ''
+                      }`}
+                    >
+                      Tùy chỉnh giờ...
+                    </button>
+                  </div>
+
+                  {isCustomDuration && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="number"
+                        min="1"
+                        max="8760"
+                        value={customHours}
+                        onChange={(e) => setCustomHours(e.target.value)}
+                        placeholder="Nhập số giờ hết hạn (ví dụ: 48, 120...)"
+                        className="tku-keys-modal-input"
+                        style={{ width: '100%', boxSizing: 'border-box' }}
+                        autoFocus
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="tku-keys-modal-footer">
+                <button
+                  type="button"
+                  className="tku-detail-btn tku-detail-btn--secondary"
+                  onClick={() => setIsCreateKeyModalOpen(false)}
+                  disabled={isCreatingKeys}
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  className="tku-keys-create-btn"
+                  disabled={isCreatingKeys}
+                >
+                  {isCreatingKeys ? (
+                    <span>Đang khởi tạo mã Key...</span>
+                  ) : (
+                    <>
+                      <Sparkles size={16} />
+                      <span>Xác nhận tạo mã Key</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
 
 export default AdminCourseDetailPage;
