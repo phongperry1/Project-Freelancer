@@ -48,6 +48,7 @@ export interface AcademicCourseCardProps {
 
 export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ course, onSelect }) => {
   const [imageFailed, setImageFailed] = useState(false);
+  const [avatarFailed, setAvatarFailed] = useState(false);
 
   const teacherInitials = useMemo(() => {
     if (!course.teacher.fullName) return 'GV';
@@ -61,6 +62,11 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
     Boolean(course.thumbnailUrl) &&
     course.thumbnailUrl?.trim() !== '' &&
     !imageFailed;
+
+  const hasValidAvatar =
+    Boolean(course.teacher.avatarUrl) &&
+    course.teacher.avatarUrl?.trim() !== '' &&
+    !avatarFailed;
 
   // Dữ liệu thật từ database thông qua CourseEnrollment kèm fallback tức thì từ localStorage khi vừa kích hoạt mã key
   const isEnrolled =
@@ -140,11 +146,14 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
 
         {/* Teacher Info */}
         <div className="tku-course-card__teacher">
-          {course.teacher.avatarUrl ? (
+          {hasValidAvatar ? (
             <img
-              src={course.teacher.avatarUrl}
+              src={course.teacher.avatarUrl!}
               alt={course.teacher.fullName}
               className="tku-course-card__teacher-avatar"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setAvatarFailed(true)}
             />
           ) : (
             <div className="tku-course-card__teacher-fallback" aria-hidden="true">

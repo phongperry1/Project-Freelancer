@@ -44,6 +44,189 @@ export interface PublicCourseDetailResponse extends PublicCourseItem {
   chapters: PublicCourseDetailChapter[];
 }
 
+export interface LearningLessonItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  chapterId: string;
+  hasVideo: boolean;
+  videoUrl?: string | null;
+  content?: string | null;
+  isCompleted: boolean;
+  progressPercent: number;
+  lastPosition: number;
+}
+
+export interface LearningChapterItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  lessons: LearningLessonItem[];
+}
+
+export interface CourseLearningRoomResponse {
+  course: {
+    id: string;
+    title: string;
+    grade: string;
+    description: string | null;
+    thumbnailUrl: string | null;
+    teacher: PublicCourseTeacher;
+  };
+  enrollment: {
+    enrolledAt: string;
+    progressPercent: number;
+    completedAt: string | null;
+  };
+  chapters: LearningChapterItem[];
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;
+  currentLessonId: string | null;
+}
+
+export interface StudentAssessmentItem {
+  id: string;
+  courseId: string;
+  lessonId: string | null;
+  lessonTitle: string | null;
+  title: string;
+  type: 'QUIZ' | 'TEST' | 'EXAM';
+  durationMinutes: number | null;
+  startDate: string | null;
+  dueDate: string | null;
+  totalQuestions: number;
+  submissionsCount: number;
+  bestScore: number | null;
+  latestSubmission: {
+    id: string;
+    attemptNumber: number;
+    score: number | null;
+    submittedAt: string | null;
+  } | null;
+}
+
+export interface TakeAssessmentQuestionOption {
+  id: string;
+  content: string;
+  sortOrder: number;
+}
+
+export interface TakeAssessmentQuestion {
+  id: string;
+  content: string;
+  type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'TEXT';
+  score: number;
+  sortOrder: number;
+  options: TakeAssessmentQuestionOption[];
+}
+
+export interface TakeAssessmentResponse {
+  assessment: {
+    id: string;
+    courseId: string;
+    courseTitle: string;
+    courseGrade: string;
+    lessonId: string | null;
+    lessonTitle: string | null;
+    title: string;
+    type: 'QUIZ' | 'TEST' | 'EXAM';
+    durationMinutes: number | null;
+    startDate: string | null;
+    dueDate: string | null;
+    totalQuestions: number;
+    attemptNumber: number;
+  };
+  questions: TakeAssessmentQuestion[];
+}
+
+export interface SubmitAssessmentPayload {
+  answers: Array<{
+    questionId: string;
+    selectedOptionId?: string;
+    answerText?: string;
+  }>;
+}
+
+export interface SubmitAssessmentResponse {
+  submissionId: string;
+  attemptNumber: number;
+  score: number;
+  totalQuestions: number;
+  correctCount: number;
+  wrongCount: number;
+  skippedCount: number;
+  submittedAt: string;
+}
+
+export interface AssessmentResultQuestionOption {
+  id: string;
+  content: string;
+  isCorrect: boolean;
+  sortOrder: number;
+}
+
+export interface AssessmentResultQuestion {
+  id: string;
+  content: string;
+  type: 'SINGLE_CHOICE' | 'MULTIPLE_CHOICE' | 'TRUE_FALSE' | 'TEXT';
+  score: number;
+  sortOrder: number;
+  solutionText: string | null;
+  solutionFileUrl: string | null;
+  selectedOptionId: string | null;
+  answerText: string | null;
+  isCorrect: boolean;
+  options: AssessmentResultQuestionOption[];
+}
+
+export interface AssessmentResultResponse {
+  submission: {
+    id: string;
+    attemptNumber: number;
+    score: number | null;
+    submittedAt: string | null;
+    createdAt: string;
+  };
+  assessment: {
+    id: string;
+    courseId: string;
+    courseTitle: string;
+    lessonId: string | null;
+    lessonTitle: string | null;
+    title: string;
+    type: 'QUIZ' | 'TEST' | 'EXAM';
+    durationMinutes: number | null;
+    totalQuestions: number;
+  };
+  stats: {
+    totalQuestions: number;
+    correctCount: number;
+    wrongCount: number;
+    skippedCount: number;
+  };
+  questions: AssessmentResultQuestion[];
+}
+
+export interface AssessmentHistoryItem {
+  id: string;
+  attemptNumber: number;
+  score: number | null;
+  submittedAt: string | null;
+  createdAt: string;
+}
+
+export interface AssessmentHistoryResponse {
+  assessment: {
+    id: string;
+    title: string;
+    type: 'QUIZ' | 'TEST' | 'EXAM';
+    durationMinutes: number | null;
+    totalQuestions: number;
+  } | null;
+  history: AssessmentHistoryItem[];
+}
+
 const RAW_API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3000/api/v1';
 const API_BASE_URL = RAW_API_URL.replace(/\/+$/, '');
 
@@ -195,6 +378,204 @@ export const courseService = {
     }
 
     return data;
+  },
+
+  /**
+   * Lấy dữ liệu phòng học bài giảng cho học sinh đã ghi danh
+   */
+  async getCourseLearningRoom(courseId: string): Promise<CourseLearningRoomResponse> {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để vào phòng học.');
+    }
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/learn`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải dữ liệu phòng học.');
+    }
+
+    return (await response.json()) as CourseLearningRoomResponse;
+  },
+
+  /**
+   * Cập nhật tiến độ học tập của bài học (đánh dấu hoàn thành / lưu vị trí video)
+   */
+  async updateLessonProgress(
+    courseId: string,
+    lessonId: string,
+    data: { isCompleted?: boolean; lastPosition?: number; progressPercent?: number },
+  ): Promise<{
+    lessonProgress: {
+      studentId: string;
+      lessonId: string;
+      isCompleted: boolean;
+      lastPosition: number;
+      progressPercent: number;
+    };
+    courseProgressPercent: number;
+  }> {
+    const token = getAuthToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để lưu tiến độ học tập.');
+    }
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/progress`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể cập nhật tiến độ bài học.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Lấy danh sách bài tập và đề thi của khóa học cho học sinh
+   */
+  async getStudentAssessments(courseId: string, lessonId?: string): Promise<StudentAssessmentItem[]> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để xem danh sách bài kiểm tra.');
+
+    const query = lessonId ? `?lessonId=${encodeURIComponent(lessonId)}` : '';
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/assessments${query}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải danh sách bài tập.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Lấy đề thi để học sinh làm bài thi trực tuyến
+   */
+  async getAssessmentForTake(courseId: string, assessmentId: string): Promise<TakeAssessmentResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để làm bài thi.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/assessments/${encodeURIComponent(assessmentId)}/take`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải dữ liệu đề thi.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Học sinh nộp bài thi trực tuyến
+   */
+  async submitAssessment(
+    courseId: string,
+    assessmentId: string,
+    payload: SubmitAssessmentPayload,
+  ): Promise<SubmitAssessmentResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để nộp bài.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/assessments/${encodeURIComponent(assessmentId)}/submit`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể nộp bài thi.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Xem kết quả bài thi chi tiết, lời giải và file giải viết tay
+   */
+  async getAssessmentResult(
+    courseId: string,
+    assessmentId: string,
+    submissionId: string,
+  ): Promise<AssessmentResultResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để xem kết quả.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/assessments/${encodeURIComponent(assessmentId)}/results/${encodeURIComponent(submissionId)}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải kết quả bài thi.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Xem lịch sử các lần thi của học sinh
+   */
+  async getAssessmentHistory(courseId: string, assessmentId: string): Promise<AssessmentHistoryResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để xem lịch sử thi.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/assessments/${encodeURIComponent(assessmentId)}/history`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải lịch sử thi.');
+    }
+
+    return await response.json();
   },
 };
 
