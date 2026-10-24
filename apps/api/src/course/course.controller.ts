@@ -140,5 +140,143 @@ export class CourseController {
 
     return this.courseService.enrollWithKey(id, studentId, body.key);
   }
+
+  @Get(':id/learn')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy dữ liệu phòng học và danh mục bài giảng của khóa học' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiResponse({ status: 200, description: 'Dữ liệu toàn bộ phòng học kèm tiến độ học tập' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 403, description: 'Chưa ghi danh khóa học' })
+  async getCourseLearningRoom(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập tài khoản học sinh để vào học.');
+    }
+
+    return this.courseService.getCourseLearningRoom(id, studentId);
+  }
+
+  @Post(':id/lessons/:lessonId/progress')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lưu tiến độ học tập của bài giảng (thời gian xem / hoàn thành)' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiResponse({ status: 200, description: 'Cập nhật tiến độ thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async updateLessonProgress(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Body() body: { isCompleted?: boolean; lastPosition?: number; progressPercent?: number },
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để lưu tiến độ học tập.');
+    }
+
+    return this.courseService.updateLessonProgress(id, lessonId, studentId, body);
+  }
+
+  @Get(':id/assessments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách bài tập và đề thi của khóa học cho học sinh' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiQuery({ name: 'lessonId', required: false, description: 'Lọc bài tập theo bài học cụ thể' })
+  @ApiResponse({ status: 200, description: 'Danh sách bài tập và đề thi' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async getStudentAssessments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query('lessonId') lessonId?: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để xem danh sách bài kiểm tra.');
+    }
+    return this.courseService.getStudentAssessments(id, studentId, lessonId);
+  }
+
+  @Get(':id/assessments/:assessmentId/take')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy dữ liệu đề thi để học sinh làm bài trực tuyến (bảo mật)' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'assessmentId', description: 'Mã UUID của đề thi' })
+  @ApiResponse({ status: 200, description: 'Dữ liệu đề thi và câu hỏi' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async getAssessmentForTake(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assessmentId', ParseUUIDPipe) assessmentId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để làm bài thi.');
+    }
+    return this.courseService.getAssessmentForTake(id, assessmentId, studentId);
+  }
+
+  @Post(':id/assessments/:assessmentId/submit')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Nộp bài thi trực tuyến và tự động chấm điểm' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'assessmentId', description: 'Mã UUID của đề thi' })
+  @ApiResponse({ status: 200, description: 'Chấm điểm và nộp bài thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async submitAssessment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assessmentId', ParseUUIDPipe) assessmentId: string,
+    @Body() body: { answers: Array<{ questionId: string; selectedOptionId?: string; answerText?: string }> },
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để nộp bài thi.');
+    }
+    return this.courseService.submitAssessment(id, assessmentId, studentId, body);
+  }
+
+  @Get(':id/assessments/:assessmentId/results/:submissionId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xem kết quả bài làm, lời giải chi tiết và file viết tay của đề thi' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'assessmentId', description: 'Mã UUID của đề thi' })
+  @ApiParam({ name: 'submissionId', description: 'Mã UUID của lần thi' })
+  @ApiResponse({ status: 200, description: 'Kết quả chi tiết bài thi' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async getAssessmentResult(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assessmentId', ParseUUIDPipe) assessmentId: string,
+    @Param('submissionId', ParseUUIDPipe) submissionId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để xem kết quả bài thi.');
+    }
+    return this.courseService.getAssessmentResult(id, assessmentId, submissionId, studentId);
+  }
+
+  @Get(':id/assessments/:assessmentId/history')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xem lịch sử các lần thi của học sinh cho đề thi này' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'assessmentId', description: 'Mã UUID của đề thi' })
+  @ApiResponse({ status: 200, description: 'Lịch sử các lần thi' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async getAssessmentHistory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('assessmentId', ParseUUIDPipe) assessmentId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để xem lịch sử thi.');
+    }
+    return this.courseService.getAssessmentHistory(id, assessmentId, studentId);
+  }
 }
 
