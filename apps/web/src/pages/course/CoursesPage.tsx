@@ -216,9 +216,19 @@ export const CoursesPage: React.FC = () => {
 
   const handleSelectCourse = useCallback(
     (courseId: string) => {
-      navigate(`/courses/${courseId}`);
+      const selected = courses.find((c) => c.id === courseId);
+      const isEnrolled =
+        Boolean(selected?.isEnrolled) ||
+        (typeof window !== 'undefined' &&
+          localStorage.getItem(`tku_enrolled_${courseId}`) === 'true');
+
+      if (isEnrolled) {
+        navigate(`/courses/${courseId}/learn`);
+      } else {
+        navigate(`/courses/${courseId}`);
+      }
     },
-    [navigate],
+    [navigate, courses],
   );
 
   const currentCategoryInfo = useMemo(() => {

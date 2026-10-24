@@ -1,0 +1,2150 @@
+/* ==========================================================================
+   TKU STUDENT LEARNING ROOM / COURSE PLAYER (PHÒNG HỌC BÀI GIẢNG HỌC THUẬT)
+   Giao diện nền trắng tối giản, đồng bộ 100% với hệ thống container TKU
+   ========================================================================== */
+
+:root {
+  /* Nền và Bề mặt - Light Mode */
+  --tku-lr-bg: #f8fafc;               /* Nền trang off-white nhẹ */
+  --tku-lr-surface: #ffffff;          /* Nền thẻ, thanh điều khiển, header trắng tinh */
+  --tku-lr-surface-alt: #ffffff;      /* Nền sidebar trắng sạch */
+  --tku-lr-surface-subtle: #f1f5f9;   /* Nền xám nhạt cho accordion header */
+  --tku-lr-border: #e2e8f0;          /* Đường viền chuẩn */
+  --tku-lr-border-hover: #cbd5e1;     /* Viền khi hover */
+  
+  /* Màu chủ đạo TKU Brand */
+  --tku-lr-primary: #1d68f2;
+  --tku-lr-primary-hover: #1555c8;
+  --tku-lr-primary-soft: #eff6ff;     /* Nền xanh pastel nhạt cho bài đang học */
+  --tku-lr-primary-border: #bfdbfe;
+  
+  /* Màu trạng thái Hoàn thành */
+  --tku-lr-success: #10b981;
+  --tku-lr-success-soft: #ecfdf5;
+  --tku-lr-success-border: #a7f3d0;
+  --tku-lr-success-text: #059669;
+
+  /* Typography Colors */
+  --tku-lr-text-primary: #0f172a;     /* Chữ tiêu đề đen đậm rõ nét */
+  --tku-lr-text-body: #334155;        /* Chữ văn bản Slate-700 dễ đọc */
+  --tku-lr-text-muted: #64748b;       /* Chữ phụ, nhãn chương, metadata */
+  --tku-lr-text-subtle: #94a3b8;      /* Icon phụ, placeholder */
+}
+
+.tku-learning-room {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--tku-lr-bg);
+  color: var(--tku-lr-text-body);
+  font-family: inherit;
+  overflow-x: hidden;
+}
+
+/* ==========================================================================
+   STANDARDIZED LEARNING CONTAINER (ĐỒNG BỘ 100% KHOẢNG CÁCH VỚI CÁC TRANG TKU)
+   ========================================================================== */
+.tku-learning-container {
+  width: 100%;
+  max-width: 1440px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(20px, 3.5vw, 48px);
+  padding-right: clamp(20px, 3.5vw, 48px);
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   1. MAIN LEARNING LAYOUT (BỐ CỤC 2 CỘT CHUẨN ĐỐI XỨNG)
+   ========================================================================== */
+.tku-learning-layout {
+  display: flex;
+  gap: 24px;
+  padding-top: 20px;
+  padding-bottom: 48px;
+  align-items: flex-start;
+  min-height: calc(100vh - 180px);
+}
+
+/* 2.1 Cột trái: Khung phát Video & Thông tin bài giảng */
+.tku-learning-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* KHỐI PLAYER GỘP THỐNG NHẤT (HEADER KHÓA HỌC + VIDEO + THANH ĐIỀU KHIỂN) */
+.tku-learning-player-card {
+  width: 100%;
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+/* 1. Top Header của Khối Player */
+.tku-learning-player-header {
+  height: 48px;
+  padding: 0 16px;
+  background: var(--tku-lr-surface);
+  border-bottom: 1px solid var(--tku-lr-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-learning-player-header__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-learning-player-header__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  border-radius: 4px;
+  background: var(--tku-lr-surface-subtle);
+  color: var(--tku-lr-text-body);
+  border: 1px solid var(--tku-lr-border);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tku-learning-player-header__course-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 500px;
+}
+
+.tku-learning-player-header__right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Nút mở lại sidebar khi đã bị ẩn */
+.tku-learning-sidebar-reopen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--tku-lr-primary-soft);
+  border: 1px solid var(--tku-lr-primary-border);
+  color: var(--tku-lr-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-learning-sidebar-reopen-btn:hover {
+  background: #dbeafe;
+}
+
+/* Video Stage - Nằm giữa Player Card */
+.tku-learning-stage {
+  width: 100%;
+  background: #000000;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.tku-learning-video-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  position: relative;
+  background: #05070d;
+}
+
+.tku-learning-video-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+.tku-learning-video-native {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #000000;
+}
+
+/* Fallback khi bài học lý thuyết hoặc không có video */
+.tku-learning-no-video {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+  background: #f8fafc;
+  border: 1px dashed var(--tku-lr-border);
+  border-radius: 0;
+  text-align: center;
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-learning-no-video__icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  background: var(--tku-lr-primary-soft);
+  border: 1px solid var(--tku-lr-primary-border);
+  color: var(--tku-lr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.tku-learning-no-video__title {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0 0 8px;
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-learning-no-video__desc {
+  font-size: 14px;
+  color: var(--tku-lr-text-muted);
+  max-width: 480px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.tku-learning-no-video__action-btn {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: 8px;
+  background: var(--tku-lr-primary);
+  color: #ffffff;
+  border: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.25);
+}
+
+.tku-learning-no-video__action-btn:hover:not(:disabled) {
+  background: var(--tku-lr-primary-hover);
+  transform: translateY(-1px);
+}
+
+.tku-learning-no-video__action-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tku-learning-no-video__done-badge {
+  margin-top: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 18px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* 2.2 Lesson Control Actions Bar (Dưới Video - Liền mạch trong Player Card) */
+.tku-learning-controls-bar {
+  background: var(--tku-lr-surface);
+  border: 0;
+  border-top: 1px solid var(--tku-lr-border);
+  border-radius: 0;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  box-shadow: none;
+}
+
+.tku-learning-lesson-title-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tku-learning-lesson-meta-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-learning-back-course-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tku-lr-primary);
+  text-decoration: none;
+  padding: 0;
+  background: transparent;
+  border: none;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-learning-back-course-btn:hover {
+  color: var(--tku-lr-primary-hover);
+  text-decoration: underline;
+}
+
+.tku-learning-meta-sep {
+  color: #cbd5e1;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.tku-learning-chapter-crumb {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--tku-lr-text-muted);
+  text-transform: none;
+}
+
+.tku-learning-completed-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tku-learning-active-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0;
+  line-height: 1.35;
+}
+
+.tku-learning-nav-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tku-learning-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 15px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+/* Secondary Button: Bài trước */
+.tku-learning-btn--secondary {
+  background: var(--tku-lr-surface);
+  border-color: var(--tku-lr-border);
+  color: var(--tku-lr-text-body);
+}
+
+.tku-learning-btn--secondary:hover:not(:disabled) {
+  background: var(--tku-lr-surface-subtle);
+  color: var(--tku-lr-text-primary);
+  border-color: var(--tku-lr-border-hover);
+}
+
+.tku-learning-btn--secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Nút hoàn thành - Nền xanh mint nhạt, chữ xanh lục êm dịu */
+.tku-learning-btn--complete {
+  background: var(--tku-lr-surface);
+  border-color: var(--tku-lr-border);
+  color: var(--tku-lr-text-body);
+}
+
+.tku-learning-btn--complete:hover:not(:disabled) {
+  background: var(--tku-lr-success-soft);
+  color: var(--tku-lr-success-text);
+  border-color: var(--tku-lr-success-border);
+}
+
+.tku-learning-btn--completed {
+  background: var(--tku-lr-success-soft);
+  color: var(--tku-lr-success-text);
+  border-color: var(--tku-lr-success-border);
+  font-weight: 600;
+}
+
+.tku-learning-btn--completed:hover:not(:disabled) {
+  background: #d1fae5;
+}
+
+/* Nút chính: Bài tiếp theo - Xanh thương hiệu TKU */
+.tku-learning-btn--primary {
+  background: var(--tku-lr-primary);
+  color: #ffffff;
+  border-color: var(--tku-lr-primary);
+  font-weight: 600;
+}
+
+.tku-learning-btn--primary:hover:not(:disabled) {
+  background: var(--tku-lr-primary-hover);
+  border-color: var(--tku-lr-primary-hover);
+}
+
+.tku-learning-btn--primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+   3. LESSON DETAILS & TABS AREA (NỘI DUNG LÝ THUYẾT & TIỆN ÍCH)
+   ========================================================================== */
+.tku-learning-details-section {
+  padding: 20px 0 0;
+  background: transparent;
+  flex: 1;
+}
+
+.tku-learning-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid var(--tku-lr-border);
+  padding-bottom: 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+}
+
+.tku-learning-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--tku-lr-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  outline: none;
+  font-family: inherit;
+}
+
+.tku-learning-tab-btn:hover {
+  color: var(--tku-lr-text-primary);
+  background: #f1f5f9;
+}
+
+.tku-learning-tab-btn.is-active {
+  color: var(--tku-lr-primary);
+  background: var(--tku-lr-surface);
+  border: 1px solid #bfdbfe;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.08);
+}
+
+.tku-learning-tab-btn:focus,
+.tku-learning-tab-btn:focus-visible {
+  outline: none;
+}
+
+/* Tab Panel: Lý thuyết bài giảng - Thẻ trắng sạch sẽ */
+.tku-learning-content-card,
+.tku-learning-content-pane {
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 24px 28px;
+  color: var(--tku-lr-text-body);
+  line-height: 1.7;
+  font-size: 14.5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tku-learning-markdown-body {
+  font-size: 14.5px;
+  line-height: 1.7;
+  color: var(--tku-lr-text-body);
+}
+
+.tku-learning-content-card h2,
+.tku-learning-content-card h3,
+.tku-learning-markdown-body h2,
+.tku-learning-markdown-body h3 {
+  color: var(--tku-lr-text-primary);
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: 700;
+}
+
+.tku-learning-content-card h2:first-child,
+.tku-learning-content-card h3:first-child,
+.tku-learning-markdown-body h2:first-child,
+.tku-learning-markdown-body h3:first-child {
+  margin-top: 0;
+}
+
+.tku-learning-content-card p,
+.tku-learning-markdown-body p {
+  margin: 0 0 14px;
+  color: var(--tku-lr-text-body);
+}
+
+.tku-learning-content-card ul,
+.tku-learning-content-card ol,
+.tku-learning-markdown-body ul,
+.tku-learning-markdown-body ol {
+  margin: 0 0 14px 20px;
+  color: var(--tku-lr-text-body);
+}
+
+.tku-learning-content-card li,
+.tku-learning-markdown-body li {
+  margin-bottom: 6px;
+}
+
+/* Academic callout box - Xanh pastel nhẹ nhàng */
+.tku-learning-academic-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: var(--tku-lr-primary-soft);
+  border: 1px solid var(--tku-lr-primary-border);
+  border-left: 3px solid var(--tku-lr-primary);
+  margin: 18px 0;
+}
+
+.tku-learning-academic-callout__icon {
+  color: var(--tku-lr-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tku-learning-academic-callout__text {
+  font-size: 13.5px;
+  color: #1e40af;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Tab Panel: Ghi chú học sinh */
+.tku-learning-notes-pane {
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tku-learning-notes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-learning-notes-hint {
+  font-size: 12.5px;
+  color: var(--tku-lr-text-muted);
+  font-weight: 500;
+}
+
+.tku-learning-save-note-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  background: var(--tku-lr-primary-soft);
+  color: var(--tku-lr-primary);
+  border: 1px solid var(--tku-lr-primary-border);
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.tku-learning-save-note-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+.tku-learning-note-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  font-family: inherit;
+  color: var(--tku-lr-text-primary);
+  background: #f8fafc;
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 8px;
+  resize: vertical;
+  min-height: 140px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.tku-learning-note-textarea:focus {
+  background: #ffffff;
+  border-color: var(--tku-lr-primary);
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-learning-note-textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Tab Panel: Thông tin giảng viên */
+.tku-learning-teacher-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.tku-learning-teacher-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--tku-lr-primary);
+  flex-shrink: 0;
+}
+
+.tku-learning-teacher-fallback,
+.tku-learning-teacher-avatar-fallback {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--tku-lr-primary-soft);
+  color: var(--tku-lr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 18px;
+  border: 1.5px solid var(--tku-lr-primary-border);
+  flex-shrink: 0;
+}
+
+.tku-learning-teacher-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-learning-teacher-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0;
+}
+
+.tku-learning-teacher-role,
+.tku-learning-teacher-title {
+  font-size: 13px;
+  color: var(--tku-lr-text-muted);
+  margin: 0;
+}
+
+/* Placeholder Note / QA state / Empty Tab Card */
+.tku-learning-placeholder-card,
+.tku-learning-empty-tab {
+  background: var(--tku-lr-surface);
+  border: 1px dashed var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.tku-learning-placeholder-card__icon,
+.tku-learning-empty-tab > svg {
+  width: 54px;
+  height: 54px;
+  padding: 13px;
+  border-radius: 14px;
+  background: var(--tku-lr-primary-soft);
+  color: var(--tku-lr-primary);
+  border: 1px solid var(--tku-lr-primary-border);
+  margin: 0 auto 14px;
+  box-sizing: border-box;
+}
+
+.tku-learning-placeholder-card__title,
+.tku-learning-empty-tab h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0 0 8px;
+}
+
+.tku-learning-placeholder-card__desc,
+.tku-learning-empty-tab p {
+  font-size: 13.5px;
+  color: var(--tku-lr-text-muted);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ==========================================================================
+   4. CURRICULUM SIDEBAR (THANH DANH MỤC CHƯƠNG BÀI HỌC - CARD TRẮNG BO GÓC)
+   ========================================================================== */
+.tku-learning-sidebar {
+  width: 380px;
+  background: var(--tku-lr-surface-alt);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  max-height: calc(100vh - 110px);
+  position: sticky;
+  top: 92px; /* 76px Navbar + 16px khoảng đệm thoáng đãng */
+  transition: transform 0.25s ease, width 0.25s ease;
+  z-index: 40;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+}
+
+.tku-learning-sidebar.is-hidden,
+.tku-learning-sidebar.is-collapsed {
+  display: none;
+}
+
+.tku-learning-sidebar__header {
+  padding: 14px 16px;
+  background: var(--tku-lr-surface);
+  border-bottom: 1px solid var(--tku-lr-border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-learning-sidebar__header-top,
+.tku-learning-sidebar__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-learning-sidebar__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0;
+}
+
+/* Nút Thu gọn / Ẩn bài học ngay trong Sidebar Header */
+.tku-learning-sidebar-collapse-btn,
+.tku-learning-sidebar__toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  color: var(--tku-lr-text-body);
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  outline: none;
+  font-family: inherit;
+}
+
+.tku-learning-sidebar-collapse-btn:hover,
+.tku-learning-sidebar__toggle-btn:hover {
+  background: var(--tku-lr-surface-subtle);
+  color: var(--tku-lr-primary);
+  border-color: var(--tku-lr-border-hover);
+}
+
+/* Khối tiến độ tích hợp liền mạch */
+.tku-learning-sidebar__progress-box,
+.tku-learning-sidebar__progress-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 2px;
+}
+
+.tku-learning-sidebar__progress-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+}
+
+.tku-learning-sidebar__progress-label {
+  color: var(--tku-lr-text-muted);
+  font-weight: 500;
+  font-size: 11.5px;
+}
+
+.tku-learning-sidebar__progress-val,
+.tku-learning-sidebar__progress-num {
+  color: var(--tku-lr-primary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.tku-learning-sidebar__progress-track {
+  width: 100%;
+  height: 5px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tku-learning-sidebar__progress-fill {
+  height: 100%;
+  background: var(--tku-lr-primary);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* Sidebar Accordion List */
+.tku-learning-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+/* Chapter Accordion Group */
+.tku-learning-chapter-group {
+  border-bottom: 1px solid var(--tku-lr-border);
+}
+
+.tku-learning-chapter-group:last-child {
+  border-bottom: 0;
+}
+
+.tku-learning-chapter-head,
+.tku-learning-chapter-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--tku-lr-surface-subtle);
+  border: 0;
+  border-radius: 0;
+  color: var(--tku-lr-text-primary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+  margin: 0;
+}
+
+.tku-learning-chapter-head:hover,
+.tku-learning-chapter-toggle:hover {
+  background: #e2e8f0;
+}
+
+.tku-learning-chapter-head__left,
+.tku-learning-chapter-toggle__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.tku-learning-chapter-num,
+.tku-learning-chapter-toggle__num {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tku-lr-text-muted);
+  white-space: nowrap;
+}
+
+.tku-learning-chapter-name,
+.tku-learning-chapter-toggle__title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tku-lr-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.tku-learning-chapter-head__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tku-learning-chapter-progress,
+.tku-learning-chapter-toggle__stat {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tku-lr-text-muted);
+  white-space: nowrap;
+}
+
+.tku-learning-chapter-chevron,
+.tku-learning-chapter-toggle__chevron {
+  color: var(--tku-lr-text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.tku-learning-chapter-chevron.is-open,
+.tku-learning-chapter-toggle__chevron.is-open {
+  transform: rotate(180deg);
+}
+
+/* Lesson Items Inside Chapter */
+.tku-learning-lesson-list,
+.tku-learning-lessons-sublist {
+  padding: 0;
+  background: var(--tku-lr-surface);
+}
+
+.tku-learning-chapter-empty {
+  padding: 10px 18px 10px 32px;
+  font-size: 12px;
+  color: var(--tku-lr-text-muted);
+  background: var(--tku-lr-surface);
+}
+
+.tku-learning-lesson-item {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 16px 10px 18px;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--tku-lr-text-body);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  position: relative;
+}
+
+.tku-learning-lesson-item:hover {
+  background: #f8fafc;
+  color: var(--tku-lr-text-primary);
+}
+
+/* Active Lesson - Nền xanh pastel nhạt dịu mắt, viền xanh TKU */
+.tku-learning-lesson-item.is-active {
+  background: var(--tku-lr-primary-soft);
+  color: var(--tku-lr-primary);
+}
+
+.tku-learning-lesson-item.is-active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--tku-lr-primary);
+  border-radius: 0 2px 2px 0;
+}
+
+.tku-learning-lesson-status-icon,
+.tku-learning-lesson-item__status {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+}
+
+.tku-learning-lesson-status-icon--completed {
+  color: var(--tku-lr-success);
+}
+
+.tku-learning-lesson-status-icon--active {
+  color: var(--tku-lr-primary);
+}
+
+.tku-learning-lesson-status-icon--pending {
+  color: #94a3b8;
+}
+
+.tku-learning-lesson-info,
+.tku-learning-lesson-item__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tku-learning-lesson-name,
+.tku-learning-lesson-item__title {
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+
+.tku-learning-lesson-item.is-active .tku-learning-lesson-name,
+.tku-learning-lesson-item.is-active .tku-learning-lesson-item__title {
+  font-weight: 600;
+  color: var(--tku-lr-primary);
+}
+
+.tku-learning-lesson-meta,
+.tku-learning-lesson-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  line-height: 1.3;
+  color: var(--tku-lr-text-muted);
+}
+
+.tku-learning-lesson-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==========================================================================
+   5. LOADING & ERROR STATES
+   ========================================================================== */
+.tku-learning-loading-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  color: var(--tku-lr-text-primary);
+  gap: 14px;
+}
+
+.tku-learning-spinner {
+  color: var(--tku-lr-primary);
+  animation: tku-spin 1s linear infinite;
+}
+
+.tku-learning-loading-text {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--tku-lr-text-muted);
+}
+
+@keyframes tku-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tku-learning-error-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8fafc;
+  padding: 20px;
+}
+
+.tku-learning-error-box {
+  max-width: 480px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.tku-learning-error-icon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #fef2f2;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+}
+
+.tku-learning-error-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+  margin: 0 0 6px;
+}
+
+.tku-learning-error-desc {
+  font-size: 13.5px;
+  color: var(--tku-lr-text-muted);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.tku-learning-error-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* ==========================================================================
+   6. RESPONSIVE DESIGN (TABLET & MOBILE)
+   ========================================================================== */
+@media (max-width: 1024px) {
+  .tku-learning-player-header__course-title {
+    max-width: 220px;
+  }
+
+  .tku-learning-sidebar {
+    width: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .tku-learning-container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .tku-learning-player-header__course-title {
+    display: none;
+  }
+
+  .tku-learning-layout {
+    flex-direction: column;
+    padding-top: 12px;
+    gap: 16px;
+  }
+
+  .tku-learning-sidebar {
+    width: 100%;
+    max-height: 420px;
+    position: static;
+  }
+
+  .tku-learning-controls-bar {
+    padding: 12px 16px;
+  }
+
+  .tku-learning-details-section {
+    padding-top: 14px;
+  }
+}
+
+/* ==========================================================================
+   7. ANTI-SEEKING WARNING MODAL (CẢNH BÁO KHÔNG ĐƯỢC TUA VIDEO)
+   ========================================================================== */
+.tku-learning-seek-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: tkuModalFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tkuModalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tku-learning-seek-modal {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 28px 26px;
+  box-shadow:
+    0 25px 50px -12px rgba(15, 23, 42, 0.35),
+    0 0 0 1px rgba(245, 158, 11, 0.25);
+  text-align: center;
+  overflow: hidden;
+  animation: tkuModalScaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tkuModalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.tku-learning-seek-modal__glow {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 160px;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(245, 158, 11, 0) 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-learning-seek-modal__icon-wrap {
+  position: relative;
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fef3c7 0%, #fee2e2 100%);
+  border: 2px solid #fde68a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.35);
+}
+
+.tku-learning-seek-modal__icon-halo {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px dashed rgba(245, 158, 11, 0.35);
+  animation: tkuSpinSlow 20s linear infinite;
+}
+
+@keyframes tkuSpinSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.tku-learning-seek-modal__icon {
+  color: #d97706;
+  animation: tkuShakeWarn 0.8s ease-in-out;
+}
+
+@keyframes tkuShakeWarn {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  20%, 60% {
+    transform: rotate(-8deg);
+  }
+  40%, 80% {
+    transform: rotate(8deg);
+  }
+}
+
+.tku-learning-seek-modal__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 12px;
+}
+
+.tku-learning-seek-modal__title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 10px;
+  line-height: 1.3;
+}
+
+.tku-learning-seek-modal__desc {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #64748b;
+  margin: 0 0 16px;
+}
+
+.tku-learning-seek-modal__badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+
+.tku-learning-seek-modal__btn {
+  width: 100%;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--tku-lr-primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(29, 104, 242, 0.3);
+}
+
+.tku-learning-seek-modal__btn:hover {
+  background: var(--tku-lr-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(29, 104, 242, 0.4);
+}
+
+.tku-learning-seek-modal__btn:active {
+  transform: translateY(0);
+}
+
+/* ==========================================================================
+   4. LESSON ASSESSMENT CALLOUT & EXERCISES TAB STYLES
+   Hỗ trợ bước 2: Làm bài tập củng cố sau mỗi phần học & bước 3: Thi trực tuyến
+   ========================================================================== */
+.tku-lesson-assessment-callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 8px rgba(29, 104, 242, 0.06);
+}
+
+.tku-lesson-assessment-callout__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.tku-lesson-assessment-callout__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #1d68f2;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.tku-lesson-assessment-callout__info {
+  min-width: 0;
+}
+
+.tku-lesson-assessment-callout__info h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-lesson-assessment-callout__info p {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+}
+
+.tku-lesson-assessment-callout__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.tku-learning-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tku-learning-tab-btn.is-active .tku-learning-tab-count {
+  background: #1d68f2;
+  color: #ffffff;
+}
+
+/* Exercises Pane */
+.tku-learning-exercises-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tku-exercise-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-exercise-group__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-exercise-card {
+  background: #ffffff;
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.tku-exercise-card:hover {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 12px rgba(29, 104, 242, 0.06);
+}
+
+.tku-exercise-card__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tku-exercise-card__icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-exercise-card__icon--quiz {
+  background: #ecfdf5;
+  color: #10b981;
+}
+
+.tku-exercise-card__icon--exam {
+  background: #fdf2f8;
+  color: #db2777;
+}
+
+.tku-exercise-card__details {
+  min-width: 0;
+}
+
+.tku-exercise-card__title {
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-exercise-type-tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #475569;
+  text-transform: uppercase;
+}
+
+.tku-exercise-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12.5px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.tku-exercise-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .tku-lesson-assessment-callout {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tku-lesson-assessment-callout__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .tku-exercise-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tku-exercise-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+/* =========================================================================
+ * BÀI TẬP KÈM THEO TRONG NỘI DUNG KHÓA HỌC (SIDEBAR & NỘI DUNG BÀI HỌC)
+ * ========================================================================= */
+
+.tku-learning-lesson-group-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-learning-lesson-quiz-count-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.tku-learning-lesson-sub-exercises {
+  padding: 4px 12px 8px 34px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: #f8fafc;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-learning-sub-exercise-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.tku-learning-sub-exercise-card:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.tku-learning-sub-exercise-card.is-done {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+}
+
+.tku-learning-sub-exercise-card.is-done:hover {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.tku-learning-sub-exercise-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+  cursor: pointer;
+}
+
+.tku-learning-sub-exercise-icon {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tku-learning-sub-exercise-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-learning-sub-exercise-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-learning-sub-exercise-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.tku-learning-sub-exercise-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+
+.tku-learning-sub-exercise-meta {
+  font-size: 11px;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tku-learning-sub-exercise-score {
+  color: #059669;
+  font-weight: 600;
+}
+
+.tku-learning-sub-exercise-start-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 11px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: #1d68f2;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: inherit;
+  box-shadow: 0 1px 2px rgba(29, 104, 242, 0.2);
+}
+
+.tku-learning-sub-exercise-start-btn:hover {
+  background: #1557d4;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 6px rgba(29, 104, 242, 0.3);
+}
+
+.tku-learning-sub-exercise-card.is-done .tku-learning-sub-exercise-start-btn {
+  background: #059669;
+  box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
+}
+
+.tku-learning-sub-exercise-card.is-done .tku-learning-sub-exercise-start-btn:hover {
+  background: #047857;
+  box-shadow: 0 3px 6px rgba(5, 150, 105, 0.3);
+}
+
+/* =========================================================================
+ * POPUP HƯỚNG DẪN LÀM BÀI TẬP (QUIZ GUIDE MODAL)
+ * ========================================================================= */
+
+@keyframes tku-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes tku-scale-up {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tku-quiz-guide-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: tku-fade-in 0.2s ease-out;
+}
+
+.tku-quiz-guide-modal {
+  background-color: #ffffff;
+  border-radius: 20px;
+  width: 100%;
+  max-width: 520px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.3);
+  border: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  animation: tku-scale-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tku-quiz-guide-modal-header {
+  padding: 20px 24px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tku-quiz-guide-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.tku-quiz-guide-modal-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: #1d68f2;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-quiz-guide-modal-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.tku-quiz-guide-modal-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 2px 0 0;
+}
+
+.tku-quiz-guide-modal-close-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-quiz-guide-modal-close-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+  border-color: #fecaca;
+}
+
+.tku-quiz-guide-modal-body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+/* Hero Box */
+.tku-quiz-guide-hero-box {
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tku-quiz-guide-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-quiz-guide-type-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1d68f2;
+  background: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid #bfdbfe;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.tku-quiz-guide-lesson-badge {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  background: #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-quiz-guide-quiz-name {
+  font-size: 15.5px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Stats 3 Grid */
+.tku-quiz-guide-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.tku-quiz-guide-stat-card {
+  padding: 12px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-quiz-guide-stat-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-quiz-guide-stat-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tku-quiz-guide-stat-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tku-quiz-guide-stat-value {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Previous score highlight */
+.tku-quiz-guide-previous-score {
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Instructions */
+.tku-quiz-guide-instructions {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-quiz-guide-instructions-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.tku-quiz-guide-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.tku-quiz-guide-rules-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  font-size: 12.5px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.tku-quiz-rule-bullet {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #eff6ff;
+  color: #1d68f2;
+  font-weight: 700;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1.5px;
+}
+
+/* Modal Footer */
+.tku-quiz-guide-modal-footer {
+  padding: 16px 24px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 1px solid #f1f5f9;
+  background: #fafbfc;
+}
+
+.tku-quiz-guide-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+  text-decoration: none;
+  border: none;
+}
+
+.tku-quiz-guide-btn--outline {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.tku-quiz-guide-btn--outline:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.tku-quiz-guide-btn--secondary {
+  background: #eff6ff;
+  color: #1d68f2;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-quiz-guide-btn--secondary:hover {
+  background: #dbeafe;
+}
+
+.tku-quiz-guide-btn--primary {
+  background: #1d68f2;
+  color: #ffffff;
+  border: 1px solid #1d68f2;
+  box-shadow: 0 2px 4px rgba(29, 104, 242, 0.25);
+}
+
+.tku-quiz-guide-btn--primary:hover {
+  background: #1557d4;
+  box-shadow: 0 4px 10px rgba(29, 104, 242, 0.35);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 640px) {
+  .tku-quiz-guide-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-quiz-guide-modal-footer {
+    flex-direction: column-reverse;
+  }
+  .tku-quiz-guide-btn {
+    width: 100%;
+  }
+}
+
+
+

@@ -16,6 +16,9 @@ const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
 const CoursesPage = lazy(() => import('./pages/course/CoursesPage'));
 const CategoryCoursesPage = lazy(() => import('./pages/course/CategoryCoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/course/CourseDetailPage'));
+const CourseLearningRoomPage = lazy(() => import('./pages/course/CourseLearningRoomPage'));
+const CourseExamRoomPage = lazy(() => import('./pages/course/CourseExamRoomPage'));
+const CourseExamResultPage = lazy(() => import('./pages/course/CourseExamResultPage'));
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'));
@@ -85,6 +88,10 @@ export const App: React.FC = () => {
               <Route path="/courses/category/:categoryKey" element={<CategoryCoursesPage />} />
               <Route path="/my-courses" element={<CategoryCoursesPage defaultCategory="my-courses" />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
+              <Route path="/courses/:courseId/learn" element={<CourseLearningRoomPage />} />
+              <Route path="/courses/:courseId/learn/:lessonId" element={<CourseLearningRoomPage />} />
+              <Route path="/courses/:courseId/exams/:assessmentId" element={<CourseExamRoomPage />} />
+              <Route path="/courses/:courseId/exams/:assessmentId/results/:submissionId" element={<CourseExamResultPage />} />
               <Route
                 path="/login"
                 element={
