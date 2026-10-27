@@ -36,6 +36,8 @@ import {
   type LearningLessonItem,
   type StudentAssessmentItem,
 } from '../../services/course.service';
+import { LessonDiscussionPane } from './components/LessonDiscussionPane';
+import { LessonAiAssistantPane } from './components/LessonAiAssistantPane';
 import './courseLearningRoom.css';
 
 // ============================================================================
@@ -151,6 +153,8 @@ interface YouTubeVideoPlayerProps {
   onEnded: () => void;
   onSeekWarning: (maxWatchedSec: number) => void;
   resumeTrigger: number;
+  onTimeUpdate?: (seconds: number) => void;
+  seekTarget?: { time: number; trigger: number } | null;
 }
 
 const YouTubeVideoPlayer: React.FC<YouTubeVideoPlayerProps> = ({
@@ -159,6 +163,8 @@ const YouTubeVideoPlayer: React.FC<YouTubeVideoPlayerProps> = ({
   onEnded,
   onSeekWarning,
   resumeTrigger,
+  onTimeUpdate,
+  seekTarget,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playerRef = useRef<YouTubePlayerInstance | null>(null);
@@ -169,6 +175,7 @@ const YouTubeVideoPlayer: React.FC<YouTubeVideoPlayerProps> = ({
   // Lưu callback vào ref để tránh re-trigger effect hủy và tạo lại iframe YouTube khi state ở component cha thay đổi
   const onEndedRef = useRef(onEnded);
   const onSeekWarningRef = useRef(onSeekWarning);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
@@ -177,6 +184,24 @@ const YouTubeVideoPlayer: React.FC<YouTubeVideoPlayerProps> = ({
   useEffect(() => {
     onSeekWarningRef.current = onSeekWarning;
   }, [onSeekWarning]);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+
+  // Hỗ trợ nhảy mốc thời gian khi học viên/giáo viên bấm vào tag [MM:SS]
+  useEffect(() => {
+    if (seekTarget && playerRef.current && typeof playerRef.current.seekTo === 'function') {
+      const targetSec = seekTarget.time;
+      maxWatchedTimeRef.current = Math.max(maxWatchedTimeRef.current, targetSec);
+      try {
+        playerRef.current.seekTo(targetSec, true);
+        playerRef.current.playVideo();
+      } catch {
+        // Bỏ qua lỗi phát video nếu có
+      }
+    }
+  }, [seekTarget]);
 
   useEffect(() => {
     let isMounted = true;
@@ -234,6 +259,7 @@ const YouTubeVideoPlayer: React.FC<YouTubeVideoPlayerProps> = ({
         if (state === 1 || state === 3) {
           const currentTime = player.getCurrentTime();
           if (typeof currentTime === 'number' && !isNaN(currentTime)) {
+            onTimeUpdateRef.current?.(currentTime);
             // Chỉ hiển thị cảnh báo và kéo lùi nếu tua video nhanh quá 10 giây
             if (currentTime > maxWatchedTimeRef.current + MAX_ALLOWED_SEEK_FORWARD_SECONDS) {
               player.seekTo(maxWatchedTimeRef.current, true);
@@ -303,6 +329,8 @@ interface NativeVideoPlayerProps {
   onEnded: () => void;
   onSeekWarning: (maxWatchedSec: number) => void;
   resumeTrigger: number;
+  onTimeUpdate?: (seconds: number) => void;
+  seekTarget?: { time: number; trigger: number } | null;
 }
 
 const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
@@ -311,6 +339,8 @@ const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
   onEnded,
   onSeekWarning,
   resumeTrigger,
+  onTimeUpdate,
+  seekTarget,
 }) => {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const maxWatchedTimeRef = useRef<number>(0);
@@ -318,6 +348,7 @@ const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
 
   const onEndedRef = useRef(onEnded);
   const onSeekWarningRef = useRef(onSeekWarning);
+  const onTimeUpdateRef = useRef(onTimeUpdate);
 
   useEffect(() => {
     onEndedRef.current = onEnded;
@@ -326,6 +357,20 @@ const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
   useEffect(() => {
     onSeekWarningRef.current = onSeekWarning;
   }, [onSeekWarning]);
+
+  useEffect(() => {
+    onTimeUpdateRef.current = onTimeUpdate;
+  }, [onTimeUpdate]);
+
+  // Hỗ trợ nhảy mốc thời gian khi học viên/giáo viên bấm vào tag [MM:SS]
+  useEffect(() => {
+    if (seekTarget && videoRef.current) {
+      const targetSec = seekTarget.time;
+      maxWatchedTimeRef.current = Math.max(maxWatchedTimeRef.current, targetSec);
+      videoRef.current.currentTime = targetSec;
+      videoRef.current.play().catch(() => {});
+    }
+  }, [seekTarget]);
 
   const checkSeeking = useCallback(() => {
     const video = videoRef.current;
@@ -363,7 +408,10 @@ const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
       controlsList="nodownload"
       poster={poster}
       onSeeking={checkSeeking}
-      onTimeUpdate={checkSeeking}
+      onTimeUpdate={(e) => {
+        checkSeeking();
+        onTimeUpdateRef.current?.(e.currentTarget.currentTime);
+      }}
       onEnded={handleEnded}
     >
       <track kind="captions" />
@@ -637,7 +685,7 @@ export const CourseLearningRoomPage: React.FC = () => {
 
   // UI state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'content' | 'teacher' | 'notes' | 'discussion'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'teacher' | 'notes' | 'discussion' | 'ai'>('content');
   const [openChapters, setOpenChapters] = useState<Record<string, boolean>>({});
   const [avatarFailed, setAvatarFailed] = useState<boolean>(false);
 
@@ -907,6 +955,31 @@ export const CourseLearningRoomPage: React.FC = () => {
     setResumeTrigger((prev) => prev + 1);
   }, []);
 
+  // 9.1 Mốc thời gian video & Chuyển video đến mốc thời gian (Video Timestamp Tagging)
+  // Tối ưu hóa: Dùng Ref thay vì State để loại bỏ hoàn toàn việc re-render toàn bộ trang mỗi 250ms khi video phát
+  const currentVideoTimeRef = useRef<number>(0);
+  const [seekTarget, setSeekTarget] = useState<{ time: number; trigger: number } | null>(null);
+
+  // Reset mốc video ref khi chuyển đổi bài học (không gọi setState trong effect)
+  useEffect(() => {
+    currentVideoTimeRef.current = 0;
+  }, [activeLesson?.id]);
+
+  const handleTimeUpdate = useCallback((seconds: number) => {
+    currentVideoTimeRef.current = seconds;
+  }, []);
+
+  const getCurrentVideoTime = useCallback(() => currentVideoTimeRef.current, []);
+
+  const handleSeekToTimestamp = useCallback((seconds: number) => {
+    setSeekTarget({ time: seconds, trigger: Date.now() });
+    const playerCard = document.getElementById('main-learning-content');
+    if (playerCard) {
+      playerCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    toast.success(`Đã chuyển video đến mốc [${formatVideoTime(seconds)}]`, { duration: 2500 });
+  }, []);
+
   // Toggle chapter accordion
   const toggleChapter = useCallback((chapterId: string) => {
     setOpenChapters((prev) => ({
@@ -1035,6 +1108,8 @@ export const CourseLearningRoomPage: React.FC = () => {
                     onEnded={handleAutoMarkComplete}
                     onSeekWarning={handleSeekWarning}
                     resumeTrigger={resumeTrigger}
+                    onTimeUpdate={handleTimeUpdate}
+                    seekTarget={seekTarget}
                   />
                 ) : isDirectVideo && activeLesson?.videoUrl ? (
                   <NativeVideoPlayer
@@ -1044,6 +1119,8 @@ export const CourseLearningRoomPage: React.FC = () => {
                     onEnded={handleAutoMarkComplete}
                     onSeekWarning={handleSeekWarning}
                     resumeTrigger={resumeTrigger}
+                    onTimeUpdate={handleTimeUpdate}
+                    seekTarget={seekTarget}
                   />
                 ) : (
                   <div className="tku-learning-no-video">
@@ -1180,6 +1257,15 @@ export const CourseLearningRoomPage: React.FC = () => {
                 <MessageSquare size={16} />
                 <span>Thảo luận học tập</span>
               </button>
+
+              <button
+                type="button"
+                className={`tku-learning-tab-btn ${activeTab === 'ai' ? 'is-active' : ''}`}
+                onClick={() => setActiveTab('ai')}
+              >
+                <Sparkles size={16} />
+                <span>Trợ lý Gia sư AI</span>
+              </button>
             </nav>
 
             <div className="tku-learning-tab-panel">
@@ -1244,17 +1330,32 @@ export const CourseLearningRoomPage: React.FC = () => {
               )}
 
               {/* TAB 4: THẢO LUẬN */}
-              {activeTab === 'discussion' && (
+              {activeTab === 'discussion' && activeLesson && (
                 <div className="tku-learning-discussion-pane">
-                  <div className="tku-learning-placeholder-card">
-                    <div className="tku-learning-placeholder-card__icon">
-                      <MessageSquare size={24} />
-                    </div>
-                    <h4 className="tku-learning-placeholder-card__title">Diễn đàn hỏi đáp chuyên đề</h4>
-                    <p className="tku-learning-placeholder-card__desc">
-                      Tính năng trao đổi trực tiếp với trợ giảng TKU và cộng đồng học sinh sẽ được kết nối trong phiên học trực tuyến.
-                    </p>
-                  </div>
+                  <LessonDiscussionPane
+                    key={`discussion_${activeLesson.id}`}
+                    courseId={course.id}
+                    lessonId={activeLesson.id}
+                    lessonTitle={activeLesson.title}
+                    getCurrentVideoTime={getCurrentVideoTime}
+                    hasVideo={Boolean(youtubeVideoId || (isDirectVideo && activeLesson?.videoUrl))}
+                    onSeekToTimestamp={handleSeekToTimestamp}
+                    isCourseTeacher={user?.role === 'TEACHER' && course.teacher.id === user?.id}
+                  />
+                </div>
+              )}
+
+              {/* TAB 5: TRỢ LÝ GIA SƯ AI */}
+              {activeTab === 'ai' && activeLesson && (
+                <div className="tku-learning-ai-tab-pane">
+                  <LessonAiAssistantPane
+                    key={`ai_${activeLesson.id}`}
+                    courseId={course.id}
+                    lessonId={activeLesson.id}
+                    lessonTitle={activeLesson.title}
+                    courseTitle={course.title}
+                    courseGrade={course.grade}
+                  />
                 </div>
               )}
             </div>
