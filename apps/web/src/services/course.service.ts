@@ -106,6 +106,72 @@ export interface StudentAssessmentItem {
   } | null;
 }
 
+export interface CommentUser {
+  id: string;
+  fullName: string;
+  avatarUrl?: string | null;
+  role: 'STUDENT' | 'TEACHER' | 'ADMIN';
+}
+
+export interface LessonCommentItem {
+  id: string;
+  lessonId: string;
+  userId: string;
+  parentId?: string | null;
+  content: string;
+  videoTimestamp?: number | null;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  user: CommentUser;
+  replies?: LessonCommentItem[];
+  replyCount?: number;
+}
+
+export interface LessonCommentsResponse {
+  lessonId: string;
+  lessonTitle: string;
+  totalQuestions: number;
+  comments: LessonCommentItem[];
+}
+
+export interface CreateCommentPayload {
+  content: string;
+  parentId?: string;
+  videoTimestamp?: number | null;
+}
+
+export interface LessonAiMessage {
+  id: string;
+  sessionId?: string;
+  question: string;
+  answer: string;
+  createdAt: string;
+}
+
+export interface LessonAiSessionItem {
+  sessionId: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+}
+
+export interface LessonAiSessionsResponse {
+  lessonId: string;
+  lessonTitle: string;
+  totalSessions: number;
+  sessions: LessonAiSessionItem[];
+}
+
+export interface LessonAiHistoryResponse {
+  lessonId: string;
+  lessonTitle: string;
+  activeSessionId?: string | null;
+  totalMessages: number;
+  history: LessonAiMessage[];
+}
+
 export interface TakeAssessmentQuestionOption {
   id: string;
   content: string;
@@ -577,5 +643,262 @@ export const courseService = {
 
     return await response.json();
   },
+
+  /**
+   * Bước 4.1: Lấy danh sách hỏi đáp / thảo luận của bài học
+   */
+  async getLessonComments(courseId: string, lessonId: string): Promise<LessonCommentsResponse> {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/comments`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải danh sách thảo luận bài học.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.1: Đặt câu hỏi hoặc trả lời thảo luận kèm mốc thời gian video
+   */
+  async createLessonComment(
+    courseId: string,
+    lessonId: string,
+    payload: CreateCommentPayload,
+  ): Promise<LessonCommentItem> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để tham gia thảo luận.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/comments`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể gửi bình luận.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.1: Ghim / Bỏ ghim câu trả lời chuẩn xác (Giảng viên / Admin)
+   */
+  async togglePinComment(
+    courseId: string,
+    lessonId: string,
+    commentId: string,
+  ): Promise<LessonCommentItem> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để thao tác.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/comments/${encodeURIComponent(commentId)}/pin`;
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể ghim câu trả lời này.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.1: Xóa bình luận
+   */
+  async deleteLessonComment(
+    courseId: string,
+    lessonId: string,
+    commentId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để xóa bình luận.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/comments/${encodeURIComponent(commentId)}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể xóa bình luận.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.2: Lấy danh sách các phiên trò chuyện (Sessions) trong bài học
+   */
+  async getLessonAiSessions(
+    courseId: string,
+    lessonId: string,
+  ): Promise<LessonAiSessionsResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để sử dụng Trợ lý Gia sư AI.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/ai/sessions`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải danh sách đoạn chat.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.2: Lấy lịch sử hỏi đáp với Gia sư AI trong một phiên cụ thể (hoặc phiên mới nhất)
+   */
+  async getLessonAiHistory(
+    courseId: string,
+    lessonId: string,
+    sessionId?: string,
+  ): Promise<LessonAiHistoryResponse> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để sử dụng Trợ lý Gia sư AI.');
+
+    let url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/ai/history`;
+    if (sessionId) {
+      url += `?sessionId=${encodeURIComponent(sessionId)}`;
+    }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải lịch sử trò chuyện AI.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.2: Gửi câu hỏi đến Gia sư AI kèm theo sessionId (nếu có)
+   */
+  async askLessonAi(
+    courseId: string,
+    lessonId: string,
+    question: string,
+    sessionId?: string,
+  ): Promise<LessonAiMessage> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để sử dụng Trợ lý Gia sư AI.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/ai/ask`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ question, sessionId }),
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Gia sư AI hiện chưa thể phản hồi. Vui lòng thử lại sau.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.2: Xóa một phiên trò chuyện cụ thể
+   */
+  async deleteLessonAiSession(
+    courseId: string,
+    lessonId: string,
+    sessionId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để thao tác.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/ai/sessions/${encodeURIComponent(sessionId)}`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể xóa đoạn chat này.');
+    }
+
+    return await response.json();
+  },
+
+  /**
+   * Bước 4.2: Xóa toàn bộ lịch sử trò chuyện AI trong bài học này
+   */
+  async clearLessonAiHistory(
+    courseId: string,
+    lessonId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const token = getAuthToken();
+    if (!token) throw new Error('Vui lòng đăng nhập để thao tác.');
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/ai/history`;
+    const response = await fetch(url, {
+      method: 'DELETE',
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể xóa lịch sử trò chuyện AI.');
+    }
+
+    return await response.json();
+  },
 };
+
 

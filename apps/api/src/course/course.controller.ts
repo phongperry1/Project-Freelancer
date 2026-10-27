@@ -2,6 +2,8 @@ import {
   Controller,
   Get,
   Post,
+  Patch,
+  Delete,
   Param,
   Query,
   Body,
@@ -21,7 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
 
 import { CourseService } from './course.service.js';
 
@@ -36,6 +38,35 @@ export class EnrollWithKeyDto {
   key!: string;
 }
 
+export class CreateCommentDto {
+  @ApiProperty({
+    description: 'Nội dung câu hỏi hoặc phản hồi thảo luận',
+    example: 'Thầy cho em hỏi ở mốc 05:24 tại sao chất X lại phản ứng tạo kết tủa?',
+  })
+  @IsNotEmpty({ message: 'Nội dung thảo luận không được để trống.' })
+  @IsString({ message: 'Nội dung thảo luận phải là chuỗi ký tự.' })
+  content!: string;
+
+  @ApiProperty({
+    description: 'Mã UUID của câu hỏi gốc nếu là câu trả lời phân cấp (Nested Reply)',
+    required: false,
+    example: 'd290f1ee-6c54-4b01-90e6-d701748f0851',
+  })
+  @IsOptional()
+  @IsUUID(undefined, { message: 'Mã câu hỏi gốc không đúng định dạng UUID.' })
+  parentId?: string;
+
+  @ApiProperty({
+    description: 'Mốc thời gian video bài giảng (tính bằng giây, ví dụ 324 cho 05:24)',
+    required: false,
+    example: 324,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Mốc thời gian video phải là số nguyên (giây).' })
+  @Min(0, { message: 'Mốc thời gian video không được là số âm.' })
+  videoTimestamp?: number;
+}
+
 @ApiTags('Courses')
 @Controller('api/v1/courses')
 export class CourseController {
@@ -46,11 +77,21 @@ export class CourseController {
   ) {}
 
   /**
-   * Helper giải mã token của học sinh
+   * Helper giải mã token của học sinh (tái sử dụng getUserFromHeader)
    */
   private async getStudentIdFromHeader(
     authorization?: string,
   ): Promise<string | null> {
+    const user = await this.getUserFromHeader(authorization);
+    return user?.id ?? null;
+  }
+
+  /**
+   * Helper giải mã token người dùng (bao gồm id và role)
+   */
+  private async getUserFromHeader(
+    authorization?: string,
+  ): Promise<{ id: string; role?: string } | null> {
     if (!authorization) return null;
 
     const token = authorization.replace(/^Bearer\s+/i, '').trim();
@@ -65,7 +106,7 @@ export class CourseController {
         sub?: string;
         role?: string;
       }>(token, { secret });
-      return payload?.sub ?? null;
+      return payload?.sub ? { id: payload.sub, role: payload.role } : null;
     } catch {
       return null;
     }
@@ -277,6 +318,104 @@ export class CourseController {
       throw new UnauthorizedException('Vui lòng đăng nhập để xem lịch sử thi.');
     }
     return this.courseService.getAssessmentHistory(id, assessmentId, studentId);
+  }
+
+  // ==========================================================================
+  // BƯỚC 4.1: THẢO LUẬN / BÌNH LUẬN BÀI HỌC (COMMUNITY Q&A)
+  // ==========================================================================
+
+  @Get(':id/lessons/:lessonId/comments')
+  @ApiOperation({ summary: 'Lấy danh sách thảo luận / Q&A cộng đồng của bài học' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiResponse({ status: 200, description: 'Danh sách câu hỏi thảo luận kèm các phản hồi phân cấp' })
+  async getLessonComments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+  ) {
+    return this.courseService.getLessonComments(id, lessonId);
+  }
+
+  @Post(':id/lessons/:lessonId/comments')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Đặt câu hỏi hoặc gửi phản hồi thảo luận kèm mốc thời gian video' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiResponse({ status: 201, description: 'Đăng bình luận thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  async createLessonComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Body() body: CreateCommentDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const user = await this.getUserFromHeader(authorization);
+    if (!user) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để tham gia thảo luận.');
+    }
+    return this.courseService.createLessonComment(
+      id,
+      lessonId,
+      user.id,
+      user.role || 'STUDENT',
+      body,
+    );
+  }
+
+  @Patch(':id/lessons/:lessonId/comments/:commentId/pin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Ghim / Bỏ ghim câu trả lời chuẩn xác (Chỉ Giảng viên / Admin)' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiParam({ name: 'commentId', description: 'Mã UUID của bình luận' })
+  @ApiResponse({ status: 200, description: 'Cập nhật trạng thái ghim thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 403, description: 'Không có quyền ghim câu trả lời' })
+  async togglePinComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Param('commentId', ParseUUIDPipe) commentId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const user = await this.getUserFromHeader(authorization);
+    if (!user) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để thực hiện thao tác này.');
+    }
+    return this.courseService.togglePinComment(
+      id,
+      lessonId,
+      commentId,
+      user.id,
+      user.role || 'STUDENT',
+    );
+  }
+
+  @Delete(':id/lessons/:lessonId/comments/:commentId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xóa bình luận thảo luận (Tác giả, Giảng viên hoặc Admin)' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiParam({ name: 'commentId', description: 'Mã UUID của bình luận' })
+  @ApiResponse({ status: 200, description: 'Xóa bình luận thành công' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 403, description: 'Không có quyền xóa bình luận' })
+  async deleteLessonComment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Param('commentId', ParseUUIDPipe) commentId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const user = await this.getUserFromHeader(authorization);
+    if (!user) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để thực hiện thao tác này.');
+    }
+    return this.courseService.deleteLessonComment(
+      id,
+      lessonId,
+      commentId,
+      user.id,
+      user.role || 'STUDENT',
+    );
   }
 }
 

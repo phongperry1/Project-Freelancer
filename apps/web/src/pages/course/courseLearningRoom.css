@@ -2146,5 +2146,1946 @@
   }
 }
 
+/* ==========================================================================
+   BƯỚC 4.1: THẢO LUẬN / BÌNH LUẬN BÀI HỌC (COMMUNITY Q&A)
+   ========================================================================== */
+.tku-discussion {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* 2. Khung đặt câu hỏi (Question Composer) */
+.tku-discussion__composer {
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tku-discussion__composer:focus-within {
+  border-color: #93c5fd;
+  box-shadow: 0 4px 14px rgba(29, 104, 242, 0.08);
+}
+
+.tku-discussion__composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-discussion__composer-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-discussion__composer-title svg {
+  color: var(--tku-lr-primary);
+}
+
+.tku-discussion__timestamp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1d68f2;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tku-discussion__timestamp-btn:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  transform: translateY(-1px);
+}
+
+.tku-discussion__timestamp-btn.is-attached {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.3);
+}
+
+.tku-discussion__remove-time-icon {
+  margin-left: 2px;
+  opacity: 0.8;
+}
+
+.tku-discussion__remove-time-icon:hover {
+  opacity: 1;
+}
+
+.tku-discussion__timestamp-btn--sm {
+  padding: 4px 9px;
+  font-size: 11.5px;
+}
+
+.tku-discussion__textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--tku-lr-border);
+  background: #f8fafc;
+  color: var(--tku-lr-text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 76px;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.tku-discussion__textarea:focus {
+  background: #ffffff;
+  border-color: var(--tku-lr-primary);
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+}
+
+.tku-discussion__textarea::placeholder {
+  color: var(--tku-lr-text-subtle);
+  font-size: 13.5px;
+}
+
+.tku-discussion__composer-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.tku-discussion__attached-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: #eff6ff;
+  color: #1d68f2;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-discussion__submit-btn {
+  margin-left: auto;
+  gap: 6px;
+  padding: 8px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+/* 3. Toolbar: Bộ lọc & Tìm kiếm */
+.tku-discussion__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-discussion__filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+}
+
+.tku-discussion__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tku-lr-text-muted);
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.tku-discussion__filter-btn:hover {
+  color: var(--tku-lr-text-primary);
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.tku-discussion__filter-btn.is-active {
+  color: var(--tku-lr-primary);
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  box-shadow: 0 1px 3px rgba(29, 104, 242, 0.1);
+}
+
+.tku-discussion__filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.tku-discussion__filter-btn.is-active .tku-discussion__filter-badge {
+  background: #1d68f2;
+  color: #ffffff;
+}
+
+.tku-discussion__search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 220px;
+}
+
+.tku-discussion__search-icon {
+  position: absolute;
+  left: 11px;
+  color: var(--tku-lr-text-subtle);
+  pointer-events: none;
+}
+
+.tku-discussion__search-input {
+  width: 100%;
+  padding: 7px 30px 7px 32px;
+  border-radius: 8px;
+  border: 1px solid var(--tku-lr-border);
+  background: var(--tku-lr-surface);
+  color: var(--tku-lr-text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.tku-discussion__search-input:focus {
+  border-color: var(--tku-lr-primary);
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.1);
+}
+
+.tku-discussion__search-clear {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--tku-lr-text-subtle);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border-radius: 4px;
+}
+
+.tku-discussion__search-clear:hover {
+  color: var(--tku-lr-text-primary);
+}
+
+/* 4. Loading & Error & Empty States */
+.tku-discussion__loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 20px;
+  background: var(--tku-lr-surface);
+  border: 1px dashed var(--tku-lr-border);
+  border-radius: 12px;
+  color: var(--tku-lr-text-muted);
+  font-size: 14px;
+}
+
+.tku-discussion__error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-radius: 10px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 13.5px;
+}
+
+.tku-discussion__retry-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.tku-discussion__retry-btn:hover {
+  background: #fee2e2;
+}
+
+.tku-discussion__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--tku-lr-surface);
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+}
+
+.tku-discussion__empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #eff6ff;
+  color: var(--tku-lr-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.tku-discussion__empty-title {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-discussion__empty-desc {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--tku-lr-text-muted);
+  max-width: 460px;
+  line-height: 1.6;
+}
+
+/* 5. Danh sách câu hỏi thảo luận (Discussion Cards) */
+.tku-discussion__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tku-discussion__card {
+  background: var(--tku-lr-surface);
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.tku-discussion__card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+.tku-discussion__card.is-pinned {
+  border-left: 3.5px solid #f59e0b;
+}
+
+/* Card Header */
+.tku-discussion__card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tku-discussion__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-discussion__avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.tku-discussion__avatar--sm {
+  width: 30px;
+  height: 30px;
+}
+
+.tku-discussion__avatar-fallback {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.tku-discussion__avatar-fallback--sm {
+  width: 30px;
+  height: 30px;
+  font-size: 11px;
+}
+
+.tku-discussion__author-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-discussion__author-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-discussion__author-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-discussion__post-time {
+  font-size: 12px;
+  color: var(--tku-lr-text-muted);
+}
+
+/* Badges */
+.tku-discussion__role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.tku-discussion__role-badge--teacher {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.tku-discussion__role-badge--admin {
+  background: #ede9fe;
+  color: #5b21b6;
+  border: 1px solid #ddd6fe;
+}
+
+.tku-discussion__role-badge--author {
+  background: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.tku-discussion__pinned-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: #fffbeb;
+  color: #b45309;
+  border: 1px solid #fde68a;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Time Pill (Interactive Timestamp Seek) */
+.tku-discussion__time-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1d68f2;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: monospace, inherit;
+  flex-shrink: 0;
+}
+
+.tku-discussion__time-pill:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+  box-shadow: 0 2px 8px rgba(29, 104, 242, 0.35);
+  transform: translateY(-1px);
+}
+
+.tku-discussion__time-pill--sm {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.tku-discussion__time-play-icon {
+  fill: currentColor;
+}
+
+/* Card Content */
+.tku-discussion__card-content {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: var(--tku-lr-text-body);
+  word-break: break-word;
+}
+
+.tku-discussion__card-content p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Card Actions */
+.tku-discussion__card-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-discussion__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--tku-lr-text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.tku-discussion__action-btn:hover {
+  color: var(--tku-lr-primary);
+  background: #f1f5f9;
+}
+
+.tku-discussion__action-btn--reply {
+  color: var(--tku-lr-primary);
+}
+
+.tku-discussion__action-btn.is-active-pin {
+  color: #b45309;
+  background: #fef3c7;
+}
+
+.tku-discussion__action-btn--delete {
+  color: #94a3b8;
+}
+
+.tku-discussion__action-btn--delete:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+/* 6. Nested Replies Thread */
+.tku-discussion__replies {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+  padding-left: 24px;
+  border-left: 2px solid #e2e8f0;
+  position: relative;
+}
+
+.tku-discussion__reply-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.tku-discussion__reply-card:hover {
+  border-color: #cbd5e1;
+}
+
+.tku-discussion__reply-card.is-solution {
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+}
+
+.tku-discussion__solution-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11.5px;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.tku-discussion__reply-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-discussion__reply-content {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--tku-lr-text-body);
+  word-break: break-word;
+}
+
+.tku-discussion__reply-content p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.tku-discussion__reply-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.tku-discussion__pin-solution-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #059669;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tku-discussion__pin-solution-btn:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+}
+
+.tku-discussion__pin-solution-btn.is-pinned-solution {
+  background: #059669;
+  color: #ffffff;
+  border-color: #059669;
+}
+
+.tku-discussion__delete-reply-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.tku-discussion__delete-reply-btn:hover {
+  color: #ef4444;
+  background: #fef2f2;
+  border-color: #fecaca;
+}
+
+/* 7. Inline Reply Form */
+.tku-discussion__reply-form-box {
+  margin-top: 8px;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: tku-fade-in 0.2s ease;
+}
+
+.tku-discussion__reply-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-discussion__reply-to-text {
+  font-size: 12.5px;
+  color: var(--tku-lr-text-muted);
+}
+
+.tku-discussion__reply-to-text strong {
+  color: var(--tku-lr-text-primary);
+}
+
+.tku-discussion__textarea--reply {
+  min-height: 60px;
+  font-size: 13.5px;
+  padding: 10px 12px;
+}
+
+.tku-discussion__reply-form-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tku-discussion__reply-cancel-btn {
+  padding: 6px 14px;
+  font-size: 12.5px;
+}
+
+.tku-discussion__reply-submit-btn {
+  padding: 6px 16px;
+  font-size: 12.5px;
+  gap: 5px;
+}
+
+@keyframes tku-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tku-discussion__header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tku-discussion__stats {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .tku-discussion__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tku-discussion__search-box {
+    width: 100%;
+  }
+  .tku-discussion__replies {
+    padding-left: 14px;
+  }
+}
+
+/* ============================================================================
+   BƯỚC 4.2: TRỢ LÝ GIA SƯ AI TKU (AI LEARNING ASSISTANT - PHƯƠNG ÁN 1)
+   ============================================================================ */
+
+/* AI Assistant Tab Pane Layout */
+.tku-learning-ai-tab-pane {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  animation: tku-ai-fade-in 0.28s ease-out;
+}
+
+@keyframes tku-ai-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tku-ai-pane {
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  border: 1px solid var(--tku-lr-border, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  overflow: hidden;
+  height: 680px;
+  position: relative;
+}
+
+/* 1. Thanh Header phụ Gia sư AI */
+.tku-ai-sub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 18px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.tku-ai-sub-header__info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.tku-ai-sub-header__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1d68f2;
+  flex-shrink: 0;
+}
+
+.tku-ai-sub-header__bot-icon {
+  stroke-width: 2;
+}
+
+.tku-ai-sub-header__text {
+  min-width: 0;
+}
+
+.tku-ai-sub-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-ai-sub-header__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tku-ai-sub-header__desc {
+  margin: 1px 0 0;
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-ai-sub-header__desc strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.tku-ai-sub-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* Nút Tạo đoạn chat mới - Đồng bộ nút chính TKU */
+.tku-ai-btn-new-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6.5px 12px;
+  background: #1d68f2;
+  border: 1px solid #1d68f2;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 1px 2px rgba(29, 104, 242, 0.15);
+}
+
+.tku-ai-btn-new-chat:hover {
+  background: #1555c8;
+  border-color: #1555c8;
+}
+
+/* Nút Xem lịch sử đoạn chat - Đồng bộ nút phụ TKU */
+.tku-ai-btn-history {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #475569;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-btn-history:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.tku-ai-btn-history.is-active {
+  background: #eff6ff;
+  color: #1d68f2;
+  border-color: #bfdbfe;
+}
+
+/* Panel Danh sách các đoạn chat (Sessions Drawer) */
+.tku-ai-sessions-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 340px;
+  max-width: 92%;
+  background: #ffffff;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -4px 0 16px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  animation: tku-ai-slide-left 0.2s ease-out;
+}
+
+@keyframes tku-ai-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.tku-ai-sessions-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.tku-ai-sessions-drawer__title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-ai-sessions-drawer__icon {
+  color: #1d68f2;
+}
+
+.tku-ai-sessions-drawer__title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tku-ai-sessions-drawer__count {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-ai-sessions-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-sessions-drawer__close:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.tku-ai-sessions-drawer__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-ai-sessions-drawer__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 36px 16px;
+  color: #64748b;
+}
+
+.tku-ai-sessions-drawer__empty-icon {
+  color: #cbd5e1;
+  margin-bottom: 10px;
+}
+
+.tku-ai-sessions-drawer__empty p {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tku-ai-sessions-drawer__empty span {
+  font-size: 11.5px;
+  color: #94a3b8;
+  line-height: 1.5;
+}
+
+/* Từng đoạn chat item */
+.tku-ai-session-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid #f1f5f9;
+  background: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tku-ai-session-item:hover {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.tku-ai-session-item.is-active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.tku-ai-session-item__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #64748b;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.tku-ai-session-item.is-active .tku-ai-session-item__icon-wrap {
+  background: #dbeafe;
+  color: #1d68f2;
+}
+
+.tku-ai-session-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tku-ai-session-item__title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: space-between;
+}
+
+.tku-ai-session-item__title {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tku-ai-session-item__badge-active {
+  flex-shrink: 0;
+  font-size: 9.5px;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #1d68f2;
+  color: #ffffff;
+}
+
+.tku-ai-session-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 3px;
+}
+
+.tku-ai-session-item__dot {
+  color: #cbd5e1;
+}
+
+.tku-ai-session-item__del-btn {
+  opacity: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tku-ai-session-item:hover .tku-ai-session-item__del-btn {
+  opacity: 1;
+}
+
+.tku-ai-session-item__del-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
+.tku-ai-sessions-drawer__footer {
+  padding: 10px 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.tku-ai-sessions-drawer__btn-new {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-sessions-drawer__btn-new:hover {
+  background: #1d68f2;
+  color: #ffffff;
+  border-color: #1d68f2;
+}
+
+/* 2. Khung nội dung tin nhắn */
+.tku-ai-messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.tku-ai-messages-container::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tku-ai-messages-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tku-ai-messages-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+/* Loading State */
+.tku-ai-loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: auto;
+  gap: 10px;
+  color: #64748b;
+  font-size: 13.5px;
+}
+
+.tku-ai-spin {
+  animation: tku-ai-spin-anim 1s linear infinite;
+}
+
+@keyframes tku-ai-spin-anim {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Welcome Box (Trạng thái rỗng) */
+.tku-ai-welcome-box {
+  margin: auto;
+  max-width: 580px;
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  text-align: center;
+}
+
+.tku-ai-welcome-hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.tku-ai-welcome-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.tku-ai-welcome-title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-ai-welcome-desc {
+  margin: 0;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.6;
+}
+
+.tku-ai-welcome-desc strong {
+  color: #1d68f2;
+  font-weight: 600;
+}
+
+.tku-ai-welcome-suggestions {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+  text-align: left;
+}
+
+.tku-ai-suggestions-title {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 10px;
+}
+
+.tku-ai-pills-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.tku-ai-quick-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-quick-pill:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-ai-quick-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tku-ai-quick-pill__icon {
+  color: #1d68f2;
+  flex-shrink: 0;
+}
+
+/* Danh sách tin nhắn */
+.tku-ai-messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tku-ai-msg {
+  display: flex;
+  gap: 10px;
+  max-width: 86%;
+}
+
+.tku-ai-msg--user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.tku-ai-msg--bot {
+  align-self: flex-start;
+}
+
+.tku-ai-msg__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+}
+
+.tku-ai-msg__avatar--user {
+  background: #1d68f2;
+  color: #ffffff;
+}
+
+.tku-ai-msg__avatar--user img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-ai-msg__avatar--bot {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-ai-msg__content-wrap {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.tku-ai-msg--user .tku-ai-msg__content-wrap {
+  align-items: flex-end;
+}
+
+.tku-ai-msg__meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 11.5px;
+}
+
+.tku-ai-msg__sender {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tku-ai-thinking-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d68f2;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.tku-ai-msg__time {
+  color: #94a3b8;
+}
+
+/* Bong bóng chat */
+.tku-ai-bubble {
+  padding: 12px 16px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  position: relative;
+  word-break: break-word;
+}
+
+.tku-ai-bubble--user {
+  background: #1d68f2;
+  color: #ffffff;
+  border-radius: 12px 2px 12px 12px;
+  box-shadow: 0 1px 3px rgba(29, 104, 242, 0.2);
+}
+
+.tku-ai-bubble--user p {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.tku-ai-bubble--bot {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 2px 12px 12px 12px;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.tku-ai-bubble--thinking {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffffff;
+  border-color: #bfdbfe;
+  padding: 12px 16px;
+}
+
+/* Typing Indicator Dots */
+.tku-ai-typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tku-ai-typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1d68f2;
+  opacity: 0.4;
+  animation: tku-ai-bounce 1.4s infinite ease-in-out both;
+}
+
+.tku-ai-typing-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.tku-ai-typing-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+@keyframes tku-ai-bounce {
+  0%, 80%, 100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+  40% {
+    transform: scale(1.1);
+    opacity: 1;
+  }
+}
+
+.tku-ai-thinking-text {
+  font-size: 12.5px;
+  color: #1d68f2;
+  font-weight: 500;
+}
+
+/* Rendered Markdown & KaTeX content */
+.tku-ai-rendered-content {
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: #1e293b;
+}
+
+.tku-ai-rendered-content .tku-ai-md-p {
+  margin: 0 0 10px;
+}
+
+.tku-ai-rendered-content .tku-ai-md-p:last-child {
+  margin-bottom: 0;
+}
+
+.tku-ai-rendered-content strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.tku-ai-rendered-content .tku-ai-md-h3 {
+  margin: 16px 0 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-ai-rendered-content .tku-ai-md-h4 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d68f2;
+}
+
+.tku-ai-rendered-content .tku-ai-md-h5 {
+  margin: 10px 0 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.tku-ai-rendered-content .tku-ai-md-hr {
+  border: none;
+  border-top: 1px dashed #cbd5e1;
+  margin: 12px 0 14px;
+}
+
+.tku-ai-rendered-content .tku-ai-md-quote {
+  margin: 10px 0;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-left: 3px solid #1d68f2;
+  border-radius: 4px;
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.tku-ai-rendered-content .tku-ai-md-list {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+}
+
+.tku-ai-rendered-content .tku-ai-md-list li {
+  margin-bottom: 5px;
+  line-height: 1.6;
+}
+
+.tku-ai-rendered-content .tku-ai-md-ol {
+  margin: 6px 0 10px;
+  padding-left: 20px;
+}
+
+.tku-ai-rendered-content .tku-ai-md-ol li {
+  margin-bottom: 5px;
+  line-height: 1.6;
+}
+
+.tku-ai-rendered-content .tku-ai-inline-code {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: #0f172a;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.tku-ai-rendered-content .tku-ai-code-block {
+  margin: 10px 0;
+  padding: 12px;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 6px;
+  font-size: 12px;
+  overflow-x: auto;
+}
+
+/* KaTeX Blocks and Inlines */
+.tku-ai-katex-block {
+  margin: 10px 0;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-left: 3px solid #1d68f2;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-size: 1.05em;
+  text-align: center;
+}
+
+.tku-ai-katex-inline {
+  display: inline-block;
+  font-size: 1.02em;
+  padding: 0 2px;
+  vertical-align: -0.1em;
+}
+
+.tku-ai-rendered-content .katex {
+  font-size: 1.04em;
+  text-rendering: auto;
+}
+
+.tku-ai-rendered-content .katex-display {
+  margin: 4px 0;
+}
+
+.tku-ai-rendered-content .katex-html {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+}
+
+.tku-ai-bubble__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-ai-btn-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-btn-copy:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-ai-copy-success {
+  color: #10b981;
+}
+
+/* 3. Toolbar gợi ý câu hỏi & phím tắt ký hiệu */
+.tku-ai-toolbar {
+  padding: 6px 16px 2px;
+  background: #ffffff;
+  border-top: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tku-ai-toolbar__prompts {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.tku-ai-prompts-scroll {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tku-ai-prompts-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tku-ai-prompt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tku-ai-prompt-chip:hover:not(:disabled) {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+/* Nút toggle mở ký hiệu */
+.tku-ai-btn-formula-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-btn-formula-toggle:hover,
+.tku-ai-btn-formula-toggle.is-active {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+.tku-ai-toolbar__symbols {
+  display: flex;
+  align-items: center;
+  padding: 4px 0 2px;
+}
+
+.tku-ai-symbols-scroll {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tku-ai-symbols-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.tku-ai-symbol-btn {
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-symbol-btn:hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d68f2;
+}
+
+/* 4. Thanh nhập liệu thông minh */
+.tku-ai-input-bar {
+  padding: 6px 16px 10px;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.tku-ai-error-tip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #e11d48;
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.tku-ai-input-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-input-wrapper:focus-within {
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.1);
+}
+
+.tku-ai-textarea {
+  flex: 1;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-family: inherit;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #0f172a;
+  outline: none;
+  max-height: 140px;
+  padding: 3px 0;
+}
+
+.tku-ai-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.tku-ai-send-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #94a3b8;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: not-allowed;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.tku-ai-send-btn.is-active {
+  background: #1d68f2;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.tku-ai-send-btn.is-active:hover {
+  background: #1555c8;
+}
+
+.tku-ai-input-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.tku-ai-input-tip {
+  color: #64748b;
+}
+
+.tku-ai-input-tip strong {
+  color: #334155;
+  font-weight: 600;
+}
+
+.tku-ai-char-count {
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+
+/* Responsive AI pane */
+@media (max-width: 768px) {
+  .tku-ai-pane {
+    height: 580px;
+  }
+  .tku-ai-msg {
+    max-width: 95%;
+  }
+  .tku-ai-pills-grid {
+    grid-template-columns: 1fr;
+  }
+  .tku-ai-sub-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tku-ai-sub-header__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+
 
 

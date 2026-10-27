@@ -48,12 +48,6 @@ enum QuestionType {
   TEXT
 }
 
-enum CommentStatus {
-  ACTIVE
-  HIDDEN
-  DELETED
-}
-
 enum NotificationType {
   SYSTEM
   COURSE
@@ -406,12 +400,13 @@ model SubmissionAnswer {
 // ============================================================
 
 model Comment {
-  id       String        @id @default(uuid()) @db.Uuid
-  lessonId String        @db.Uuid
-  userId   String        @db.Uuid
-  parentId String?       @db.Uuid
-  content  String        @db.Text
-  status   CommentStatus @default(ACTIVE)
+  id             String        @id @default(uuid()) @db.Uuid
+  lessonId       String        @db.Uuid
+  userId         String        @db.Uuid
+  parentId       String?       @db.Uuid
+  content        String        @db.Text
+  videoTimestamp Int?
+  isPinned       Boolean       @default(false)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
   updatedAt DateTime @updatedAt @db.Timestamptz(6)
@@ -424,6 +419,7 @@ model Comment {
   @@index([lessonId])
   @@index([userId])
   @@index([parentId])
+  @@index([lessonId, isPinned])
 }
 
 // ============================================================
@@ -454,6 +450,7 @@ model AiHistory {
   id        String  @id @default(uuid()) @db.Uuid
   studentId String  @db.Uuid
   lessonId  String? @db.Uuid
+  sessionId String? @db.VarChar(100)
   question  String  @db.Text
   answer    String  @db.Text
 
@@ -464,5 +461,6 @@ model AiHistory {
 
   @@index([studentId])
   @@index([lessonId])
+  @@index([sessionId])
   @@index([studentId, createdAt])
 }

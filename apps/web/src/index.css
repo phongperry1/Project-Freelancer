@@ -1,5 +1,6 @@
 @import './styles/variables.css';
 @import './styles/components.css';
+@import 'katex/dist/katex.min.css';
 
 /* Global Reset & Base */
 *,
