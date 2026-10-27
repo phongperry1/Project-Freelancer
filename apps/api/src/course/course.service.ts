@@ -1218,5 +1218,274 @@ export class CourseService {
       history: submissions,
     };
   }
+
+  /**
+   * Bước 4.1: Lấy danh sách thảo luận / hỏi đáp Q&A của bài học
+   */
+  async getLessonComments(courseId: string, lessonId: string) {
+    const [lesson, comments] = await Promise.all([
+      this.prisma.lesson.findFirst({
+        where: { id: lessonId, chapter: { courseId } },
+        select: { id: true, title: true },
+      }),
+      this.prisma.comment.findMany({
+        where: {
+          lessonId,
+          parentId: null,
+        },
+        orderBy: [
+          { isPinned: 'desc' },
+          { createdAt: 'desc' },
+        ],
+        include: {
+          user: {
+            select: {
+              id: true,
+              fullName: true,
+              avatarUrl: true,
+              role: true,
+            },
+          },
+          replies: {
+            orderBy: [
+              { isPinned: 'desc' },
+              { createdAt: 'asc' },
+            ],
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  avatarUrl: true,
+                  role: true,
+                },
+              },
+            },
+          },
+        },
+      }),
+    ]);
+
+    if (!lesson) {
+      throw new NotFoundException('Không tìm thấy bài học hoặc bài học không thuộc khóa học này.');
+    }
+
+    const totalQuestions = comments.length;
+
+    return {
+      lessonId,
+      lessonTitle: lesson.title,
+      totalQuestions,
+      comments: comments.map((c) => ({
+        ...c,
+        replyCount: c.replies.length,
+      })),
+    };
+  }
+
+  /**
+   * Bước 4.1: Đặt câu hỏi mới hoặc phản hồi phân cấp (Nested Reply) kèm videoTimestamp
+   */
+  async createLessonComment(
+    courseId: string,
+    lessonId: string,
+    userId: string,
+    userRole: string,
+    dto: { content: string; parentId?: string; videoTimestamp?: number | null },
+  ) {
+    if (!dto.content || !dto.content.trim()) {
+      throw new BadRequestException('Nội dung bình luận không được để trống.');
+    }
+
+    const isTeacherOrAdmin = userRole === 'TEACHER' || userRole === 'ADMIN';
+
+    // Tối ưu hóa: Chạy song song kiểm tra ghi danh, bài học và câu hỏi cha qua Promise.all
+    const [enrollment, lesson, parentComment] = await Promise.all([
+      !isTeacherOrAdmin
+        ? this.prisma.courseEnrollment.findUnique({
+            where: {
+              courseId_studentId: {
+                courseId,
+                studentId: userId,
+              },
+            },
+            select: { courseId: true },
+          })
+        : Promise.resolve({ courseId }),
+      this.prisma.lesson.findFirst({
+        where: { id: lessonId, chapter: { courseId } },
+        select: { id: true, title: true },
+      }),
+      dto.parentId
+        ? this.prisma.comment.findFirst({
+            where: { id: dto.parentId, lessonId },
+            select: { id: true, userId: true, parentId: true },
+          })
+        : Promise.resolve(null),
+    ]);
+
+    if (!isTeacherOrAdmin && !enrollment) {
+      throw new ForbiddenException('Bạn cần ghi danh vào khóa học để tham gia thảo luận.');
+    }
+    if (!lesson) {
+      throw new NotFoundException('Bài học không tồn tại trong khóa học này.');
+    }
+    if (dto.parentId && !parentComment) {
+      throw new NotFoundException('Câu hỏi gốc không tồn tại hoặc đã bị xóa.');
+    }
+
+    // Nếu reply vào một reply, tự động gán vào parentId gốc để tránh lồng cấp quá sâu
+    const actualParentId = parentComment
+      ? parentComment.parentId || parentComment.id
+      : null;
+
+    let parsedTimestamp: number | null = null;
+    if (typeof dto.videoTimestamp === 'number' && !isNaN(dto.videoTimestamp) && dto.videoTimestamp >= 0) {
+      parsedTimestamp = Math.floor(dto.videoTimestamp);
+    }
+
+    const created = await this.prisma.comment.create({
+      data: {
+        lessonId,
+        userId,
+        parentId: actualParentId,
+        content: dto.content.trim(),
+        videoTimestamp: parsedTimestamp,
+        isPinned: false,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    // Tạo thông báo nếu là trả lời người khác (tái sử dụng fullName từ kết quả tạo bình luận, không cần query lại bảng user)
+    if (parentComment && parentComment.userId !== userId) {
+      try {
+        const replierName = created.user?.fullName || 'Một thành viên';
+        await this.prisma.notification.create({
+          data: {
+            userId: parentComment.userId,
+            type: 'COMMENT',
+            content: `${replierName} đã trả lời câu hỏi của bạn trong bài học "${lesson.title}".`,
+          },
+        });
+      } catch {
+        // Bỏ qua lỗi notification không làm fail việc tạo comment
+      }
+    }
+
+    return created;
+  }
+
+  /**
+   * Bước 4.1: Ghim / Bỏ ghim câu trả lời chuẩn xác hoặc câu hỏi quan trọng (Chỉ Giảng viên & Admin)
+   */
+  async togglePinComment(
+    courseId: string,
+    lessonId: string,
+    commentId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    // Chạy song song truy vấn khóa học và bình luận
+    const [course, comment] = await Promise.all([
+      this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { teacherId: true },
+      }),
+      this.prisma.comment.findFirst({
+        where: { id: commentId, lessonId },
+        select: { id: true, isPinned: true },
+      }),
+    ]);
+
+    if (!course) {
+      throw new NotFoundException('Khóa học không tồn tại.');
+    }
+
+    const isTeacher = userRole === 'TEACHER' && course.teacherId === userId;
+    const isAdmin = userRole === 'ADMIN';
+
+    if (!isTeacher && !isAdmin) {
+      throw new ForbiddenException(
+        'Chỉ giảng viên phụ trách khóa học hoặc Quản trị viên mới có quyền ghim câu trả lời hữu ích.',
+      );
+    }
+
+    if (!comment) {
+      throw new NotFoundException('Không tìm thấy bình luận cần thao tác.');
+    }
+
+    const updated = await this.prisma.comment.update({
+      where: { id: commentId },
+      data: {
+        isPinned: !comment.isPinned,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Bước 4.1: Xóa bình luận (Tác giả, Giảng viên hoặc Admin)
+   */
+  async deleteLessonComment(
+    courseId: string,
+    lessonId: string,
+    commentId: string,
+    userId: string,
+    userRole: string,
+  ) {
+    // Chạy song song truy vấn khóa học và bình luận
+    const [course, comment] = await Promise.all([
+      this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { teacherId: true },
+      }),
+      this.prisma.comment.findFirst({
+        where: { id: commentId, lessonId },
+        select: { id: true, userId: true },
+      }),
+    ]);
+
+    if (!course) {
+      throw new NotFoundException('Khóa học không tồn tại.');
+    }
+
+    if (!comment) {
+      throw new NotFoundException('Không tìm thấy bình luận.');
+    }
+
+    const isAuthor = comment.userId === userId;
+    const isTeacher = userRole === 'TEACHER' && course.teacherId === userId;
+    const isAdmin = userRole === 'ADMIN';
+
+    if (!isAuthor && !isTeacher && !isAdmin) {
+      throw new ForbiddenException('Bạn không có quyền xóa bình luận này.');
+    }
+
+    await this.prisma.comment.delete({
+      where: { id: commentId },
+    });
+
+    return { success: true, message: 'Đã xóa bình luận thành công.' };
+  }
 }
 

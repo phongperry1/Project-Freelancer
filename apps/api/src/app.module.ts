@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { AdminModule } from './admin/admin.module.js';
 import { LecturerModule } from './lecturer/lecturer.module.js';
 import { CourseModule } from './course/course.module.js';
+import { AiAssistantModule } from './ai-assistant/ai-assistant.module.js';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { CourseModule } from './course/course.module.js';
     AdminModule,
     LecturerModule,
     CourseModule,
+    AiAssistantModule,
   ],
   controllers: [AppController],
   providers: [AppService],
