@@ -48,14 +48,6 @@ enum QuestionType {
   TEXT
 }
 
-enum NotificationType {
-  SYSTEM
-  COURSE
-  ASSESSMENT
-  COMMENT
-  PROGRESS
-}
-
 // ============================================================
 // 1. USER
 // ============================================================
@@ -360,6 +352,7 @@ model AssessmentSubmission {
   studentId     String    @db.Uuid
   attemptNumber Int
   score         Float?
+  feedback      String?   @db.Text
   submittedAt   DateTime? @db.Timestamptz(6)
   createdAt     DateTime  @default(now()) @db.Timestamptz(6)
 
@@ -427,11 +420,12 @@ model Comment {
 // ============================================================
 
 model Notification {
-  id      String           @id @default(uuid()) @db.Uuid
-  userId  String           @db.Uuid
-  type    NotificationType
-  content String           @db.Text
-  isRead  Boolean          @default(false)
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  targetUrl String   @db.VarChar(500)
+  isRead    Boolean  @default(false)
 
   createdAt DateTime @default(now()) @db.Timestamptz(6)
 
@@ -439,7 +433,7 @@ model Notification {
 
   @@index([userId])
   @@index([userId, isRead])
-  @@index([createdAt])
+  @@index([userId, createdAt])
 }
 
 // ============================================================

@@ -1598,7 +1598,7 @@ export class LecturerService {
         statusText: isLate ? 'Nộp muộn' : 'Đã nộp bài',
         gradeTier,
         gradeTierText,
-        feedback: '',
+        feedback: sub.feedback || '',
         answers,
       };
     });
@@ -1946,5 +1946,264 @@ export class LecturerService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Lấy danh sách câu hỏi thảo luận của học sinh trong các khóa học do Giảng viên phụ trách
+   */
+  async getLecturerDiscussions(
+    userId: string,
+    role: string,
+    params?: {
+      courseId?: string;
+      status?: 'ALL' | 'UNANSWERED' | 'ANSWERED';
+      search?: string;
+    },
+  ) {
+    const isTeacherOnly = role !== 'ADMIN';
+
+    // 1. Xác định phạm vi khóa học của giảng viên
+    const teacherCourses = await this.prisma.course.findMany({
+      where: isTeacherOnly ? { teacherId: userId } : {},
+      select: { id: true, title: true },
+    });
+
+    const teacherCourseIds = teacherCourses.map((c) => c.id);
+
+    if (teacherCourseIds.length === 0) {
+      return {
+        stats: {
+          totalQuestions: 0,
+          unansweredCount: 0,
+          answeredCount: 0,
+          timestampedCount: 0,
+        },
+        questions: [],
+        courses: [],
+      };
+    }
+
+    // Nếu có chọn lọc cụ thể 1 khóa học
+    let filterCourseIds = teacherCourseIds;
+    if (params?.courseId && params.courseId !== 'all') {
+      if (isTeacherOnly && !teacherCourseIds.includes(params.courseId)) {
+        return {
+          stats: {
+            totalQuestions: 0,
+            unansweredCount: 0,
+            answeredCount: 0,
+            timestampedCount: 0,
+          },
+          questions: [],
+          courses: teacherCourses,
+        };
+      }
+      filterCourseIds = [params.courseId];
+    }
+
+    // 2. Lấy tất cả câu hỏi gốc (parentId = null)
+    const questions = await this.prisma.comment.findMany({
+      where: {
+        parentId: null,
+        lesson: {
+          chapter: {
+            courseId: { in: filterCourseIds },
+          },
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            chapter: {
+              select: {
+                id: true,
+                title: true,
+                course: {
+                  select: {
+                    id: true,
+                    title: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        replies: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+                role: true,
+              },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // 3. Tính toán thống kê
+    let unansweredCount = 0;
+    let answeredCount = 0;
+    let timestampedCount = 0;
+
+    const mappedQuestions = questions.map((q) => {
+      const hasTeacherReply = q.replies.some((r) => r.user?.role === 'TEACHER' || r.user?.role === 'ADMIN');
+
+      if (hasTeacherReply) {
+        answeredCount++;
+      } else {
+        unansweredCount++;
+      }
+
+      if (q.videoTimestamp !== null && q.videoTimestamp !== undefined) {
+        timestampedCount++;
+      }
+
+      return {
+        id: q.id,
+        content: q.content,
+        videoTimestamp: q.videoTimestamp,
+        isPinned: q.isPinned,
+        createdAt: q.createdAt.toISOString(),
+        updatedAt: q.updatedAt.toISOString(),
+        student: q.user,
+        course: {
+          id: q.lesson.chapter.course.id,
+          title: q.lesson.chapter.course.title,
+        },
+        lesson: {
+          id: q.lesson.id,
+          title: q.lesson.title,
+        },
+        chapter: {
+          id: q.lesson.chapter.id,
+          title: q.lesson.chapter.title,
+        },
+        repliesCount: q.replies.length,
+        hasTeacherReply,
+        replies: q.replies.map((r) => ({
+          id: r.id,
+          content: r.content,
+          videoTimestamp: r.videoTimestamp,
+          isPinned: r.isPinned,
+          createdAt: r.createdAt.toISOString(),
+          user: r.user,
+        })),
+      };
+    });
+
+    // 4. Lọc dữ liệu theo tham số truy vấn
+    let filtered = mappedQuestions;
+
+    if (params?.status === 'UNANSWERED') {
+      filtered = filtered.filter((q) => !q.hasTeacherReply);
+    } else if (params?.status === 'ANSWERED') {
+      filtered = filtered.filter((q) => q.hasTeacherReply);
+    }
+
+    if (params?.search && params.search.trim()) {
+      const s = params.search.trim().toLowerCase();
+      filtered = filtered.filter(
+        (q) =>
+          q.content.toLowerCase().includes(s) ||
+          q.student.fullName.toLowerCase().includes(s) ||
+          q.lesson.title.toLowerCase().includes(s) ||
+          q.course.title.toLowerCase().includes(s)
+      );
+    }
+
+    return {
+      stats: {
+        totalQuestions: mappedQuestions.length,
+        unansweredCount,
+        answeredCount,
+        timestampedCount,
+      },
+      questions: filtered,
+      courses: teacherCourses,
+    };
+  }
+
+  /**
+   * Bước 5.2: Lưu nhận xét lời phê cho bài nộp của học sinh và gửi thông báo EXAM_GRADED
+   */
+  async saveSubmissionFeedback(
+    userId: string,
+    submissionId: string,
+    feedback: string,
+    role?: string,
+  ) {
+    const submission = await this.prisma.assessmentSubmission.findUnique({
+      where: { id: submissionId },
+      include: {
+        student: { select: { id: true, fullName: true } },
+        assessment: {
+          select: {
+            id: true,
+            title: true,
+            courseId: true,
+            course: { select: { id: true, title: true, teacherId: true } },
+          },
+        },
+      },
+    });
+
+    if (!submission) {
+      throw new NotFoundException('Không tìm thấy bài nộp của học sinh.');
+    }
+
+    if (role !== 'ADMIN' && submission.assessment.course.teacherId !== userId) {
+      throw new ForbiddenException('Bạn không có quyền nhận xét bài nộp này.');
+    }
+
+    const trimmedFeedback = (feedback || '').trim();
+
+    const updated = await this.prisma.assessmentSubmission.update({
+      where: { id: submissionId },
+      data: {
+        feedback: trimmedFeedback,
+      },
+    });
+
+    // Tự động gửi thông báo EXAM_GRADED đến Học sinh
+    try {
+      const shortFeedback =
+        trimmedFeedback.length > 60
+          ? `${trimmedFeedback.slice(0, 60)}...`
+          : trimmedFeedback;
+      const feedbackMsg = shortFeedback ? ` Nhận xét: "${shortFeedback}"` : '';
+
+      await this.prisma.notification.create({
+        data: {
+          userId: submission.studentId,
+          title: 'Kết quả bài kiểm tra',
+          content: `Giảng viên đã nhận xét bài làm "${submission.assessment.title}" của bạn.${feedbackMsg}`,
+          targetUrl: `/courses/${submission.assessment.courseId}/exams/${submission.assessment.id}/results/${submission.id}`,
+          isRead: false,
+        },
+      });
+    } catch {
+      // Bỏ qua lỗi gửi notification để không gián đoạn việc lưu nhận xét
+    }
+
+    return {
+      success: true,
+      submissionId: updated.id,
+      feedback: updated.feedback,
+    };
   }
 }
