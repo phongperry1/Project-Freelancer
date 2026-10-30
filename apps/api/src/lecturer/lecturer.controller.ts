@@ -350,6 +350,25 @@ export class LecturerController {
     return this.lecturerService.getAssessmentResults(userId, assessmentId, role);
   }
 
+  @Put('submissions/:id/feedback')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lưu nhận xét cho bài nộp của học sinh và gửi thông báo kết quả' })
+  @ApiResponse({ status: 200, description: 'Lưu nhận xét thành công và đã gửi thông báo.' })
+  async saveSubmissionFeedback(
+    @Param('id') submissionId: string,
+    @Body() body: { feedback: string },
+    @Headers('authorization') authorization?: string,
+  ) {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.saveSubmissionFeedback(
+      userId,
+      submissionId,
+      body?.feedback ?? '',
+      role,
+    );
+  }
+
   @Post('assessments')
   @HttpCode(HttpStatus.CREATED)
   @ApiBearerAuth()
@@ -388,5 +407,24 @@ export class LecturerController {
   ): Promise<{ success: boolean }> {
     const { userId, role } = await this.verifyLecturer(authorization);
     return this.lecturerService.deleteAssessment(userId, assessmentId, role);
+  }
+
+  @Get('discussions')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách các câu hỏi thảo luận của học sinh trong các khóa học do giảng viên phụ trách' })
+  @ApiResponse({ status: 200, description: 'Danh sách thảo luận kèm thống kê.' })
+  async getDiscussions(
+    @Query('courseId') courseId?: string,
+    @Query('status') status?: 'ALL' | 'UNANSWERED' | 'ANSWERED',
+    @Query('search') search?: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.getLecturerDiscussions(userId, role, {
+      courseId,
+      status,
+      search,
+    });
   }
 }

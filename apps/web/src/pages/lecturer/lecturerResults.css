@@ -678,8 +678,15 @@
   overflow: hidden;
 }
 
+.tku-table-responsive,
+.tku-results-table-responsive {
+  width: 100%;
+  overflow-x: auto;
+}
+
 .tku-results-table {
   width: 100%;
+  min-width: 1100px;
   border-collapse: collapse;
   text-align: left;
 }
@@ -884,16 +891,20 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 4px 10px;
+  padding: 3.5px 10px;
   border-radius: 999px;
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
+  white-space: nowrap;
+  width: fit-content;
+  line-height: 1.35;
+  flex-shrink: 0;
 }
 
 .tku-submission-status-pill--graded {
-  background: #f0fdf4;
-  color: #166534;
-  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
 }
 
 .tku-submission-status-pill--late {
@@ -906,6 +917,46 @@
   background: #f1f5f9;
   color: #64748b;
   border: 1px solid #e2e8f0;
+}
+
+/* Time & Date Cell in Submissions Table */
+.tku-submission-time-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 135px;
+}
+
+.tku-submission-datetime-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tku-submission-time-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tku-submission-date-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tku-submission-date-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
 }
 
 /* Action Buttons in Row */
@@ -1175,22 +1226,47 @@
   gap: 8px;
 }
 
-.tku-modal-close-btn {
-  background: rgba(255, 255, 255, 0.16);
-  border: none;
-  color: #ffffff;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+.tku-modal-close-btn,
+.tku-modal-header-banner .tku-modal-close-btn {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.15s ease;
+  padding: 0;
+  position: static;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.tku-modal-close-btn:hover {
-  background: rgba(255, 255, 255, 0.28);
+.tku-modal-close-btn svg,
+.tku-modal-header-banner .tku-modal-close-btn svg {
+  color: rgba(255, 255, 255, 0.85) !important;
+  stroke: rgba(255, 255, 255, 0.85) !important;
+  transition: color 0.15s ease, stroke 0.15s ease;
+}
+
+.tku-modal-close-btn:hover,
+.tku-modal-header-banner .tku-modal-close-btn:hover {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+}
+
+.tku-modal-close-btn:hover svg,
+.tku-modal-header-banner .tku-modal-close-btn:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.tku-modal-close-btn:active,
+.tku-modal-header-banner .tku-modal-close-btn:active {
+  background: rgba(255, 255, 255, 0.26) !important;
 }
 
 /* Modal Score Bar */
@@ -1383,9 +1459,29 @@
   box-sizing: border-box;
 }
 
+.tku-feedback-textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: #0f172a;
+  outline: none;
+  resize: vertical;
+  min-height: 72px;
+  box-sizing: border-box;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tku-feedback-textarea:hover {
+  border-color: #94a3b8;
+}
+
 .tku-feedback-textarea:focus {
   border-color: #1d68f2;
-  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
+  box-shadow: 0 0 0 3.5px rgba(29, 104, 242, 0.14);
 }
 
 .tku-modal-actions-footer {
@@ -1399,7 +1495,7 @@
 }
 
 .tku-modal-btn-secondary {
-  padding: 9px 18px;
+  padding: 9px 20px;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
   background: #ffffff;
@@ -1407,32 +1503,48 @@
   font-size: 13.5px;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .tku-modal-btn-secondary:hover {
-  background: #f1f5f9;
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #0f172a;
+  transform: translateY(-1.5px);
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.08);
+}
+
+.tku-modal-btn-secondary:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .tku-modal-btn-primary {
-  padding: 9px 20px;
+  padding: 9px 22px;
   border: none;
   border-radius: 10px;
-  background: #1d68f2;
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
   color: #ffffff;
   font-size: 13.5px;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.25);
-  transition: all 0.15s ease;
+  box-shadow: 0 2px 8px rgba(29, 104, 242, 0.28);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
 }
 
 .tku-modal-btn-primary:hover {
-  background: #1558d6;
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #1558d6 0%, #0e46b3 100%);
+  transform: translateY(-1.5px);
+  box-shadow: 0 6px 18px rgba(29, 104, 242, 0.38);
+}
+
+.tku-modal-btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(29, 104, 242, 0.25);
 }
 
 /* ==========================================================================

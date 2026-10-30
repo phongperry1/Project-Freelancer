@@ -1,0 +1,553 @@
+/* ==========================================================================
+   TKU Academic Platform - Lecturer Notifications & Activity Center
+   Synchronized 100% with TKU Academic Design System (Discussions, Results, Assignments)
+   ========================================================================== */
+
+/* 1. Page Container */
+.tku-notifications-page {
+  padding: 28px 36px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  animation: tkuFadeIn 0.2s ease-out;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+}
+
+@keyframes tkuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.tku-spin {
+  animation: tkuSpin 1s linear infinite;
+}
+
+@keyframes tkuSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 2. Banner Actions */
+.tku-banner-action-wrap {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.tku-banner-mark-read-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  transition: all 0.2s ease;
+}
+
+.tku-banner-mark-read-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.32);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.tku-banner-mark-read-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* 3. KPI Quick Stats Grid */
+.tku-notif-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.tku-notif-stat-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tku-notif-stat-card.is-active {
+  border-color: #1d68f2;
+  background: #f8faff;
+  box-shadow: 0 0 0 2.5px rgba(29, 104, 242, 0.22), 0 4px 14px rgba(29, 104, 242, 0.08);
+}
+
+.tku-notif-stat-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.06);
+}
+
+.tku-notif-stat-card.is-highlight {
+  border-color: #fde68a;
+  background: linear-gradient(135deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.tku-notif-stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-notif-stat-icon--total {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-notif-stat-icon--unread {
+  background: #fff7ed;
+  color: #ea580c;
+}
+
+.tku-notif-stat-icon--exam {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.tku-notif-stat-icon--qa {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.tku-notif-stat-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tku-notif-stat-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-notif-stat-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-notif-stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.tku-pill-badge-pulse {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+  animation: tkuPulse 2s infinite;
+}
+
+@keyframes tkuPulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* 4. Notification Feed & Grouping */
+.tku-notif-content-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.tku-notif-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.tku-notif-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-notif-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.tku-notif-group-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-notif-group-label::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1d68f2;
+}
+
+.tku-notif-group-count {
+  font-size: 12.5px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.tku-notif-group-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 6. Notification Full Card */
+.tku-notif-full-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 22px;
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.03);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.tku-notif-full-card:hover {
+  transform: translateY(-2px);
+  border-color: #cbd5e1;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+}
+
+.tku-notif-full-card.is-unread {
+  background: linear-gradient(to right, #f8faff 0%, #ffffff 100%);
+  border-left: 4px solid #1d68f2;
+}
+
+.tku-notif-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tku-notif-card-icon--exam {
+  background: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-notif-card-icon--qa {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.tku-notif-card-icon--general {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.tku-notif-card-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-notif-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tku-notif-category-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+}
+
+.tku-notif-category-pill--exam {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.tku-notif-category-pill--qa {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.tku-notif-category-pill--general {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tku-notif-card-time-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.tku-notif-badge-unread {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #ef4444;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 999px;
+}
+
+.tku-notif-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.tku-notif-card-text {
+  margin: 0;
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* Card Actions Right */
+.tku-notif-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: 12px;
+  align-self: center;
+}
+
+.tku-notif-action-btn-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+  padding: 7px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-notif-action-btn-check:hover {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
+.tku-notif-action-btn-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d68f2;
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-notif-action-btn-go:hover {
+  background: #1d68f2;
+  border-color: #1d68f2;
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+/* 7. Loading, Error & Empty States */
+.tku-notif-loading-box,
+.tku-notif-error-box,
+.tku-notif-empty-state {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 64px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 14px;
+}
+
+.tku-notif-loading-box {
+  color: #1d68f2;
+}
+
+.tku-notif-loading-box p {
+  margin: 0;
+  color: #64748b;
+  font-size: 14.5px;
+  font-weight: 500;
+}
+
+.tku-notif-error-box {
+  color: #ef4444;
+}
+
+.tku-notif-empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+  margin-bottom: 4px;
+}
+
+.tku-notif-empty-title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-notif-empty-desc {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+.tku-notif-reset-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  color: #1e293b;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-notif-reset-filter-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* 8. Responsive Adjustments */
+@media (max-width: 1024px) {
+  .tku-notifications-page {
+    padding: 20px 24px 36px 24px;
+  }
+
+  .tku-notif-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .tku-notifications-page {
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .tku-notif-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tku-notif-full-card {
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .tku-notif-card-actions {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+    padding-top: 8px;
+    border-top: 1px solid #f1f5f9;
+  }
+}
+

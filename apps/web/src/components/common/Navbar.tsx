@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { Bell, Menu, X, LogOut } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
 import { MAIN_NAV_ITEMS } from '../../data/navigation.data';
 import { useAuth } from '../../context/useAuth';
 import { toast } from '../../context/useToast';
+import { NotificationDropdown } from './NotificationDropdown';
 
 export const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -116,15 +117,7 @@ export const Navbar: React.FC = () => {
         </nav>
 
         <div className="tku-nav-actions">
-          <button
-            type="button"
-            className="tku-btn-icon"
-            aria-label="Thông báo"
-            title="Thông báo"
-            onClick={() => toast.info('Hiện chưa có thông báo mới.')}
-          >
-            <Bell size={18} />
-          </button>
+          <NotificationDropdown />
 
           {isAuthenticated && user ? (
             <div className="tku-user-profile">

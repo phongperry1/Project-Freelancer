@@ -16,13 +16,14 @@ import {
   Trash2,
   X,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
 import {
   courseService,
   type LessonCommentItem,
 } from '../../../services/course.service';
+import { notificationService } from '../../../services/notification.service';
 
 interface LessonDiscussionPaneProps {
   courseId: string;
@@ -32,6 +33,7 @@ interface LessonDiscussionPaneProps {
   hasVideo: boolean;
   onSeekToTimestamp: (seconds: number) => void;
   isCourseTeacher: boolean;
+  targetCommentId?: string | null;
 }
 
 const formatVideoTime = (seconds: number): string => {
@@ -80,6 +82,7 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
   hasVideo,
   onSeekToTimestamp,
   isCourseTeacher,
+  targetCommentId,
 }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
@@ -110,34 +113,150 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
   // Action loadings
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
-  // Load comments
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadComments = async () => {
+  // Load comments (hỗ trợ silent background update không làm gián đoạn người học)
+  const loadComments = useCallback(
+    async (showLoadingSpinner = false) => {
+      if (showLoadingSpinner) {
+        setIsLoading(true);
+      }
       try {
         const res = await courseService.getLessonComments(courseId, lessonId);
-        if (!isMounted) return;
         setComments(res.comments || []);
         setTotalQuestions(res.totalQuestions || 0);
         setError(null);
       } catch (err) {
-        if (!isMounted) return;
-        const msg = err instanceof Error ? err.message : 'Không thể tải thảo luận bài học.';
-        setError(msg);
+        if (showLoadingSpinner) {
+          const msg = err instanceof Error ? err.message : 'Không thể tải thảo luận bài học.';
+          setError(msg);
+        }
       } finally {
-        if (isMounted) {
+        if (showLoadingSpinner) {
           setIsLoading(false);
         }
       }
-    };
+    },
+    [courseId, lessonId]
+  );
 
-    loadComments();
+  // Highlight state quản lý comment mục tiêu khi mở từ thông báo
+  const [highlightedTargetId, setHighlightedTargetId] = useState<string | null>(() => targetCommentId || null);
+  const hasScrolledTargetRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (targetCommentId) {
+      setHighlightedTargetId(targetCommentId);
+    }
+  }, [targetCommentId]);
+
+  // Cơ chế Real-time Auto-Sync đa tầng cho học sinh:
+  // 1) Khi tải vào bài học lần đầu (có loading spinner)
+  // 2) Tự động quét ngầm mỗi 8 giây (silent refresh, chỉ quét khi tab đang hiển thị)
+  // 3) Khi chuyển tab quay lại cửa sổ bài học (focus)
+  // 4) Khi chuông thông báo phát hiện có thông báo mới (Custom Event 'tku:new-notification')
+  useEffect(() => {
+    let isMounted = true;
+
+    // Tải dữ liệu ban đầu
+    loadComments(true);
+
+    const interval = setInterval(() => {
+      if (document.hidden) return;
+      if (isMounted) {
+        loadComments(false);
+      }
+    }, 8000);
+
+    const handleFocus = () => {
+      if (isMounted && !document.hidden) {
+        loadComments(false);
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+
+    const handleNewNotif = () => {
+      if (isMounted) {
+        loadComments(false);
+      }
+    };
+    window.addEventListener('tku:new-notification', handleNewNotif);
 
     return () => {
       isMounted = false;
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('tku:new-notification', handleNewNotif);
     };
-  }, [courseId, lessonId, refreshTrigger]);
+  }, [courseId, lessonId, refreshTrigger, loadComments]);
+
+  // Khi targetCommentId thay đổi (ví dụ học sinh click thông báo phản hồi từ quả chuông):
+  useEffect(() => {
+    if (targetCommentId) {
+      hasScrolledTargetRef.current = false;
+      loadComments(false);
+
+      // Xóa commentId khỏi URL trên thanh địa chỉ ngay lập tức
+      // để khi người dùng F5 / reload trang không bị tự động nhảy lại xuống bình luận đó nữa
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('commentId')) {
+          url.searchParams.delete('commentId');
+          window.history.replaceState(null, '', url.pathname + (url.search ? url.search : ''));
+        }
+      } catch {
+        // Bỏ qua lỗi URL replaceState nếu không hỗ trợ
+      }
+    }
+  }, [targetCommentId, loadComments]);
+
+  // Tự động kiểm tra và đánh dấu đã đọc thông báo liên quan đến bình luận/phản hồi đang xem
+  useEffect(() => {
+    let isMounted = true;
+    const targetId = targetCommentId || highlightedTargetId;
+    if (targetId) {
+      notificationService
+        .getNotifications(20)
+        .then(async (res) => {
+          if (!isMounted) return;
+          const unreadTargets = (res.notifications || []).filter(
+            (n) => !n.isRead && n.targetUrl && n.targetUrl.includes(targetId)
+          );
+          if (unreadTargets.length > 0 && isMounted) {
+            await Promise.all(
+              unreadTargets.map((notif) => notificationService.markAsRead(notif.id))
+            );
+            if (isMounted) {
+              window.dispatchEvent(
+                new CustomEvent('tku:notification-read', { detail: { id: targetId } })
+              );
+            }
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [targetCommentId, highlightedTargetId]);
+
+  // Tự động cuộn (scroll) và highlight câu trả lời hoặc câu hỏi khi bấm từ Thông báo (chỉ cuộn 1 lần)
+  useEffect(() => {
+    if (!highlightedTargetId || comments.length === 0 || hasScrolledTargetRef.current) return;
+
+    hasScrolledTargetRef.current = true;
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`comment-${highlightedTargetId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('tku-comment-target-highlight');
+        setTimeout(() => {
+          el.classList.remove('tku-comment-target-highlight');
+          setHighlightedTargetId(null);
+        }, 3500);
+      }
+    }, 400);
+
+    return () => clearTimeout(timer);
+  }, [highlightedTargetId, comments]);
 
   const handleRetry = useCallback(() => {
     setIsLoading(true);
@@ -311,7 +430,7 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
     }
   };
 
-  // Filtered comments
+  // Filtered comments (ưu tiên bài ghim -> câu hỏi giảng viên mới vừa trả lời -> mới nhất)
   const filteredComments = useMemo(() => {
     let result = [...comments];
 
@@ -334,6 +453,49 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
             )),
       );
     }
+
+    // Helper tính mốc thời gian để sắp xếp ưu tiên:
+    const parseTime = (dateVal: string | Date | undefined | null): number => {
+      if (!dateVal) return 0;
+      const t = new Date(dateVal).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
+    const getCommentSortTime = (item: LessonCommentItem): number => {
+      const teacherReplies = (item.replies || []).filter(
+        (r) => r.user?.role === 'TEACHER' || r.user?.role === 'ADMIN',
+      );
+      if (teacherReplies.length > 0) {
+        const latestTeacherTime = Math.max(
+          ...teacherReplies.map((r) => parseTime(r.createdAt)),
+        );
+        return Math.max(parseTime(item.createdAt), latestTeacherTime);
+      }
+      return parseTime(item.createdAt);
+    };
+
+    // Tối ưu hóa: Tiền tính toán thời gian sắp xếp một lần (O(N) thay vì O(N log N))
+    const sortTimeMap = new Map<string, number>();
+    for (const item of result) {
+      sortTimeMap.set(item.id, getCommentSortTime(item));
+    }
+
+    // Sắp xếp: Ưu tiên ghim -> Ưu tiên câu hỏi giảng viên mới vừa trả lời lên đầu -> Mới nhất
+    result.sort((a, b) => {
+      // 1. Pinned comment lên đầu
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
+      // 2. Câu hỏi giảng viên mới vừa trả lời (hoặc câu hỏi mới đặt)
+      const timeA = sortTimeMap.get(a.id) ?? 0;
+      const timeB = sortTimeMap.get(b.id) ?? 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+
+      // 3. Cuối cùng sắp theo thời điểm tạo câu hỏi
+      return parseTime(b.createdAt) - parseTime(a.createdAt);
+    });
 
     return result;
   }, [comments, filter, searchQuery]);
@@ -526,6 +688,7 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
             return (
               <article
                 key={question.id}
+                id={`comment-${question.id}`}
                 className={`tku-discussion__card ${question.isPinned ? 'is-pinned' : ''}`}
               >
                 {/* ROOT QUESTION HEADER */}
@@ -659,6 +822,7 @@ export const LessonDiscussionPane: React.FC<LessonDiscussionPaneProps> = React.m
                       return (
                         <div
                           key={reply.id}
+                          id={`comment-${reply.id}`}
                           className={`tku-discussion__reply-card ${
                             isPinnedSolution ? 'is-solution' : ''
                           }`}

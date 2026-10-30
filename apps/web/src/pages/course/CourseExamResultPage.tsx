@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   AlertCircle,
   ArrowLeft,
@@ -11,6 +11,7 @@ import {
   FileText,
   History,
   Loader2,
+  MessageSquare,
   RotateCcw,
   Sparkles,
   X,
@@ -34,6 +35,8 @@ export const CourseExamResultPage: React.FC = () => {
     submissionId: string;
   }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const feedbackCardRef = useRef<HTMLDivElement | null>(null);
 
   // Khi học viên bấm nút Lui trên trình duyệt ở trang kết quả, đưa học viên về lại phòng học
   useEffect(() => {
@@ -48,6 +51,7 @@ export const CourseExamResultPage: React.FC = () => {
   const [resultData, setResultData] = useState<AssessmentResultResponse | null>(null);
   const [historyList, setHistoryList] = useState<AssessmentHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const hasLoadedOnceRef = useRef<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Tabs: 'solutions' | 'history'
@@ -61,6 +65,13 @@ export const CourseExamResultPage: React.FC = () => {
     url: string;
     questionNum: number;
   } | null>(null);
+
+  // Tự động cuộn mượt đến khung lời phê của Giảng viên khi dữ liệu đã sẵn sàng
+  useEffect(() => {
+    if (resultData?.submission?.feedback && feedbackCardRef.current) {
+      feedbackCardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [resultData?.submission?.feedback]);
 
   // Khóa cuộn trang và hỗ trợ phím Escape đóng modal xem lời giải viết tay
   useEffect(() => {
@@ -80,13 +91,32 @@ export const CourseExamResultPage: React.FC = () => {
     };
   }, [previewSolutionUrl]);
 
-  // Load results and history
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Lắng nghe sự kiện thông báo mới hoặc sự kiện refresh từ chuông thông báo
+  useEffect(() => {
+    const handleRefresh = () => {
+      setRefreshKey((prev) => prev + 1);
+    };
+
+    window.addEventListener('tku:new-notification', handleRefresh);
+    window.addEventListener('tku:refresh-exam-result', handleRefresh);
+
+    return () => {
+      window.removeEventListener('tku:new-notification', handleRefresh);
+      window.removeEventListener('tku:refresh-exam-result', handleRefresh);
+    };
+  }, []);
+
+  // Tải dữ liệu kết quả bài thi và lịch sử làm bài (hỗ trợ Stale-While-Revalidate không chớp màn hình trắng khi refresh)
   useEffect(() => {
     let isMounted = true;
 
     const loadData = async () => {
       if (!courseId || !assessmentId || !submissionId) return;
-      setIsLoading(true);
+      if (!hasLoadedOnceRef.current) {
+        setIsLoading(true);
+      }
       setErrorMessage(null);
 
       try {
@@ -98,6 +128,7 @@ export const CourseExamResultPage: React.FC = () => {
         if (!isMounted) return;
         setResultData(resultRes);
         setHistoryList(historyRes.history || []);
+        hasLoadedOnceRef.current = true;
       } catch (err: unknown) {
         if (!isMounted) return;
         const msg = err instanceof Error ? err.message : 'Không thể tải kết quả bài thi.';
@@ -112,7 +143,7 @@ export const CourseExamResultPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [courseId, assessmentId, submissionId]);
+  }, [courseId, assessmentId, submissionId, refreshKey, location.key, location.search]);
 
   // Score styling
   const scoreNumber = resultData?.submission.score ?? 0;
@@ -354,6 +385,66 @@ export const CourseExamResultPage: React.FC = () => {
                     </span>
                   )}
                 </div>
+
+                {submission.feedback && (
+                  <div
+                    ref={feedbackCardRef}
+                    className="tku-student-feedback-box"
+                    style={{
+                      marginTop: 14,
+                      padding: '14px 18px',
+                      borderRadius: 12,
+                      background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%)',
+                      border: '1.5px solid #10b981',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: 14,
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.12)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        background: '#10b981',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      <MessageSquare size={16} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div
+                        style={{
+                          fontSize: 13,
+                          fontWeight: 700,
+                          color: '#065f46',
+                          marginBottom: 3,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                        }}
+                      >
+                        <span>Lời nhận xét & Lời phê của Giảng viên:</span>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 14,
+                          color: '#1e293b',
+                          fontStyle: 'italic',
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        "{submission.feedback}"
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

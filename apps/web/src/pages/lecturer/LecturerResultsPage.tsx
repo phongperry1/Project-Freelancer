@@ -1,38 +1,39 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import {
-  BarChart3,
-  Search,
-  X,
-  BookOpen,
-  Users,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  Eye,
-  ChevronDown,
-  Layers,
+  AlertCircle,
   Award,
-  TrendingUp,
-  Loader2,
-  Send,
+  BarChart3,
+  BookOpen,
+  Calendar,
   Check,
-  Lightbulb,
-  MessageSquare,
-  Printer,
-  FileQuestion,
+  CheckCircle2,
+  ChevronDown,
+  Clock,
+  Eye,
   FileCheck2,
+  FileQuestion,
   GraduationCap,
+  HelpCircle,
+  Layers,
+  Lightbulb,
+  Loader2,
+  MessageSquare,
+  Search,
+  Send,
+  TrendingUp,
+  Users,
+  X,
+  XCircle,
 } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { toast } from '../../context/toastService';
 import {
   lecturerService,
-  type LecturerCourseItem,
-  type AssignmentItem,
   type AssessmentResultsSummary,
+  type AssignmentItem,
+  type LecturerCourseItem,
   type StudentSubmissionDetail,
 } from '../../services/lecturer.service';
-import { toast } from '../../context/toastService';
 import './lecturerResults.css';
 
 interface StudentAvatarProps {
@@ -133,6 +134,28 @@ export const LecturerResultsPage: React.FC = () => {
     useState<StudentSubmissionDetail | null>(null);
   const [feedbackInput, setFeedbackInput] = useState('');
   const [isSavingFeedback, setIsSavingFeedback] = useState(false);
+
+  // Đồng bộ assessmentId từ URL params theo chuẩn React
+  const [prevTargetAssessmentId, setPrevTargetAssessmentId] = useState<string | null>(targetAssessmentId);
+
+  if (targetAssessmentId && targetAssessmentId !== prevTargetAssessmentId) {
+    setPrevTargetAssessmentId(targetAssessmentId);
+    setSelectedAssessmentId(targetAssessmentId);
+  }
+
+  // Deep-link: Tự động mở modal bài nộp khi điều hướng từ thông báo (query: submissionId)
+  const querySubmissionId = searchParams.get('submissionId');
+  const [prevQuerySubmissionId, setPrevQuerySubmissionId] = useState<string | null>(null);
+  if (querySubmissionId && querySubmissionId !== prevQuerySubmissionId && resultsData?.submissions) {
+    setPrevQuerySubmissionId(querySubmissionId);
+    const targetSub = resultsData.submissions.find((s) => s.id === querySubmissionId);
+    if (targetSub) {
+      setReviewSubmission(targetSub);
+      setFeedbackInput(targetSub.feedback || '');
+    }
+  } else if (!querySubmissionId && prevQuerySubmissionId !== null) {
+    setPrevQuerySubmissionId(null);
+  }
 
   // Load courses and assessments only once on component mount
   useEffect(() => {
@@ -245,7 +268,7 @@ export const LecturerResultsPage: React.FC = () => {
         return nextParams;
       });
     },
-    [selectedAssessmentId, setSearchParams],
+    [selectedAssessmentId, setSearchParams, setSelectedAssessmentId],
   );
 
   const handleCourseChange = useCallback(
@@ -291,7 +314,7 @@ export const LecturerResultsPage: React.FC = () => {
         });
       }
     },
-    [assessments, selectedAssessmentId, setSearchParams],
+    [assessments, selectedAssessmentId, setSearchParams, setSelectedAssessmentId],
   );
 
   // Filtered submissions list
@@ -328,7 +351,16 @@ export const LecturerResultsPage: React.FC = () => {
   const handleCloseReview = useCallback(() => {
     setReviewSubmission(null);
     setFeedbackInput('');
-  }, []);
+    if (searchParams.get('submissionId')) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('submissionId');
+        return next;
+      }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+
 
   // Save Teacher Feedback
   const handleSaveFeedback = useCallback(async () => {
@@ -352,14 +384,14 @@ export const LecturerResultsPage: React.FC = () => {
             },
           };
         });
-        setReviewSubmission((prev) => (prev ? { ...prev, feedback: feedbackInput.trim() } : null));
+        handleCloseReview();
       }
     } catch {
       toast.error('Có lỗi khi lưu lời phê');
     } finally {
       setIsSavingFeedback(false);
     }
-  }, [reviewSubmission, feedbackInput, selectedAssessmentId]);
+  }, [reviewSubmission, feedbackInput, selectedAssessmentId, handleCloseReview]);
 
   // Close modal with ESC
   useEffect(() => {
@@ -797,7 +829,7 @@ export const LecturerResultsPage: React.FC = () => {
                 </section>
               ) : (
                 <section className="tku-results-table-card">
-                  <div className="tku-table-responsive">
+                  <div className="tku-table-responsive tku-results-table-responsive">
                     <table className="tku-results-table">
                       <thead>
                         <tr>
@@ -835,24 +867,46 @@ export const LecturerResultsPage: React.FC = () => {
                             <td>
                               {sub.status === 'NOT_SUBMITTED' ? (
                                 <span className="tku-submission-status-pill tku-submission-status-pill--unsubmitted">
-                                  Chưa nộp bài
+                                  <AlertCircle size={11} style={{ flexShrink: 0 }} />
+                                  <span>Chưa nộp bài</span>
                                 </span>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                                  <span style={{ fontSize: '13px', color: '#1e293b' }}>
-                                    {sub.submittedAt}
-                                  </span>
-                                  <span
-                                    className={`tku-submission-status-pill ${
-                                      sub.isLate
-                                        ? 'tku-submission-status-pill--late'
-                                        : 'tku-submission-status-pill--graded'
-                                    }`}
-                                  >
-                                    {sub.isLate ? 'Nộp muộn' : 'Nộp đúng hạn'}
-                                  </span>
-                                </div>
-                              )}
+                              ) : (() => {
+                                const raw = (sub.submittedAt || '').replace(',', '').trim();
+                                const parts = raw.split(/\s+/);
+                                const timeVal = parts.length >= 2 ? parts[0] : raw;
+                                const dateVal = parts.length >= 2 ? parts[1] : '';
+
+                                return (
+                                  <div className="tku-submission-time-cell">
+                                    <div className="tku-submission-datetime-block">
+                                      <div className="tku-submission-time-row">
+                                        <Clock size={12} style={{ color: '#64748b', flexShrink: 0 }} />
+                                        <span>{timeVal}</span>
+                                      </div>
+                                      {dateVal && (
+                                        <div className="tku-submission-date-row">
+                                          <Calendar size={11} className="tku-submission-date-icon" />
+                                          <span>{dateVal}</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                    <span
+                                      className={`tku-submission-status-pill ${
+                                        sub.isLate
+                                          ? 'tku-submission-status-pill--late'
+                                          : 'tku-submission-status-pill--graded'
+                                      }`}
+                                    >
+                                      {sub.isLate ? (
+                                        <Clock size={11} style={{ flexShrink: 0 }} />
+                                      ) : (
+                                        <CheckCircle2 size={11} style={{ flexShrink: 0 }} />
+                                      )}
+                                      <span>{sub.isLate ? 'Nộp muộn' : 'Nộp đúng hạn'}</span>
+                                    </span>
+                                  </div>
+                                );
+                              })()}
                             </td>
 
                             {/* Thời lượng làm bài */}
@@ -1084,7 +1138,12 @@ export const LecturerResultsPage: React.FC = () => {
                       : 'tku-submission-status-pill--graded'
                   }`}
                 >
-                  {reviewSubmission.submittedAt}
+                  {reviewSubmission.isLate ? (
+                    <Clock size={11} style={{ flexShrink: 0 }} />
+                  ) : (
+                    <CheckCircle2 size={11} style={{ flexShrink: 0 }} />
+                  )}
+                  <span>{reviewSubmission.submittedAt}</span>
                 </span>
               </div>
             </div>
@@ -1190,22 +1249,11 @@ export const LecturerResultsPage: React.FC = () => {
               <button
                 type="button"
                 className="tku-modal-btn-secondary"
-                onClick={() => window.print()}
-                title="In bài thi này ra giấy hoặc lưu PDF"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Printer size={15} />
-                <span>In bài làm</span>
-              </button>
-
-              <button
-                type="button"
-                className="tku-modal-btn-secondary"
                 onClick={handleCloseReview}
+                disabled={isSavingFeedback}
               >
                 Đóng
               </button>
-
               <button
                 type="button"
                 className="tku-modal-btn-primary"

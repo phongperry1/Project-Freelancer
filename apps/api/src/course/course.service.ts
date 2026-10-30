@@ -860,6 +860,9 @@ export class CourseService {
     const assessment = await this.prisma.assessment.findFirst({
       where: { id: assessmentId, courseId },
       include: {
+        course: {
+          select: { id: true, title: true, teacherId: true },
+        },
         questions: {
           orderBy: { sortOrder: 'asc' },
           include: {
@@ -1020,6 +1023,30 @@ export class CourseService {
       return { submission: createdSubmission, nextAttemptNumber: attemptNum };
     });
 
+    // Tự động gửi thông báo EXAM_SUBMISSION đến Giảng viên phụ trách khóa học
+    try {
+      const teacherId = assessment.course?.teacherId;
+      if (teacherId && teacherId !== studentId) {
+        const student = await this.prisma.user.findUnique({
+          where: { id: studentId },
+          select: { fullName: true },
+        });
+        const studentName = student?.fullName || 'Học sinh';
+        const courseTitle = assessment.course?.title || 'Khóa học';
+        await this.prisma.notification.create({
+          data: {
+            userId: teacherId,
+            title: 'Bài nộp kiểm tra mới',
+            content: `Học sinh ${studentName} vừa nộp bài "${assessment.title}" trong khóa "${courseTitle}". Điểm tự động: ${finalScore}/10.`,
+            targetUrl: `/lecturer/results?assessmentId=${assessmentId}&submissionId=${submission.id}`,
+            isRead: false,
+          },
+        });
+      }
+    } catch {
+      // Bỏ qua lỗi gửi notification để không làm gián đoạn nộp bài
+    }
+
     return {
       submissionId: submission.id,
       attemptNumber: nextAttemptNumber,
@@ -1141,6 +1168,7 @@ export class CourseService {
         id: submission.id,
         attemptNumber: submission.attemptNumber,
         score: submission.score,
+        feedback: submission.feedback || null,
         submittedAt: submission.submittedAt,
         createdAt: submission.createdAt,
       },
@@ -1272,11 +1300,54 @@ export class CourseService {
 
     const totalQuestions = comments.length;
 
+    // Helper tính mốc thời gian để sắp xếp ưu tiên:
+    // Nếu câu hỏi có câu trả lời từ Giảng viên/Quản trị viên, lấy thời điểm trả lời mới nhất của Giảng viên.
+    // Ngược lại, lấy thời điểm tạo câu hỏi gốc.
+    const parseTime = (dateVal: string | Date | undefined | null): number => {
+      if (!dateVal) return 0;
+      const t = new Date(dateVal).getTime();
+      return isNaN(t) ? 0 : t;
+    };
+
+    const getCommentSortTime = (c: (typeof comments)[0]): number => {
+      const teacherReplies = (c.replies || []).filter(
+        (r) => r.user?.role === 'TEACHER' || r.user?.role === 'ADMIN',
+      );
+      if (teacherReplies.length > 0) {
+        const latestTeacherTime = Math.max(
+          ...teacherReplies.map((r) => parseTime(r.createdAt)),
+        );
+        return Math.max(parseTime(c.createdAt), latestTeacherTime);
+      }
+      return parseTime(c.createdAt);
+    };
+
+    const sortTimeMap = new Map<string, number>();
+    for (const c of comments) {
+      sortTimeMap.set(c.id, getCommentSortTime(c));
+    }
+
+    const sortedComments = [...comments].sort((a, b) => {
+      // 1. Ưu tiên bài thảo luận được ghim lên đầu
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+
+      // 2. Ưu tiên câu hỏi giảng viên mới vừa trả lời (hoặc câu hỏi mới đặt)
+      const timeA = sortTimeMap.get(a.id) ?? 0;
+      const timeB = sortTimeMap.get(b.id) ?? 0;
+      if (timeB !== timeA) {
+        return timeB - timeA;
+      }
+
+      // 3. Cuối cùng sắp theo thời điểm tạo câu hỏi
+      return parseTime(b.createdAt) - parseTime(a.createdAt);
+    });
+
     return {
       lessonId,
       lessonTitle: lesson.title,
       totalQuestions,
-      comments: comments.map((c) => ({
+      comments: sortedComments.map((c) => ({
         ...c,
         replyCount: c.replies.length,
       })),
@@ -1314,7 +1385,21 @@ export class CourseService {
         : Promise.resolve({ courseId }),
       this.prisma.lesson.findFirst({
         where: { id: lessonId, chapter: { courseId } },
-        select: { id: true, title: true },
+        select: {
+          id: true,
+          title: true,
+          chapter: {
+            select: {
+              course: {
+                select: {
+                  id: true,
+                  title: true,
+                  teacherId: true,
+                },
+              },
+            },
+          },
+        },
       }),
       dto.parentId
         ? this.prisma.comment.findFirst({
@@ -1365,20 +1450,78 @@ export class CourseService {
       },
     });
 
-    // Tạo thông báo nếu là trả lời người khác (tái sử dụng fullName từ kết quả tạo bình luận, không cần query lại bảng user)
-    if (parentComment && parentComment.userId !== userId) {
-      try {
-        const replierName = created.user?.fullName || 'Một thành viên';
-        await this.prisma.notification.create({
-          data: {
-            userId: parentComment.userId,
-            type: 'COMMENT',
-            content: `${replierName} đã trả lời câu hỏi của bạn trong bài học "${lesson.title}".`,
-          },
-        });
-      } catch {
-        // Bỏ qua lỗi notification không làm fail việc tạo comment
+    // Tạo thông báo cho học sinh & giảng viên
+    try {
+      const rawName = created.user?.fullName || 'Học sinh';
+      const role = created.user?.role || userRole;
+      let replierTitle = rawName;
+      if (role === 'TEACHER') {
+        replierTitle = `Giảng viên ${rawName}`;
+      } else if (role === 'ADMIN') {
+        replierTitle = `Quản trị viên ${rawName}`;
       }
+
+      // Trích dẫn ngắn nội dung câu trả lời (tối đa 80 ký tự)
+      const cleanContent = dto.content.trim().replace(/\s+/g, ' ');
+      const shortReply = cleanContent.length > 80 ? `${cleanContent.slice(0, 80)}...` : cleanContent;
+
+      const teacherId = lesson.chapter?.course?.teacherId;
+      const isCommentFromTeacher = teacherId === userId;
+      const teacherAlreadyNotifiedAsParent = parentComment && parentComment.userId === teacherId;
+
+      const notificationsToCreate: Array<{
+        userId: string;
+        title: string;
+        content: string;
+        targetUrl: string;
+        isRead: boolean;
+      }> = [];
+
+      // 1. Nếu là trả lời bình luận của người khác -> Gửi thông báo tới người đặt câu hỏi gốc
+      if (parentComment && parentComment.userId !== userId) {
+        const isRecipientTeacher = parentComment.userId === teacherId;
+        const recipientTargetUrl = isRecipientTeacher
+          ? `/lecturer/discussions?courseId=${courseId}&commentId=${actualParentId || created.id}`
+          : `/courses/${courseId}/learn/${lessonId}?tab=discussion&commentId=${created.id}`;
+
+        notificationsToCreate.push({
+          userId: parentComment.userId,
+          title: 'Phản hồi bình luận mới',
+          content: `${replierTitle} đã trả lời bình luận của bạn trong bài học "${lesson.title}": "${shortReply}"`,
+          targetUrl: recipientTargetUrl,
+          isRead: false,
+        });
+      }
+
+      // 2. Thông báo thời gian thực tới Giảng viên phụ trách khóa học khi có bình luận / câu hỏi mới từ học sinh
+      if (teacherId && !isCommentFromTeacher && !teacherAlreadyNotifiedAsParent) {
+        const isNewQuestion = !dto.parentId;
+        const notifTitle = isNewQuestion
+          ? 'Học sinh đặt câu hỏi mới'
+          : 'Bình luận mới trong bài học';
+        const notifContent = isNewQuestion
+          ? `Học sinh ${rawName} vừa đặt câu hỏi trong bài học "${lesson.title}": "${shortReply}"`
+          : `Học sinh ${rawName} vừa bình luận trong bài học "${lesson.title}": "${shortReply}"`;
+
+        // Giảng viên luôn được điều hướng về trang Quản lý Hỏi đáp & Thảo luận của giảng viên
+        const teacherTargetUrl = `/lecturer/discussions?courseId=${courseId}&commentId=${actualParentId || created.id}`;
+
+        notificationsToCreate.push({
+          userId: teacherId,
+          title: notifTitle,
+          content: notifContent,
+          targetUrl: teacherTargetUrl,
+          isRead: false,
+        });
+      }
+
+      if (notificationsToCreate.length > 0) {
+        await this.prisma.notification.createMany({
+          data: notificationsToCreate,
+        });
+      }
+    } catch {
+      // Bỏ qua lỗi notification không làm fail việc tạo comment
     }
 
     return created;
