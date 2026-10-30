@@ -1183,3 +1183,23 @@
     width: 100%;
   }
 }
+
+/* Student Exam Feedback Glow Animation */
+.tku-student-feedback-box {
+  animation: tku-feedback-glow 2.5s ease-out 1;
+}
+
+@keyframes tku-feedback-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+    border-color: #059669;
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(16, 185, 129, 0.15);
+    border-color: #10b981;
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+    border-color: #10b981;
+  }
+}

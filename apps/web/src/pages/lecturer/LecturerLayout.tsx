@@ -5,12 +5,14 @@ import {
   BookOpen,
   FilePenLine,
   Users,
+  MessagesSquare,
   Bell,
   Settings,
   LogOut,
   Loader2,
 } from 'lucide-react';
 import { useAuth } from '../../context/useAuth';
+import { NotificationDropdown } from '../../components/common/NotificationDropdown';
 import './lecturerLayout.css';
 
 interface NavItemConfig {
@@ -57,6 +59,14 @@ const TEACHING_NAV_ITEMS: NavItemConfig[] = [
       p.startsWith('/teacher/results') ||
       p.startsWith('/lecturer/grading') ||
       p.startsWith('/teacher/grading'),
+  },
+  {
+    to: '/lecturer/discussions',
+    label: 'Hỏi đáp & thảo luận',
+    icon: MessagesSquare,
+    isActive: (p) =>
+      p.startsWith('/lecturer/discussions') ||
+      p.startsWith('/teacher/discussions'),
   },
 ];
 
@@ -399,15 +409,7 @@ export const LecturerLayout: React.FC = () => {
           </div>
 
           <div className="tku-lecturer-header__right">
-            {/* Clean notification bell WITHOUT orange dot */}
-            <button
-              type="button"
-              className="tku-lecturer-notif-btn"
-              title="Thông báo"
-              aria-label="Thông báo"
-            >
-              <Bell size={18} />
-            </button>
+            <NotificationDropdown />
           </div>
         </header>
 

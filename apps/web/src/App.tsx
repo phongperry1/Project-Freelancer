@@ -46,6 +46,8 @@ const LecturerAssignPage = lazy(() => import('./pages/lecturer/LecturerAssignPag
 const LecturerResultsPage = lazy(() => import('./pages/lecturer/LecturerResultsPage'));
 const LecturerStudentsPage = lazy(() => import('./pages/lecturer/LecturerStudentsPage'));
 const LecturerStudentProgressPage = lazy(() => import('./pages/lecturer/LecturerStudentProgressPage'));
+const LecturerDiscussionsPage = lazy(() => import('./pages/lecturer/LecturerDiscussionsPage'));
+const LecturerNotificationsPage = lazy(() => import('./pages/lecturer/LecturerNotificationsPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -90,6 +92,7 @@ export const App: React.FC = () => {
               <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route path="/courses/:courseId/learn" element={<CourseLearningRoomPage />} />
               <Route path="/courses/:courseId/learn/:lessonId" element={<CourseLearningRoomPage />} />
+              <Route path="/courses/:courseId/lessons/:lessonId" element={<CourseLearningRoomPage />} />
               <Route path="/courses/:courseId/exams/:assessmentId" element={<CourseExamRoomPage />} />
               <Route path="/courses/:courseId/exams/:assessmentId/results/:submissionId" element={<CourseExamResultPage />} />
               <Route
@@ -154,6 +157,8 @@ export const App: React.FC = () => {
                 <Route path="students/progress" element={<LecturerStudentProgressPage />} />
                 <Route path="students/:id/progress" element={<LecturerStudentProgressPage />} />
                 <Route path="students/:id" element={<LecturerStudentsPage />} />
+                <Route path="discussions" element={<LecturerDiscussionsPage />} />
+                <Route path="notifications" element={<LecturerNotificationsPage />} />
               </Route>
               <Route
                 path="/teacher/*"

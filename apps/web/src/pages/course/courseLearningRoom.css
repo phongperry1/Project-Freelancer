@@ -4086,6 +4086,33 @@
   }
 }
 
+/* ============================================================
+   TARGET COMMENT HIGHLIGHT (NOTIFICATION DEEP-LINK)
+   ============================================================ */
+.tku-comment-target-highlight {
+  animation: tku-comment-pulse 3s ease-out forwards;
+  border-color: #1d68f2 !important;
+  box-shadow: 0 0 0 4px rgba(29, 104, 242, 0.28) !important;
+  border-radius: 8px;
+  position: relative;
+  z-index: 5;
+}
 
-
-
+@keyframes tku-comment-pulse {
+  0% {
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 5px rgba(29, 104, 242, 0.4);
+  }
+  30% {
+    background-color: #e0f2fe;
+    box-shadow: 0 0 0 5px rgba(29, 104, 242, 0.35);
+  }
+  70% {
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.2);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}

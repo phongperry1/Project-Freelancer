@@ -251,6 +251,7 @@ export interface AssessmentResultResponse {
     id: string;
     attemptNumber: number;
     score: number | null;
+    feedback?: string | null;
     submittedAt: string | null;
     createdAt: string;
   };

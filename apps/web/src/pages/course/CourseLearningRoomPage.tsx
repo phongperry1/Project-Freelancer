@@ -24,7 +24,7 @@ import {
   X,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { Footer } from '../../components/common/Footer';
 import { Navbar } from '../../components/common/Navbar';
 import { useAuth } from '../../context/useAuth';
@@ -674,6 +674,7 @@ QuizGuideModal.displayName = 'QuizGuideModal';
 
 export const CourseLearningRoomPage: React.FC = () => {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId?: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -685,9 +686,25 @@ export const CourseLearningRoomPage: React.FC = () => {
 
   // UI state
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
-  const [activeTab, setActiveTab] = useState<'content' | 'teacher' | 'notes' | 'discussion' | 'ai'>('content');
   const [openChapters, setOpenChapters] = useState<Record<string, boolean>>({});
   const [avatarFailed, setAvatarFailed] = useState<boolean>(false);
+
+  // Quản lý tab bài học: đồng bộ mượt mà với URL query param theo chuẩn React
+  const queryTab = searchParams.get('tab');
+  const [userTab, setUserTab] = useState<'content' | 'teacher' | 'notes' | 'discussion' | 'ai' | null>(null);
+  const [prevQueryTab, setPrevQueryTab] = useState<string | null>(queryTab);
+
+  if (queryTab !== prevQueryTab) {
+    setPrevQueryTab(queryTab);
+    setUserTab(null);
+  }
+
+  const activeTab: 'content' | 'teacher' | 'notes' | 'discussion' | 'ai' =
+    userTab ??
+    (queryTab === 'discussion' || queryTab === 'ai' || queryTab === 'notes' || queryTab === 'teacher'
+      ? queryTab
+      : 'content');
+  const setActiveTab = setUserTab;
 
   // Assessments / Quizzes / Exams state (Bước 2 & Bước 3)
   const [assessments, setAssessments] = useState<StudentAssessmentItem[]>([]);
@@ -1341,6 +1358,7 @@ export const CourseLearningRoomPage: React.FC = () => {
                     hasVideo={Boolean(youtubeVideoId || (isDirectVideo && activeLesson?.videoUrl))}
                     onSeekToTimestamp={handleSeekToTimestamp}
                     isCourseTeacher={user?.role === 'TEACHER' && course.teacher.id === user?.id}
+                    targetCommentId={searchParams.get('commentId')}
                   />
                 </div>
               )}

@@ -1029,12 +1029,163 @@ class LecturerService {
     feedback: string,
   ): Promise<boolean> {
     try {
-      localStorage.setItem(`tku_feedback_${submissionId}`, feedback.trim());
-      return true;
-    } catch {
+      const token = authService.getStoredToken();
+      const res = await fetch(
+        `${API_BASE_URL}/lecturer/submissions/${submissionId}/feedback`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ feedback: feedback.trim() }),
+        },
+      );
+      if (res.ok) {
+        try {
+          localStorage.setItem(`tku_feedback_${submissionId}`, feedback.trim());
+        } catch {
+          // ignore
+        }
+        return true;
+      }
       return false;
+    } catch {
+      try {
+        localStorage.setItem(`tku_feedback_${submissionId}`, feedback.trim());
+        return true;
+      } catch {
+        return false;
+      }
     }
   }
+
+  /**
+   * Lấy danh sách câu hỏi thảo luận của học sinh trong các khóa học của giảng viên
+   */
+  async getLecturerDiscussions(params?: {
+    courseId?: string;
+    status?: string;
+    search?: string;
+  }): Promise<LecturerDiscussionsResponse> {
+    const token = authService.getStoredToken();
+    if (!token) {
+      return {
+        stats: {
+          totalQuestions: 0,
+          unansweredCount: 0,
+          answeredCount: 0,
+          timestampedCount: 0,
+        },
+        questions: [],
+        courses: [],
+      };
+    }
+    const query = new URLSearchParams();
+    if (params?.courseId) query.append('courseId', params.courseId);
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+
+    const res = await this.fetchWithBootRetry(`${API_BASE_URL}/lecturer/discussions?${query.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!res.ok) {
+      throw new Error('Không thể tải danh sách thảo luận học sinh.');
+    }
+
+    return res.json();
+  }
+
+  /**
+   * Giảng viên trả lời trực tiếp câu hỏi thảo luận của học sinh
+   */
+  async replyDiscussion(
+    courseId: string,
+    lessonId: string,
+    parentId: string,
+    content: string,
+    videoTimestamp?: number | null,
+  ) {
+    const token = authService.getStoredToken();
+    const res = await fetch(`${API_BASE_URL}/courses/${courseId}/lessons/${lessonId}/comments`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        content,
+        parentId,
+        videoTimestamp: videoTimestamp ?? null,
+      }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể gửi câu trả lời.');
+    }
+
+    return res.json();
+  }
+}
+
+export interface LecturerDiscussionReply {
+  id: string;
+  content: string;
+  videoTimestamp?: number | null;
+  isPinned: boolean;
+  createdAt: string;
+  user: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string | null;
+    role: string;
+  };
+}
+
+export interface LecturerDiscussionQuestion {
+  id: string;
+  content: string;
+  videoTimestamp?: number | null;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  student: {
+    id: string;
+    fullName: string;
+    avatarUrl?: string | null;
+    role: string;
+  };
+  course: {
+    id: string;
+    title: string;
+  };
+  lesson: {
+    id: string;
+    title: string;
+  };
+  chapter: {
+    id: string;
+    title: string;
+  };
+  repliesCount: number;
+  hasTeacherReply: boolean;
+  replies: LecturerDiscussionReply[];
+}
+
+export interface LecturerDiscussionsResponse {
+  stats: {
+    totalQuestions: number;
+    unansweredCount: number;
+    answeredCount: number;
+    timestampedCount: number;
+  };
+  questions: LecturerDiscussionQuestion[];
+  courses: Array<{ id: string; title: string }>;
 }
 
 export const lecturerService = new LecturerService();
