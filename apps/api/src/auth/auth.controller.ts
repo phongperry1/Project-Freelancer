@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -6,12 +7,17 @@ import {
   HttpCode,
   HttpStatus,
   Ip,
+  Patch,
   Post,
   Req,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import type { Request } from 'express';
 import {
   ApiBadRequestResponse,
+  ApiBearerAuth,
   ApiBody,
   ApiConflictResponse,
   ApiOperation,
@@ -32,6 +38,9 @@ import { GoogleAuthDto } from './dto/google-auth.dto.js';
 import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
 import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { type UploadedFileDto } from '../cloudinary/cloudinary.service.js';
 import {
   AuthService,
   type AuthResponse,
@@ -39,6 +48,7 @@ import {
   type VerifyOtpResponse,
   type VerifyResetOtpResponse,
   type ResetPasswordResponse,
+  type UserResponse,
 } from './auth.service.js';
 
 @ApiTags('Auth')
@@ -357,5 +367,85 @@ export class AuthController {
     @Body('refreshToken') refreshToken?: string,
   ): Promise<{ message: string }> {
     return this.authService.logout(authorization, refreshToken);
+  }
+  @Get('profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy thông tin trang cá nhân của người dùng hiện tại',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin người dùng thành công.',
+  })
+  async getProfile(
+    @Headers('authorization') authorization?: string,
+  ): Promise<UserResponse> {
+    const userId = await this.authService.extractUserIdFromHeader(authorization);
+    return this.authService.getProfile(userId);
+  }
+
+  @Patch('profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Cập nhật thông tin trang cá nhân người dùng',
+  })
+  @ApiBody({
+    type: UpdateProfileDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Cập nhật thông tin thành công.',
+  })
+  async updateProfile(
+    @Body() updateProfileDto: UpdateProfileDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<UserResponse> {
+    const userId = await this.authService.extractUserIdFromHeader(authorization);
+    return this.authService.updateProfile(userId, updateProfileDto);
+  }
+
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Đổi mật khẩu người dùng',
+  })
+  @ApiBody({
+    type: ChangePasswordDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Đổi mật khẩu thành công.',
+  })
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string }> {
+    const userId = await this.authService.extractUserIdFromHeader(authorization);
+    return this.authService.changePassword(userId, changePasswordDto);
+  }
+
+  @Post('upload-avatar')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Tải lên ảnh đại diện cá nhân lên Cloudinary',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Tải lên ảnh đại diện thành công.',
+  })
+  async uploadAvatar(
+    @UploadedFile() file: UploadedFileDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ avatarUrl: string; user: UserResponse }> {
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn tập tin ảnh hợp lệ.');
+    }
+    const userId = await this.authService.extractUserIdFromHeader(authorization);
+    return this.authService.uploadAvatar(userId, file);
   }
 }

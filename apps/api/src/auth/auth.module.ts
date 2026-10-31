@@ -3,12 +3,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
 import { MailModule } from '../mail/mail.module.js';
+import { CloudinaryModule } from '../cloudinary/cloudinary.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
 
 @Module({
   imports: [
     MailModule,
+    CloudinaryModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

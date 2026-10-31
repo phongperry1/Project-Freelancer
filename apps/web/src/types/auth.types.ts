@@ -9,6 +9,21 @@ export interface User {
   role: UserRole;
   status: UserStatus;
   avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: string | Date | null;
+  createdAt?: string | Date;
+}
+
+export interface UpdateProfilePayload {
+  fullName?: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  avatarUrl?: string;
+}
+
+export interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
 }
 
 export interface LoginCredentials {

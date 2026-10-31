@@ -15,6 +15,8 @@ import type {
   CheckSessionResponse,
   User,
   ApiErrorResponse,
+  UpdateProfilePayload,
+  ChangePasswordPayload,
 } from '../types/auth.types';
 import { getOrCreateDeviceId, getDeviceName } from '../utils/device';
 
@@ -510,6 +512,122 @@ export const authService = {
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
     }
+  },
+
+  async getProfile(): Promise<User> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Không thể lấy thông tin cá nhân. Vui lòng thử lại sau.',
+      );
+      throw new Error(message);
+    }
+
+    const user: User = await response.json();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+    return user;
+  },
+
+  async updateProfile(payload: UpdateProfilePayload): Promise<User> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Cập nhật thông tin thất bại. Vui lòng kiểm tra lại.',
+      );
+      throw new Error(message);
+    }
+
+    const updatedUser: User = await response.json();
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(USER_KEY, JSON.stringify(updatedUser));
+    }
+    return updatedUser;
+  },
+
+  async changePassword(payload: ChangePasswordPayload): Promise<{ message: string }> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Đổi mật khẩu không thành công. Vui lòng thử lại.',
+      );
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  async uploadAvatar(file: File): Promise<{ avatarUrl: string; user: User }> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch(`${API_BASE_URL}/auth/upload-avatar`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Tải lên ảnh đại diện thất bại. Vui lòng thử lại.',
+      );
+      throw new Error(message);
+    }
+
+    const data: { avatarUrl: string; user: User } = await response.json();
+    if (typeof window !== 'undefined' && data.user) {
+      localStorage.setItem(USER_KEY, JSON.stringify(data.user));
+    }
+    return data;
   },
 
   getStoredToken(): string | null {

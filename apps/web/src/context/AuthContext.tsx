@@ -90,6 +90,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   }, []);
 
+  const updateUser = useCallback((updatedUser: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return null;
+      const merged = { ...prev, ...updatedUser };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tku_user', JSON.stringify(merged));
+      }
+      return merged;
+    });
+  }, []);
+
+  const refreshUserProfile = useCallback(async () => {
+    try {
+      const freshUser = await authService.getProfile();
+      setUser(freshUser);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('tku_user', JSON.stringify(freshUser));
+      }
+    } catch {
+      // Ignored
+    }
+  }, []);
+
   const closeSessionTerminatedModal = useCallback(() => {
     authService.logout();
     setToken(null);
@@ -246,6 +269,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       verifyDeviceOtp,
       resendDeviceOtp,
       logout,
+      updateUser,
+      refreshUserProfile,
       isSessionTerminated,
       sessionTerminatedReason,
       closeSessionTerminatedModal,
@@ -260,6 +285,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       verifyDeviceOtp,
       resendDeviceOtp,
       logout,
+      updateUser,
+      refreshUserProfile,
       isSessionTerminated,
       sessionTerminatedReason,
       closeSessionTerminatedModal,

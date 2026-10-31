@@ -48,6 +48,8 @@ const LecturerStudentsPage = lazy(() => import('./pages/lecturer/LecturerStudent
 const LecturerStudentProgressPage = lazy(() => import('./pages/lecturer/LecturerStudentProgressPage'));
 const LecturerDiscussionsPage = lazy(() => import('./pages/lecturer/LecturerDiscussionsPage'));
 const LecturerNotificationsPage = lazy(() => import('./pages/lecturer/LecturerNotificationsPage'));
+const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
+const SecurityPage = lazy(() => import('./pages/profile/SecurityPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
@@ -112,6 +114,9 @@ export const App: React.FC = () => {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/security" element={<SecurityPage />} />
+              <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
               <Route path="/session-terminated" element={<SessionTerminatedPage />} />
               <Route
                 path="/admin"

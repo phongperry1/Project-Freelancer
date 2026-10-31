@@ -30,6 +30,9 @@ import { GoogleAuthDto } from './dto/google-auth.dto.js';
 import { VerifyDeviceOtpDto } from './dto/verify-device-otp.dto.js';
 import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
+import { UpdateProfileDto } from './dto/update-profile.dto.js';
+import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { CloudinaryService, type UploadedFileDto } from '../cloudinary/cloudinary.service.js';
 
 export interface UserResponse {
   id: string;
@@ -38,6 +41,9 @@ export interface UserResponse {
   role: string;
   status: string;
   avatarUrl?: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: Date | string | null;
+  createdAt?: Date | string;
 }
 
 export interface AuthResponse {
@@ -83,6 +89,8 @@ interface StoredDevUser {
   role: string;
   status: string;
   avatarUrl: string | null;
+  phoneNumber?: string | null;
+  dateOfBirth?: Date | string | null;
 }
 
 interface PendingRegistration {
@@ -170,6 +178,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly mailService: MailService,
     private readonly configService: ConfigService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
 
   async hashPassword(password: string): Promise<string> {
@@ -960,6 +969,9 @@ export class AuthService {
           role: user.role,
           status: user.status,
           avatarUrl: user.avatarUrl,
+          phoneNumber: user.phoneNumber,
+          dateOfBirth: user.dateOfBirth,
+          createdAt: user.createdAt,
         };
       }
     } catch {}
@@ -1763,5 +1775,199 @@ export class AuthService {
     }
 
     return { message: 'Đăng xuất thành công.' };
+  }
+async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserResponse> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      for (const devUser of AuthService.devUsers.values()) {
+        if (devUser.id === userId) {
+          if (dto.fullName) devUser.fullName = dto.fullName.trim();
+          if (dto.phoneNumber !== undefined) devUser.phoneNumber = dto.phoneNumber?.trim() || null;
+          if (dto.avatarUrl !== undefined) devUser.avatarUrl = dto.avatarUrl?.trim() || null;
+          if (dto.dateOfBirth !== undefined) {
+            devUser.dateOfBirth = dto.dateOfBirth ? new Date(dto.dateOfBirth) : null;
+          }
+          return {
+            id: devUser.id,
+            email: devUser.email,
+            fullName: devUser.fullName,
+            phoneNumber: devUser.phoneNumber,
+            dateOfBirth: devUser.dateOfBirth,
+            role: devUser.role,
+            status: devUser.status,
+            avatarUrl: devUser.avatarUrl,
+          };
+        }
+      }
+      throw new NotFoundException('Không tìm thấy tài khoản người dùng.');
+    }
+
+    let parsedDob: Date | null | undefined = undefined;
+    if (dto.dateOfBirth !== undefined) {
+      if (dto.dateOfBirth) {
+        const d = new Date(dto.dateOfBirth);
+        if (!isNaN(d.getTime())) {
+          parsedDob = d;
+        }
+      } else {
+        parsedDob = null;
+      }
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.fullName !== undefined ? { fullName: dto.fullName.trim() } : {}),
+        ...(dto.phoneNumber !== undefined ? { phoneNumber: dto.phoneNumber.trim() || null } : {}),
+        ...(parsedDob !== undefined ? { dateOfBirth: parsedDob } : {}),
+        ...(dto.avatarUrl !== undefined ? { avatarUrl: dto.avatarUrl.trim() || null } : {}),
+      },
+    });
+
+    return {
+      id: updated.id,
+      email: updated.email,
+      fullName: updated.fullName,
+      phoneNumber: updated.phoneNumber,
+      dateOfBirth: updated.dateOfBirth,
+      role: updated.role,
+      status: updated.status,
+      avatarUrl: updated.avatarUrl,
+      createdAt: updated.createdAt,
+    };
+  }
+
+  async changePassword(
+    userId: string,
+    dto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      for (const devUser of AuthService.devUsers.values()) {
+        if (devUser.id === userId) {
+          const isMatch = await this.verifyPassword(devUser.passwordHash, dto.currentPassword);
+          if (!isMatch) {
+            throw new BadRequestException('Mật khẩu hiện tại không chính xác.');
+          }
+          if (dto.currentPassword === dto.newPassword) {
+            throw new BadRequestException('Mật khẩu mới không được trùng với mật khẩu hiện tại.');
+          }
+          devUser.passwordHash = await this.hashPassword(dto.newPassword);
+          return { message: 'Đổi mật khẩu thành công.' };
+        }
+      }
+      throw new NotFoundException('Không tìm thấy tài khoản người dùng.');
+    }
+
+    const isMatch = await this.verifyPassword(user.passwordHash, dto.currentPassword);
+    if (!isMatch) {
+      throw new BadRequestException('Mật khẩu hiện tại không chính xác.');
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('Mật khẩu mới không được trùng với mật khẩu hiện tại.');
+    }
+
+    if (dto.newPassword.length < 6) {
+      throw new BadRequestException('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+    }
+
+    const newHash = await this.hashPassword(dto.newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    return { message: 'Đổi mật khẩu thành công.' };
+  }
+
+  async uploadAvatar(
+    userId: string,
+    file: UploadedFileDto,
+  ): Promise<{ avatarUrl: string; user: UserResponse }> {
+    let user = null;
+    try {
+      user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+    } catch {
+      // Prisma query fallback
+    }
+
+    const avatarUrl = await this.cloudinaryService.uploadImage(file, 'avatars');
+
+    if (!user) {
+      for (const devUser of AuthService.devUsers.values()) {
+        if (devUser.id === userId) {
+          devUser.avatarUrl = avatarUrl;
+          return {
+            avatarUrl,
+            user: {
+              id: devUser.id,
+              email: devUser.email,
+              fullName: devUser.fullName,
+              phoneNumber: devUser.phoneNumber,
+              dateOfBirth: devUser.dateOfBirth,
+              role: devUser.role,
+              status: devUser.status,
+              avatarUrl: devUser.avatarUrl,
+            },
+          };
+        }
+      }
+      throw new NotFoundException('Không tìm thấy tài khoản người dùng.');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl },
+    });
+
+    return {
+      avatarUrl,
+      user: {
+        id: updated.id,
+        email: updated.email,
+        fullName: updated.fullName,
+        phoneNumber: updated.phoneNumber,
+        dateOfBirth: updated.dateOfBirth,
+        role: updated.role,
+        status: updated.status,
+        avatarUrl: updated.avatarUrl,
+        createdAt: updated.createdAt,
+      },
+    };
+  }
+
+  async extractUserIdFromHeader(authorization?: string): Promise<string> {
+    if (!authorization?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để thực hiện thao tác này.');
+    }
+    const token = authorization.slice(7).trim();
+    const secret =
+      this.configService.get<string>('JWT_SECRET') ??
+      'tku-learning-platform-secret-jwt-key-2026';
+
+    try {
+      const payload = await this.jwtService.verifyAsync<{
+        sub?: string;
+        role?: string;
+      }>(token, { secret });
+      if (!payload?.sub) {
+        throw new UnauthorizedException('Token không hợp lệ.');
+      }
+      return payload.sub;
+    } catch {
+      throw new UnauthorizedException('Phiên đăng nhập đã hết hạn.');
+    }
   }
 }
