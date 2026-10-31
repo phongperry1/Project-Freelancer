@@ -2036,5 +2036,142 @@ export class CourseService {
 
     return { success: true, message: 'Đã xóa bình luận thành công.' };
   }
-}
 
+  // ==========================================================================
+  // BƯỚC 4.3: GHI CHÚ BÀI HỌC & ĐÁNH DẤU MỐC THỜI GIAN (LESSON TIMELINE NOTES)
+  // ==========================================================================
+
+  /**
+   * Lấy danh sách ghi chú của học sinh trong bài học (Sắp xếp theo mốc thời gian video)
+   */
+  async getLessonNotes(lessonId: string, studentId: string) {
+    return this.prisma.lessonNote.findMany({
+      where: {
+        lessonId,
+        studentId,
+      },
+      orderBy: [
+        { videoTimestamp: 'asc' },
+        { createdAt: 'asc' },
+      ],
+      select: {
+        id: true,
+        lessonId: true,
+        studentId: true,
+        videoTimestamp: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Tạo mới một mốc ghi chú cho học sinh trong bài học
+   */
+  async createLessonNote(
+    courseId: string,
+    lessonId: string,
+    studentId: string,
+    dto: { content: string; videoTimestamp?: number | null },
+  ) {
+    const lesson = await this.prisma.lesson.findUnique({
+      where: { id: lessonId },
+      select: { id: true, chapter: { select: { courseId: true } } },
+    });
+
+    if (!lesson || lesson.chapter?.courseId !== courseId) {
+      throw new NotFoundException('Bài học không tồn tại trong khóa học này.');
+    }
+
+    const trimmedContent = (dto.content || '').trim();
+    if (!trimmedContent) {
+      throw new BadRequestException('Nội dung ghi chú không được để trống.');
+    }
+
+    return this.prisma.lessonNote.create({
+      data: {
+        studentId,
+        lessonId,
+        content: trimmedContent,
+        videoTimestamp:
+          dto.videoTimestamp !== undefined && dto.videoTimestamp !== null
+            ? Math.max(0, Math.floor(dto.videoTimestamp))
+            : null,
+      },
+      select: {
+        id: true,
+        lessonId: true,
+        studentId: true,
+        videoTimestamp: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Cập nhật ghi chú của học sinh
+   */
+  async updateLessonNote(
+    noteId: string,
+    studentId: string,
+    dto: { content?: string; videoTimestamp?: number | null },
+  ) {
+    const note = await this.prisma.lessonNote.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note || note.studentId !== studentId) {
+      throw new NotFoundException('Ghi chú không tồn tại hoặc bạn không có quyền sửa.');
+    }
+
+    if (dto.content !== undefined && !dto.content.trim()) {
+      throw new BadRequestException('Nội dung ghi chú không được để trống.');
+    }
+
+    return this.prisma.lessonNote.update({
+      where: { id: noteId },
+      data: {
+        ...(dto.content !== undefined ? { content: dto.content.trim() } : {}),
+        ...(dto.videoTimestamp !== undefined
+          ? {
+              videoTimestamp:
+                dto.videoTimestamp !== null
+                  ? Math.max(0, Math.floor(dto.videoTimestamp))
+                  : null,
+            }
+          : {}),
+      },
+      select: {
+        id: true,
+        lessonId: true,
+        studentId: true,
+        videoTimestamp: true,
+        content: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+  }
+
+  /**
+   * Xóa ghi chú của học sinh
+   */
+  async deleteLessonNote(noteId: string, studentId: string) {
+    const note = await this.prisma.lessonNote.findUnique({
+      where: { id: noteId },
+    });
+
+    if (!note || note.studentId !== studentId) {
+      throw new NotFoundException('Ghi chú không tồn tại hoặc bạn không có quyền xóa.');
+    }
+
+    await this.prisma.lessonNote.delete({
+      where: { id: noteId },
+    });
+
+    return { success: true, message: 'Đã xóa ghi chú thành công.' };
+  }
+}

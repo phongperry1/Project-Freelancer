@@ -57,6 +57,8 @@ export interface CreateAssessmentDto {
   startDate?: string | null;
   dueDate?: string | null;
   questions?: AssessmentQuestionItem[];
+  notifyStudents?: boolean;
+  targetStudentIds?: string[];
 }
 
 export interface UpdateAssessmentDto {
@@ -68,6 +70,8 @@ export interface UpdateAssessmentDto {
   startDate?: string | null;
   dueDate?: string | null;
   questions?: AssessmentQuestionItem[];
+  notifyStudents?: boolean;
+  targetStudentIds?: string[];
 }
 
 export interface LecturerCourseItem {
@@ -1829,6 +1833,16 @@ export class LecturerService {
       },
     });
 
+    if (data.notifyStudents) {
+      try {
+        await this.notifyStudentsAboutAssessment(created.id, userId, role, {
+          targetStudentIds: data.targetStudentIds,
+        });
+      } catch (err) {
+        console.error('Lỗi khi tự động gửi thông báo bài kiểm tra:', err);
+      }
+    }
+
     return this.getAssessmentById(userId, created.id, role);
   }
 
@@ -1922,6 +1936,16 @@ export class LecturerService {
       }
     });
 
+    if (data.notifyStudents) {
+      try {
+        await this.notifyStudentsAboutAssessment(assessmentId, userId, role, {
+          targetStudentIds: data.targetStudentIds,
+        });
+      } catch (err) {
+        console.error('Lỗi khi tự động gửi thông báo bài kiểm tra:', err);
+      }
+    }
+
     return this.getAssessmentById(userId, assessmentId, role);
   }
 
@@ -1946,6 +1970,132 @@ export class LecturerService {
     });
 
     return { success: true };
+  }
+
+  /**
+   * Tự động hoặc thủ công gửi thông báo đến các học sinh đã ghi danh khóa học khi có bài kiểm tra mới
+   */
+  async notifyStudentsAboutAssessment(
+    assessmentId: string,
+    userId?: string,
+    role?: string,
+    options?: {
+      targetStudentIds?: string[];
+      force?: boolean;
+      customMessage?: string;
+    },
+  ): Promise<{ success: boolean; notifiedCount: number; message: string }> {
+    const assessment = await this.prisma.assessment.findUnique({
+      where: { id: assessmentId },
+      include: {
+        course: {
+          select: {
+            id: true,
+            title: true,
+            teacherId: true,
+          },
+        },
+      },
+    });
+
+    if (!assessment) {
+      throw new NotFoundException('Không tìm thấy bài kiểm tra.');
+    }
+
+    if (
+      userId &&
+      role !== 'ADMIN' &&
+      assessment.course.teacherId !== userId
+    ) {
+      throw new ForbiddenException('Bạn không có quyền thông báo cho bài tập của khóa học này.');
+    }
+
+    // Lấy danh sách học sinh đã ghi danh khóa học
+    const enrollments = await this.prisma.courseEnrollment.findMany({
+      where: {
+        courseId: assessment.courseId,
+        ...(options?.targetStudentIds && options.targetStudentIds.length > 0
+          ? { studentId: { in: options.targetStudentIds } }
+          : {}),
+      },
+      select: { studentId: true },
+    });
+
+    let studentIdsToNotify = enrollments.map((e) => e.studentId);
+
+    if (studentIdsToNotify.length === 0) {
+      return {
+        success: true,
+        notifiedCount: 0,
+        message: 'Khóa học chưa có học sinh nào ghi danh để nhận thông báo.',
+      };
+    }
+
+    const targetUrl = `/courses/${assessment.courseId}/exams/${assessment.id}`;
+
+    // Chống spam: Nếu không bật force, lọc bỏ những học sinh đã nhận thông báo bài này trong vòng 12h
+    if (!options?.force) {
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      const recentNotifications = await this.prisma.notification.findMany({
+        where: {
+          userId: { in: studentIdsToNotify },
+          targetUrl,
+          createdAt: { gte: twelveHoursAgo },
+        },
+        select: { userId: true },
+      });
+
+      const recentUserIds = new Set(recentNotifications.map((n) => n.userId));
+      studentIdsToNotify = studentIdsToNotify.filter((id) => !recentUserIds.has(id));
+    }
+
+    if (studentIdsToNotify.length === 0) {
+      return {
+        success: true,
+        notifiedCount: 0,
+        message: 'Tất cả học sinh đã nhận được thông báo về bài kiểm tra này gần đây.',
+      };
+    }
+
+    // Xây dựng nội dung thông báo trực quan, đầy đủ thông tin
+    const courseTitle = assessment.course?.title || 'Khóa học';
+    let dueInfo = '';
+    if (assessment.dueDate) {
+      const dueDateObj = new Date(assessment.dueDate);
+      const formattedDate = dueDateObj.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+      const formattedTime = dueDateObj.toLocaleTimeString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      dueInfo = ` Hạn chót: ${formattedTime} ngày ${formattedDate}.`;
+    }
+
+    const durationInfo = assessment.durationMinutes
+      ? ` Thời gian làm bài: ${assessment.durationMinutes} phút.`
+      : '';
+
+    const defaultContent = `Giảng viên đã giao bài kiểm tra "${assessment.title}" trong khóa học "${courseTitle}".${durationInfo}${dueInfo} Hãy vào kiểm tra và làm bài đúng hạn!`;
+    const finalContent = options?.customMessage?.trim() || defaultContent;
+
+    await this.prisma.notification.createMany({
+      data: studentIdsToNotify.map((studentId) => ({
+        userId: studentId,
+        title: `Bài kiểm tra mới: ${assessment.title}`.slice(0, 255),
+        content: finalContent,
+        targetUrl,
+        isRead: false,
+      })),
+    });
+
+    return {
+      success: true,
+      notifiedCount: studentIdsToNotify.length,
+      message: `Đã gửi thông báo đến ${studentIdsToNotify.length} học sinh thành công.`,
+    };
   }
 
   /**

@@ -307,6 +307,23 @@ export class LecturerController {
     return { url };
   }
 
+  @Post('upload/solution')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tải lên hình ảnh lời giải bài tập / đề thi lên Cloudinary' })
+  async uploadSolutionFile(
+    @UploadedFile() file: UploadedFileDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ url: string }> {
+    await this.verifyLecturer(authorization);
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn tệp hình ảnh hoặc tài liệu PDF lời giải.');
+    }
+    const url = await this.cloudinaryService.uploadImage(file, 'solutions');
+    return { url };
+  }
+
   // ============================================================
   // ASSESSMENT & ASSIGNMENT ENDPOINTS
   // ============================================================
@@ -407,6 +424,20 @@ export class LecturerController {
   ): Promise<{ success: boolean }> {
     const { userId, role } = await this.verifyLecturer(authorization);
     return this.lecturerService.deleteAssessment(userId, assessmentId, role);
+  }
+
+  @Post('assessments/:id/notify')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Gửi thông báo bài kiểm tra tới các học sinh trong khóa học' })
+  @ApiResponse({ status: 200, description: 'Đã gửi thông báo thành công.' })
+  async notifyAssessment(
+    @Param('id') assessmentId: string,
+    @Body() body: { targetStudentIds?: string[]; force?: boolean; customMessage?: string },
+    @Headers('authorization') authorization?: string,
+  ) {
+    const { userId, role } = await this.verifyLecturer(authorization);
+    return this.lecturerService.notifyStudentsAboutAssessment(assessmentId, userId, role, body);
   }
 
   @Get('discussions')
