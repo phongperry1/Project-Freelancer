@@ -20,6 +20,30 @@ export const Navbar: React.FC = () => {
           location.pathname === '/my-courses'
         );
       }
+      if (itemId === 'nav-lessons') {
+        return (
+          location.pathname.startsWith('/lessons') ||
+          location.pathname.startsWith('/lectures')
+        );
+      }
+      if (itemId === 'nav-roadmap') {
+        return (
+          location.pathname.startsWith('/roadmap') ||
+          location.pathname.startsWith('/lo-trinh')
+        );
+      }
+      if (itemId === 'nav-qa') {
+        return (
+          location.pathname.startsWith('/qa') ||
+          location.pathname.startsWith('/hoi-dap')
+        );
+      }
+      if (itemId === 'nav-support') {
+        return (
+          location.pathname.startsWith('/support') ||
+          location.pathname.startsWith('/ho-tro')
+        );
+      }
       if (itemId === 'nav-home') {
         return location.pathname === '/' && !location.hash;
       }
