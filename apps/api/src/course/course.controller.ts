@@ -67,6 +67,48 @@ export class CreateCommentDto {
   videoTimestamp?: number;
 }
 
+
+export class CreateLessonNoteDto {
+  @ApiProperty({
+    description: 'Nội dung ghi chú của học sinh',
+    example: 'Este no, đơn chức mạch hở: CnH2nO2 (n >= 2).',
+  })
+  @IsNotEmpty({ message: 'Nội dung ghi chú không được để trống.' })
+  @IsString({ message: 'Nội dung ghi chú phải là chuỗi ký tự.' })
+  content!: string;
+
+  @ApiProperty({
+    description: 'Mốc thời gian video bài giảng tính theo giây (ví dụ: 225 = 03:45)',
+    example: 225,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Mốc thời gian video phải là số nguyên giây.' })
+  @Min(0, { message: 'Mốc thời gian không được âm.' })
+  videoTimestamp?: number;
+}
+
+export class UpdateLessonNoteDto {
+  @ApiProperty({
+    description: 'Nội dung ghi chú cập nhật',
+    example: 'Este no, đơn chức mạch hở: CnH2nO2 (n >= 2). Phản ứng thủy phân kiềm là phản ứng một chiều.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Nội dung ghi chú phải là chuỗi ký tự.' })
+  content?: string;
+
+  @ApiProperty({
+    description: 'Mốc thời gian video bài giảng tính theo giây',
+    example: 240,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt({ message: 'Mốc thời gian video phải là số nguyên giây.' })
+  @Min(0, { message: 'Mốc thời gian không được âm.' })
+  videoTimestamp?: number;
+}
+
 @ApiTags('Courses')
 @Controller('api/v1/courses')
 export class CourseController {
@@ -483,5 +525,81 @@ export class CourseController {
       user.role || 'STUDENT',
     );
   }
-}
 
+  // ==========================================================================
+  // BƯỚC 4.3: GHI CHÚ BÀI HỌC & ĐÁNH DẤU MỐC THỜI GIAN (LESSON TIMELINE NOTES)
+  // ==========================================================================
+
+  @Get(':id/lessons/:lessonId/notes')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lấy danh sách ghi chú của học sinh trong bài học' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiResponse({ status: 200, description: 'Danh sách ghi chú kèm mốc thời gian video' })
+  async getLessonNotes(
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để xem ghi chú cá nhân.');
+    }
+    return this.courseService.getLessonNotes(lessonId, studentId);
+  }
+
+  @Post(':id/lessons/:lessonId/notes')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tạo mới ghi chú / đánh dấu mốc thời gian bài giảng' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiResponse({ status: 201, description: 'Ghi chú được lưu thành công vào cơ sở dữ liệu' })
+  async createLessonNote(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('lessonId', ParseUUIDPipe) lessonId: string,
+    @Body() dto: CreateLessonNoteDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để lưu ghi chú.');
+    }
+    return this.courseService.createLessonNote(id, lessonId, studentId, dto);
+  }
+
+  @Patch(':id/lessons/:lessonId/notes/:noteId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cập nhật nội dung hoặc mốc thời gian ghi chú' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiParam({ name: 'noteId', description: 'Mã UUID của ghi chú' })
+  @ApiResponse({ status: 200, description: 'Cập nhật ghi chú thành công' })
+  async updateLessonNote(
+    @Param('noteId', ParseUUIDPipe) noteId: string,
+    @Body() dto: UpdateLessonNoteDto,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để sửa ghi chú.');
+    }
+    return this.courseService.updateLessonNote(noteId, studentId, dto);
+  }
+
+  @Delete(':id/lessons/:lessonId/notes/:noteId')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Xóa ghi chú bài học' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiParam({ name: 'lessonId', description: 'Mã UUID của bài học' })
+  @ApiParam({ name: 'noteId', description: 'Mã UUID của ghi chú' })
+  @ApiResponse({ status: 200, description: 'Đã xóa ghi chú' })
+  async deleteLessonNote(
+    @Param('noteId', ParseUUIDPipe) noteId: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException('Vui lòng đăng nhập để xóa ghi chú.');
+    }
+    return this.courseService.deleteLessonNote(noteId, studentId);
+  }
+}

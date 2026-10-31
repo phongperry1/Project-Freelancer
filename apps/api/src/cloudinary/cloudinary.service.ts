@@ -45,16 +45,21 @@ export class CloudinaryService {
       'image/png',
       'image/webp',
       'image/gif',
+      'application/pdf',
     ];
     if (!allowedMimeTypes.includes(file.mimetype)) {
       throw new BadRequestException(
-        'Định dạng hình ảnh không hợp lệ. Vui lòng tải lên ảnh JPG, PNG, WEBP hoặc GIF.',
+        'Định dạng tệp không hợp lệ. Vui lòng tải lên ảnh JPG, PNG, WEBP hoặc tài liệu PDF.',
       );
     }
 
-    if (file.size > 5 * 1024 * 1024) {
+    const isPdf = file.mimetype === 'application/pdf';
+    const maxSizeBytes = isPdf ? 10 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
       throw new BadRequestException(
-        'Dung lượng hình ảnh quá lớn. Vui lòng tải lên ảnh dưới 5MB.',
+        isPdf
+          ? 'Dung lượng tệp PDF quá lớn. Vui lòng tải lên tài liệu dưới 10MB.'
+          : 'Dung lượng hình ảnh quá lớn. Vui lòng tải lên ảnh dưới 5MB.',
       );
     }
 
@@ -62,8 +67,8 @@ export class CloudinaryService {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: `tku-learning/${folder}`,
-          resource_type: 'image',
-          transformation: [{ quality: 'auto', fetch_format: 'auto' }],
+          resource_type: isPdf ? 'auto' : 'image',
+          ...(isPdf ? {} : { transformation: [{ quality: 'auto', fetch_format: 'auto' }] }),
         },
         (error, result?: UploadApiResponse) => {
           if (error || !result) {

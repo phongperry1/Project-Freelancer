@@ -22,6 +22,27 @@ export interface PublicCourseItem {
   isEnrolled?: boolean;
 }
 
+
+export interface LessonNoteItem {
+  id: string;
+  lessonId: string;
+  studentId: string;
+  videoTimestamp: number | null;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateLessonNotePayload {
+  content: string;
+  videoTimestamp?: number | null;
+}
+
+export interface UpdateLessonNotePayload {
+  content?: string;
+  videoTimestamp?: number | null;
+}
+
 export interface StudentLessonItem {
   id: string;
   title: string;
@@ -1079,6 +1100,100 @@ export const courseService = {
 
     return await response.json();
   },
+
+  /**
+   * BƯỚC 4.3: Ghi chú bài học và đánh dấu mốc thời gian (Database Synced)
+   */
+  async getLessonNotes(courseId: string, lessonId: string): Promise<LessonNoteItem[]> {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/notes`,
+      {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      },
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải ghi chú bài học.');
+    }
+    return (await response.json()) as LessonNoteItem[];
+  },
+
+  async createLessonNote(
+    courseId: string,
+    lessonId: string,
+    payload: CreateLessonNotePayload,
+  ): Promise<LessonNoteItem> {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/notes`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể lưu ghi chú bài học.');
+    }
+    return (await response.json()) as LessonNoteItem;
+  },
+
+  async updateLessonNote(
+    courseId: string,
+    lessonId: string,
+    noteId: string,
+    payload: UpdateLessonNotePayload,
+  ): Promise<LessonNoteItem> {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/notes/${encodeURIComponent(noteId)}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể cập nhật ghi chú bài học.');
+    }
+    return (await response.json()) as LessonNoteItem;
+  },
+
+  async deleteLessonNote(
+    courseId: string,
+    lessonId: string,
+    noteId: string,
+  ): Promise<{ success: boolean; message: string }> {
+    const token = getAuthToken();
+    const response = await fetch(
+      `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/lessons/${encodeURIComponent(lessonId)}/notes/${encodeURIComponent(noteId)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      },
+    );
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể xóa ghi chú bài học.');
+    }
+    return (await response.json()) as { success: boolean; message: string };
+  },
 };
-
-

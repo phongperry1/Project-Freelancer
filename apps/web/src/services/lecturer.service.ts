@@ -501,7 +501,6 @@ class LecturerService {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Không thể tải thông tin khóa học và giáo trình.');
     }
-
     return await res.json();
   }
 
@@ -632,6 +631,36 @@ class LecturerService {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(err.message || 'Không thể tải lên video bài giảng.');
+    }
+    return await res.json();
+  }
+
+  async uploadSolutionFile(file: File): Promise<{ url: string }> {
+    if (!file) {
+      throw new Error('Vui lòng chọn tệp hình ảnh hoặc tài liệu PDF.');
+    }
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Định dạng tệp không hợp lệ. Vui lòng chọn ảnh JPG, PNG, WEBP hoặc tài liệu PDF.');
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      throw new Error('Dung lượng tệp vượt quá giới hạn 10MB.');
+    }
+
+    const token = authService.getStoredToken();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE_URL}/lecturer/upload/solution`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải lên tệp lời giải viết tay.');
     }
     return await res.json();
   }
@@ -835,7 +864,10 @@ class LecturerService {
     return this.mapApiToAssignment(created);
   }
 
-  async saveAssessment(assignment: AssignmentItem): Promise<AssignmentItem> {
+  async saveAssessment(
+    assignment: AssignmentItem,
+    options?: { notifyStudents?: boolean; targetStudentIds?: string[] },
+  ): Promise<AssignmentItem> {
     const token = authService.getStoredToken();
     const payload = {
       title: assignment.title.trim(),
@@ -845,6 +877,8 @@ class LecturerService {
       durationMinutes: assignment.durationMinutes,
       startDate: assignment.startDate,
       dueDate: assignment.dueDate,
+      notifyStudents: options?.notifyStudents,
+      targetStudentIds: options?.targetStudentIds,
       questions: assignment.questions.map((q, idx) => ({
         content: q.content,
         type: q.type,
@@ -926,6 +960,28 @@ class LecturerService {
     } catch {
       return false;
     }
+  }
+
+  async notifyStudentsAboutAssessment(
+    assessmentId: string,
+    options?: { targetStudentIds?: string[]; force?: boolean; customMessage?: string },
+  ): Promise<{ success: boolean; notifiedCount: number; message: string }> {
+    const token = authService.getStoredToken();
+    const res = await fetch(`${API_BASE_URL}/lecturer/assessments/${assessmentId}/notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(options || {}),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể gửi thông báo.');
+    }
+
+    return res.json();
   }
 
   // ============================================================

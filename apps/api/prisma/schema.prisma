@@ -260,18 +260,19 @@ model LessonProgress {
 // ============================================================
 
 model LessonNote {
-  id        String @id @default(uuid()) @db.Uuid
-  studentId String @db.Uuid
-  lessonId  String @db.Uuid
-  content   String @db.Text
+  id             String    @id @default(uuid()) @db.Uuid
+  studentId      String    @db.Uuid
+  lessonId       String    @db.Uuid
+  videoTimestamp Int?
+  content        String    @db.Text
 
-  createdAt DateTime @default(now()) @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @db.Timestamptz(6)
+  createdAt      DateTime  @default(now()) @db.Timestamptz(6)
+  updatedAt      DateTime  @updatedAt @db.Timestamptz(6)
 
-  student User   @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  lesson  Lesson @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student        User      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  lesson         Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
 
-  @@index([studentId])
+  @@index([studentId, lessonId])
   @@index([lessonId])
 }
 

@@ -1203,3 +1203,80 @@
     border-color: #10b981;
   }
 }
+
+
+/* ==========================================================================
+   Student Text Answer & Inline Handwritten Solution Preview
+   ========================================================================== */
+
+.tku-solution-text-answer-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+
+.tku-solution-text-answer-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.tku-solution-text-answer-content {
+  font-size: 14.5px;
+  color: #1e293b;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.tku-handwritten-preview-wrap {
+  position: relative;
+  display: inline-block;
+  max-width: 440px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid #bae6fd;
+  cursor: pointer;
+  background: #0f172a;
+  margin-bottom: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.tku-handwritten-preview-wrap:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(2, 132, 199, 0.18);
+}
+
+.tku-handwritten-preview-img {
+  display: block;
+  max-width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  transition: opacity 0.2s ease;
+}
+
+.tku-handwritten-preview-wrap:hover .tku-handwritten-preview-img {
+  opacity: 0.85;
+}
+
+.tku-handwritten-preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(15, 23, 42, 0.45);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tku-handwritten-preview-wrap:hover .tku-handwritten-preview-overlay {
+  opacity: 1;
+}
