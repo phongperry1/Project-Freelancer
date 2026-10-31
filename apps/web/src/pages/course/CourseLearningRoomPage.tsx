@@ -9,6 +9,8 @@ import {
   ChevronDown,
   Circle,
   Clock,
+  Trash2,
+  Plus,
   Edit3,
   FileCheck,
   FileText,
@@ -34,6 +36,7 @@ import {
   type CourseLearningRoomResponse,
   type LearningChapterItem,
   type LearningLessonItem,
+  type LessonNoteItem,
   type StudentAssessmentItem,
 } from '../../services/course.service';
 import { LessonDiscussionPane } from './components/LessonDiscussionPane';
@@ -421,60 +424,368 @@ const NativeVideoPlayer: React.FC<NativeVideoPlayerProps> = ({
 };
 
 // ============================================================================
-// GHI CHÚ BÀI HỌC (ISOLATED COMPONENT - ZERO UNNECESSARY RERENDERS)
+// GHI CHÚ BÀI HỌC & ĐÁNH DẤU MỐC THỜI GIAN (DATABASE-SYNCED COMPONENT)
 // ============================================================================
+const sortLessonNotes = (list: LessonNoteItem[]): LessonNoteItem[] =>
+  [...list].sort((a, b) => {
+    const ta = a.videoTimestamp ?? Infinity;
+    const tb = b.videoTimestamp ?? Infinity;
+    if (ta !== tb) return ta - tb;
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  });
+
+const formatNoteCreatedDate = (dateStr: string): string => {
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
 interface LessonNotesPaneProps {
-  noteStorageKey: string | null;
+  courseId: string;
+  lessonId: string;
+  onSeekToTimestamp: (seconds: number) => void;
+  getCurrentVideoTime: () => number;
 }
 
-const LessonNotesPane: React.FC<LessonNotesPaneProps> = React.memo(({ noteStorageKey }) => {
-  const [content, setContent] = useState<string>(() => {
-    if (!noteStorageKey || typeof window === 'undefined') return '';
-    return localStorage.getItem(noteStorageKey) || '';
-  });
-  const [isSaved, setIsSaved] = useState<boolean>(false);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+const LessonNotesPane: React.FC<LessonNotesPaneProps> = React.memo(
+  ({ courseId, lessonId, onSeekToTimestamp, getCurrentVideoTime }) => {
+    const [notes, setNotes] = useState<LessonNoteItem[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const [newContent, setNewContent] = useState<string>('');
+    const [selectedTimestamp, setSelectedTimestamp] = useState<number | null>(null);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
+    const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+    const [editContent, setEditContent] = useState<string>('');
+    const [editTimestamp, setEditTimestamp] = useState<number | null>(null);
+    const [isUpdating, setIsUpdating] = useState<boolean>(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
+    // Tải danh sách ghi chú từ cơ sở dữ liệu
+    useEffect(() => {
+      let isMounted = true;
+      courseService
+        .getLessonNotes(courseId, lessonId)
+        .then((data) => {
+          if (isMounted) setNotes(sortLessonNotes(data || []));
+        })
+        .catch(() => {
+          if (isMounted) setNotes([]);
+        })
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
 
-  const handleSave = useCallback(() => {
-    if (!noteStorageKey) return;
-    localStorage.setItem(noteStorageKey, content);
-    setIsSaved(true);
-    toast.success('Đã lưu ghi chú bài học thành công!');
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    timeoutRef.current = setTimeout(() => setIsSaved(false), 2500);
-  }, [noteStorageKey, content]);
+      return () => {
+        isMounted = false;
+      };
+    }, [courseId, lessonId]);
 
-  return (
-    <div className="tku-learning-notes-pane">
-      <div className="tku-learning-notes-header">
-        <span className="tku-learning-notes-hint">
-          Ghi chú được tự động lưu cục bộ trên trình duyệt của bạn cho bài học này.
-        </span>
-        <button
-          type="button"
-          className="tku-learning-save-note-btn"
-          onClick={handleSave}
-        >
-          {isSaved ? <Check size={14} /> : <Sparkles size={14} />}
-          <span>{isSaved ? 'Đã lưu' : 'Lưu ghi chú'}</span>
-        </button>
+    // Gắn mốc thời gian hiện tại của video
+    const handleCaptureCurrentTime = useCallback(() => {
+      const cur = Math.max(0, Math.floor(getCurrentVideoTime() || 0));
+      setSelectedTimestamp(cur);
+      toast.success(`Đã chọn mốc thời gian [${formatVideoTime(cur)}]`);
+    }, [getCurrentVideoTime]);
+
+    // Tạo mới ghi chú
+    const handleCreateNote = useCallback(async (e: React.FormEvent) => {
+      e.preventDefault();
+      const trimmed = newContent.trim();
+      if (!trimmed) {
+        toast.error('Vui lòng nhập nội dung ghi chú.');
+        return;
+      }
+
+      try {
+        setIsSaving(true);
+        const created = await courseService.createLessonNote(courseId, lessonId, {
+          content: trimmed,
+          videoTimestamp: selectedTimestamp,
+        });
+        setNotes((prev) => sortLessonNotes([...prev, created]));
+        setNewContent('');
+        setSelectedTimestamp(null);
+        toast.success('Đã lưu ghi chú bài học vào cơ sở dữ liệu!');
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Lưu ghi chú thất bại.');
+      } finally {
+        setIsSaving(false);
+      }
+    }, [courseId, lessonId, newContent, selectedTimestamp]);
+
+    // Bắt đầu sửa ghi chú
+    const handleStartEdit = useCallback((note: LessonNoteItem) => {
+      setEditingNoteId(note.id);
+      setEditContent(note.content);
+      setEditTimestamp(note.videoTimestamp);
+    }, []);
+
+    // Hủy sửa ghi chú
+    const handleCancelEdit = useCallback(() => {
+      setEditingNoteId(null);
+      setEditContent('');
+      setEditTimestamp(null);
+    }, []);
+
+    // Lưu cập nhật ghi chú
+    const handleSaveEdit = useCallback(async (noteId: string) => {
+      const trimmed = editContent.trim();
+      if (!trimmed) {
+        toast.error('Nội dung ghi chú không được để trống.');
+        return;
+      }
+
+      try {
+        setIsUpdating(true);
+        const updated = await courseService.updateLessonNote(courseId, lessonId, noteId, {
+          content: trimmed,
+          videoTimestamp: editTimestamp,
+        });
+        setNotes((prev) =>
+          sortLessonNotes(prev.map((item) => (item.id === noteId ? updated : item)))
+        );
+        handleCancelEdit();
+        toast.success('Đã cập nhật ghi chú thành công!');
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Cập nhật ghi chú thất bại.');
+      } finally {
+        setIsUpdating(false);
+      }
+    }, [courseId, lessonId, editContent, editTimestamp, handleCancelEdit]);
+
+    // Xóa ghi chú
+    const handleDeleteNote = useCallback(async (noteId: string) => {
+      if (!window.confirm('Bạn có chắc chắn muốn xóa ghi chú này không?')) return;
+      try {
+        setDeletingId(noteId);
+        await courseService.deleteLessonNote(courseId, lessonId, noteId);
+        setNotes((prev) => prev.filter((item) => item.id !== noteId));
+        toast.success('Đã xóa ghi chú thành công.');
+      } catch (err: unknown) {
+        toast.error(err instanceof Error ? err.message : 'Xóa ghi chú thất bại.');
+      } finally {
+        setDeletingId(null);
+      }
+    }, [courseId, lessonId]);
+
+    return (
+      <div className="tku-learning-notes-pane">
+        {/* Form thêm mới ghi chú */}
+        <form onSubmit={handleCreateNote} className="tku-learning-notes-form-box">
+          <div className="tku-notes-form-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="tku-notes-timestamp-btn"
+                onClick={handleCaptureCurrentTime}
+                title="Bấm để lưu kèm mốc thời gian hiện tại của video"
+              >
+                <Clock size={14} />
+                <span>Gắn mốc video hiện tại</span>
+              </button>
+
+              {selectedTimestamp !== null ? (
+                <span className="tku-notes-active-tag">
+                  <Play size={11} fill="currentColor" />
+                  <span>Mốc: {formatVideoTime(selectedTimestamp)}</span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTimestamp(null)}
+                    title="Xóa mốc thời gian (lưu thành ghi chú chung)"
+                    aria-label="Xóa mốc"
+                  >
+                    <X size={13} />
+                  </button>
+                </span>
+              ) : (
+                <span className="tku-learning-notes-hint">
+                  (Ghi chú chung không gắn mốc thời gian)
+                </span>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSaving || !newContent.trim()}
+              className="tku-learning-save-note-btn"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 size={13} className="tku-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Plus size={14} />
+                  <span>Thêm ghi chú</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          <textarea
+            className="tku-learning-note-textarea"
+            value={newContent}
+            onChange={(e) => setNewContent(e.target.value)}
+            placeholder="Nhập kiến thức trọng tâm, công thức Hóa học cần nhớ hoặc lưu ý của bạn tại mốc này..."
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                handleCreateNote(e);
+              }
+            }}
+            rows={3}
+          />
+        </form>
+
+        {/* Danh sách các ghi chú của học sinh */}
+        <div className="tku-notes-list-section">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#1e293b', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <FileText size={16} className="text-blue-600" />
+              <span>Ghi chú đã lưu ({notes.length})</span>
+            </h4>
+            <span style={{ fontSize: '12px', color: '#64748b' }}>
+              Đồng bộ trực tiếp trên đám mây
+            </span>
+          </div>
+
+          {isLoading ? (
+            <div style={{ textAlign: 'center', padding: '32px 0', color: '#64748b' }}>
+              <Loader2 size={24} className="tku-spin" style={{ margin: '0 auto 8px' }} />
+              <p style={{ fontSize: '13px' }}>Đang nạp ghi chú bài học từ máy chủ...</p>
+            </div>
+          ) : notes.length === 0 ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '36px 20px',
+                background: '#f8fafc',
+                border: '1px dashed #cbd5e1',
+                borderRadius: '10px',
+                color: '#64748b',
+              }}
+            >
+              <Sparkles size={28} style={{ margin: '0 auto 10px', color: '#94a3b8' }} />
+              <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155', margin: '0 0 4px' }}>
+                Chưa có ghi chú nào cho bài học này
+              </p>
+              <p style={{ fontSize: '12.5px', margin: 0, color: '#94a3b8' }}>
+                Nhấn &quot;Gắn mốc video hiện tại&quot; phía trên để ghi lại các mẹo giải nhanh hoặc công thức Hóa học quan trọng!
+              </p>
+            </div>
+          ) : (
+            <div className="tku-notes-list">
+              {notes.map((note) => {
+                const isEditing = editingNoteId === note.id;
+                const isDeleting = deletingId === note.id;
+
+                return (
+                  <div key={note.id} className="tku-note-item">
+                    <div className="tku-note-item__head">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {note.videoTimestamp !== null && note.videoTimestamp !== undefined ? (
+                          <button
+                            type="button"
+                            className="tku-note-item__time-badge"
+                            onClick={() => onSeekToTimestamp(note.videoTimestamp as number)}
+                            title={`Nhấp để tua video tới mốc [${formatVideoTime(note.videoTimestamp)}]`}
+                          >
+                            <Play size={10} fill="currentColor" />
+                            <span>{formatVideoTime(note.videoTimestamp)}</span>
+                          </button>
+                        ) : (
+                          <span className="tku-note-item__general-badge">
+                            Ghi chú chung
+                          </span>
+                        )}
+                        <span className="tku-note-item__date">{formatNoteCreatedDate(note.createdAt)}</span>
+                      </div>
+
+                      <div className="tku-note-item__actions">
+                        {!isEditing && (
+                          <>
+                            <button
+                              type="button"
+                              className="tku-note-action-btn"
+                              onClick={() => handleStartEdit(note)}
+                              title="Chỉnh sửa ghi chú"
+                              aria-label="Sửa ghi chú"
+                            >
+                              <Edit3 size={14} />
+                            </button>
+                            <button
+                              type="button"
+                              className="tku-note-action-btn tku-note-action-btn--delete"
+                              onClick={() => handleDeleteNote(note.id)}
+                              disabled={isDeleting}
+                              title="Xóa ghi chú"
+                              aria-label="Xóa ghi chú"
+                            >
+                              {isDeleting ? <Loader2 size={14} className="tku-spin" /> : <Trash2 size={14} />}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    {isEditing ? (
+                      <div style={{ marginTop: '8px' }}>
+                        <textarea
+                          className="tku-learning-note-textarea"
+                          value={editContent}
+                          onChange={(e) => setEditContent(e.target.value)}
+                          onKeyDown={(e) => {
+                            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                              e.preventDefault();
+                              handleSaveEdit(note.id);
+                            }
+                          }}
+                          rows={3}
+                          style={{ marginBottom: '10px' }}
+                        />
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="tku-learning-save-note-btn"
+                            style={{ background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' }}
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEdit(note.id)}
+                            disabled={isUpdating || !editContent.trim()}
+                            className="tku-learning-save-note-btn"
+                          >
+                            {isUpdating ? <Loader2 size={13} className="tku-spin" /> : <Check size={13} />}
+                            <span>Lưu thay đổi</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="tku-note-item__content">{note.content}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
-      <textarea
-        className="tku-learning-note-textarea"
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="Nhập kiến thức trọng tâm, công thức Hóa học cần nhớ hoặc lưu ý của bạn khi học bài này..."
-        rows={6}
-      />
-    </div>
-  );
-});
+    );
+  },
+);
 LessonNotesPane.displayName = 'LessonNotesPane';
 
 const GRADE_LABELS: Record<string, string> = {
@@ -848,11 +1159,6 @@ export const CourseLearningRoomPage: React.FC = () => {
     return null;
   }, [allLessons, activeLessonIndex]);
 
-  // 6. Lesson Notes Storage Key
-  const noteStorageKey = useMemo(() => {
-    if (!user?.id || !activeLesson?.id) return null;
-    return `tku_note_${user.id}_${activeLesson.id}`;
-  }, [user, activeLesson]);
 
   // 7. Navigation to lesson
   const handleSelectLesson = useCallback(
@@ -1312,10 +1618,13 @@ export const CourseLearningRoomPage: React.FC = () => {
               )}
 
               {/* TAB 2: GHI CHÚ BÀI HỌC CÁ NHÂN */}
-              {activeTab === 'notes' && (
+              {activeTab === 'notes' && activeLesson && (
                 <LessonNotesPane
-                  key={noteStorageKey || 'empty_notes'}
-                  noteStorageKey={noteStorageKey}
+                  key={`lesson_notes_${course.id}_${activeLesson.id}`}
+                  courseId={course.id}
+                  lessonId={activeLesson.id}
+                  onSeekToTimestamp={handleSeekToTimestamp}
+                  getCurrentVideoTime={getCurrentVideoTime}
                 />
               )}
 

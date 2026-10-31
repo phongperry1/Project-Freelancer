@@ -650,78 +650,91 @@ export const CourseExamResultPage: React.FC = () => {
                     {/* Nội dung câu hỏi */}
                     <div className="tku-question-card__content">{q.content}</div>
 
-                    {/* Danh sách lựa chọn A, B, C, D */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {q.options.map((opt, optIdx) => {
-                        const letter = OPTION_LETTERS[optIdx] || String(optIdx + 1);
-                        const isStudentChoice = q.selectedOptionId === opt.id;
-                        const isCorrectOption = opt.isCorrect;
+                    {/* Danh sách lựa chọn A, B, C, D (cho trắc nghiệm) hoặc câu trả lời tự luận */}
+                    {q.type === 'TEXT' ? (
+                      <div className="tku-solution-text-answer-box">
+                        <span className="tku-solution-text-answer-label">Câu trả lời tự luận của bạn:</span>
+                        <div className="tku-solution-text-answer-content">
+                          {q.answerText ? (
+                            q.answerText
+                          ) : (
+                            <em style={{ color: '#94a3b8' }}>Chưa nhập câu trả lời</em>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {q.options.map((opt, optIdx) => {
+                          const letter = OPTION_LETTERS[optIdx] || String(optIdx + 1);
+                          const isStudentChoice = q.selectedOptionId === opt.id;
+                          const isCorrectOption = opt.isCorrect;
 
-                        let itemClass = 'tku-solution-choice';
-                        if (isCorrectOption) {
-                          itemClass += ' tku-solution-choice--correct-ans';
-                        } else if (isStudentChoice && !isCorrectOption) {
-                          itemClass += ' tku-solution-choice--wrong-user';
-                        }
+                          let itemClass = 'tku-solution-choice';
+                          if (isCorrectOption) {
+                            itemClass += ' tku-solution-choice--correct-ans';
+                          } else if (isStudentChoice && !isCorrectOption) {
+                            itemClass += ' tku-solution-choice--wrong-user';
+                          }
 
-                        return (
-                          <div key={opt.id} className={itemClass}>
-                            <span className="tku-choice-letter" style={{ width: 28, height: 28, fontSize: 13 }}>
-                              {letter}
-                            </span>
-                            <span style={{ flex: 1, fontSize: 14.5, color: 'inherit' }}>
-                              {opt.content}
-                            </span>
-
-                            {/* Badge chỉ định trạng thái lựa chọn */}
-                            {isStudentChoice && isCorrectOption && (
-                              <span
-                                style={{
-                                  fontSize: 12.5,
-                                  fontWeight: 700,
-                                  color: '#059669',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                }}
-                              >
-                                <CheckCircle2 size={15} /> Lựa chọn của bạn (Đúng)
+                          return (
+                            <div key={opt.id} className={itemClass}>
+                              <span className="tku-choice-letter" style={{ width: 28, height: 28, fontSize: 13 }}>
+                                {letter}
                               </span>
-                            )}
-
-                            {isStudentChoice && !isCorrectOption && (
-                              <span
-                                style={{
-                                  fontSize: 12.5,
-                                  fontWeight: 700,
-                                  color: '#dc2626',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                }}
-                              >
-                                <XCircle size={15} /> Lựa chọn của bạn (Sai)
+                              <span style={{ flex: 1, fontSize: 14.5, color: 'inherit' }}>
+                                {opt.content}
                               </span>
-                            )}
 
-                            {!isStudentChoice && isCorrectOption && (
-                              <span
-                                style={{
-                                  fontSize: 12.5,
-                                  fontWeight: 700,
-                                  color: '#059669',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: 4,
-                                }}
-                              >
-                                <CheckCircle2 size={15} /> Đáp án chính xác
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
+                              {/* Badge chỉ định trạng thái lựa chọn */}
+                              {isStudentChoice && isCorrectOption && (
+                                <span
+                                  style={{
+                                    fontSize: 12.5,
+                                    fontWeight: 700,
+                                    color: '#059669',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                  }}
+                                >
+                                  <CheckCircle2 size={15} /> Lựa chọn của bạn (Đúng)
+                                </span>
+                              )}
+
+                              {isStudentChoice && !isCorrectOption && (
+                                <span
+                                  style={{
+                                    fontSize: 12.5,
+                                    fontWeight: 700,
+                                    color: '#dc2626',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                  }}
+                                >
+                                  <XCircle size={15} /> Lựa chọn của bạn (Sai)
+                                </span>
+                              )}
+
+                              {!isStudentChoice && isCorrectOption && (
+                                <span
+                                  style={{
+                                    fontSize: 12.5,
+                                    fontWeight: 700,
+                                    color: '#059669',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 4,
+                                  }}
+                                >
+                                  <CheckCircle2 size={15} /> Đáp án chính xác
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
                     {/* KHỐI HƯỚNG DẪN GIẢI CHI TIẾT & LỜI GIẢI VIẾT TAY */}
                     {(q.solutionText || q.solutionFileUrl) && (
@@ -737,21 +750,47 @@ export const CourseExamResultPage: React.FC = () => {
 
                         {/* Nút xem lời giải viết tay do giảng viên upload */}
                         {q.solutionFileUrl && (
-                          <div>
-                            <button
-                              type="button"
-                              className="tku-handwritten-btn"
-                              onClick={() =>
-                                setPreviewSolutionUrl({
-                                  url: q.solutionFileUrl!,
-                                  questionNum: questionNumber,
-                                })
-                              }
-                            >
-                              <FileText size={15} />
-                              <span>Xem lời giải viết tay của giảng viên (Bản gốc)</span>
-                              <ExternalLink size={13} style={{ marginLeft: 4 }} />
-                            </button>
+                          <div style={{ marginTop: 12 }}>
+                            {!/\.(pdf)($|\?)/i.test(q.solutionFileUrl) && (
+                              <div
+                                className="tku-handwritten-preview-wrap"
+                                onClick={() =>
+                                  setPreviewSolutionUrl({
+                                    url: q.solutionFileUrl!,
+                                    questionNum: questionNumber,
+                                  })
+                                }
+                                title="Bấm để phóng to xem chi tiết ảnh lời giải"
+                              >
+                                <img
+                                  src={q.solutionFileUrl}
+                                  alt={`Lời giải viết tay câu ${questionNumber}`}
+                                  className="tku-handwritten-preview-img"
+                                  loading="lazy"
+                                />
+                                <div className="tku-handwritten-preview-overlay">
+                                  <ExternalLink size={16} />
+                                  <span>Phóng to xem chi tiết</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div>
+                              <button
+                                type="button"
+                                className="tku-handwritten-btn"
+                                onClick={() =>
+                                  setPreviewSolutionUrl({
+                                    url: q.solutionFileUrl!,
+                                    questionNum: questionNumber,
+                                  })
+                                }
+                              >
+                                <FileText size={15} />
+                                <span>Xem lời giải viết tay của giảng viên (Bản gốc)</span>
+                                <ExternalLink size={13} style={{ marginLeft: 4 }} />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>

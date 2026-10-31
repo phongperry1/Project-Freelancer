@@ -20,6 +20,7 @@ import {
   Layers,
   Award,
   BarChart3,
+  Bell,
 } from 'lucide-react';
 import {
   lecturerService,
@@ -45,6 +46,26 @@ export const LecturerAssignmentsPage: React.FC = () => {
 
   // Delete Confirmation Modal State
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  // Notify Students Loading State
+  const [isNotifyingId, setIsNotifyingId] = useState<string | null>(null);
+
+  const handleNotifyStudents = useCallback(async (asg: AssignmentItem) => {
+    setIsNotifyingId(asg.id);
+    try {
+      const res = await lecturerService.notifyStudentsAboutAssessment(asg.id, { force: true });
+      if (res.notifiedCount > 0) {
+        toast.success(`Đã gửi thông báo nhắc nhở tới ${res.notifiedCount} học sinh!`);
+      } else {
+        toast.info(res.message || 'Không có học sinh mới nào cần gửi thông báo.');
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Có lỗi khi gửi thông báo';
+      toast.error(message);
+    } finally {
+      setIsNotifyingId(null);
+    }
+  }, []);
 
   // Load assignments from PostgreSQL database
   const loadData = useCallback(async () => {
@@ -515,6 +536,23 @@ export const LecturerAssignmentsPage: React.FC = () => {
                           >
                             <Layers size={14} />
                             <span>Biên soạn đề thi</span>
+                          </button>
+                        )}
+
+                        {/* Gửi thông báo / Nhắc nhở học sinh làm bài (cho bài tập đã giao) */}
+                        {asg.status === 'ASSIGNED' && (
+                          <button
+                            type="button"
+                            className="tku-row-btn-icon tku-row-btn-icon--notify"
+                            title="Gửi thông báo / Nhắc nhở học sinh vào làm bài"
+                            onClick={() => handleNotifyStudents(asg)}
+                            disabled={isNotifyingId === asg.id}
+                          >
+                            {isNotifyingId === asg.id ? (
+                              <Loader2 size={15} className="tku-spin-icon" />
+                            ) : (
+                              <Bell size={15} />
+                            )}
                           </button>
                         )}
 

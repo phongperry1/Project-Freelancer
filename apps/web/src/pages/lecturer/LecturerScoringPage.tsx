@@ -7,6 +7,11 @@ import {
   Lightbulb,
   Calculator,
   Loader2,
+  Upload,
+  FileText,
+  Trash2,
+  ExternalLink,
+  Image as ImageIcon,
 } from 'lucide-react';
 import {
   lecturerService,
@@ -207,6 +212,47 @@ export const LecturerScoringPage: React.FC = () => {
         ...prev,
         solutionText,
       }));
+    },
+    [updateQuestion]
+  );
+
+  const [uploadingQId, setUploadingQId] = useState<string | null>(null);
+
+  // Update handwritten solution file
+  const handleSolutionFileChange = useCallback(
+    (qId: string, solutionFileUrl: string | null) => {
+      if (solutionFileUrl === null) {
+        if (!window.confirm('Bạn có chắc chắn muốn gỡ tệp lời giải này không?')) return;
+      }
+      updateQuestion(qId, (prev) => ({
+        ...prev,
+        solutionFileUrl,
+      }));
+    },
+    [updateQuestion]
+  );
+
+  const handleUploadSolutionFile = useCallback(
+    async (qId: string, file: File) => {
+      if (!file) return;
+      if (file.size > 10 * 1024 * 1024) {
+        toast.warning('Dung lượng tệp vượt quá 10MB. Vui lòng chọn tệp nhỏ hơn.');
+        return;
+      }
+      try {
+        setUploadingQId(qId);
+        const { url } = await lecturerService.uploadSolutionFile(file);
+        updateQuestion(qId, (prev) => ({
+          ...prev,
+          solutionFileUrl: url,
+        }));
+        toast.success('Đã tải lên tệp lời giải viết tay thành công!');
+      } catch (err: unknown) {
+        const error = err as Error;
+        toast.error(error.message || 'Không thể tải lên tệp lời giải.');
+      } finally {
+        setUploadingQId(null);
+      }
     },
     [updateQuestion]
   );
@@ -513,6 +559,108 @@ export const LecturerScoringPage: React.FC = () => {
                     value={q.solutionText || ''}
                     onChange={(e) => handleSolutionChange(q.id, e.target.value)}
                   />
+
+                  {/* Handwritten solution upload & preview */}
+                  <div className="tku-solution-file-upload">
+                    <div className="tku-solution-file-upload__header">
+                      <span className="tku-solution-file-upload__title">
+                        <ImageIcon size={15} className="tku-text-blue" />
+                        <span>Lời giải viết tay / Ảnh bài giải chi tiết</span>
+                      </span>
+                      <span className="tku-solution-file-upload__hint">
+                        Đặc biệt hữu ích cho phần tự luận, sơ đồ hoặc bài toán viết tay
+                      </span>
+                    </div>
+
+                    {q.solutionFileUrl ? (
+                      <div className="tku-solution-file-preview-card">
+                        <div className="tku-solution-file-preview-info">
+                          {/\.(pdf)($|\?)/i.test(q.solutionFileUrl) ? (
+                            <FileText size={24} className="tku-text-red" />
+                          ) : (
+                            <img
+                              src={q.solutionFileUrl}
+                              alt="Lời giải viết tay"
+                              className="tku-solution-file-thumb" loading="lazy"
+                            />
+                          )}
+                          <div className="tku-solution-file-meta">
+                            <span className="tku-solution-file-name">
+                              {/\.(pdf)($|\?)/i.test(q.solutionFileUrl)
+                                ? 'Tài liệu lời giải (PDF)'
+                                : 'Ảnh lời giải viết tay'}
+                            </span>
+                            <a
+                              href={q.solutionFileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="tku-solution-file-link"
+                            >
+                              <span>Xem bản gốc</span>
+                              <ExternalLink size={12} />
+                            </a>
+                          </div>
+                        </div>
+
+                        <div className="tku-solution-file-actions">
+                          <label className="tku-btn-reupload-file" title="Thay thế tệp khác">
+                            <Upload size={13} />
+                            <span>Đổi tệp</span>
+                            <input
+                              type="file"
+                              accept="image/png,image/jpeg,image/webp,application/pdf"
+                              style={{ display: 'none' }}
+                              disabled={uploadingQId === q.id}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleUploadSolutionFile(q.id, f);
+                                e.target.value = '';
+                              }}
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            className="tku-btn-remove-file"
+                            title="Xóa tệp lời giải viết tay"
+                            onClick={() => handleSolutionFileChange(q.id, null)}
+                          >
+                            <Trash2 size={13} />
+                            <span>Xóa</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="tku-solution-file-dropzone">
+                        <label className="tku-solution-file-upload-btn">
+                          {uploadingQId === q.id ? (
+                            <>
+                              <Loader2 size={15} className="tku-lecturer-spin-icon" />
+                              <span>Đang tải lên Cloudinary...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={15} />
+                              <span>Tải lên ảnh lời giải viết tay / file PDF</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp,application/pdf"
+                            style={{ display: 'none' }}
+                            disabled={uploadingQId === q.id}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleUploadSolutionFile(q.id, f);
+                              e.target.value = '';
+                            }}
+                          />
+                        </label>
+                        <span className="tku-solution-file-dropzone__note">
+                          Hỗ trợ ảnh PNG, JPG, WebP hoặc PDF (tối đa 10MB)
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </article>
             );

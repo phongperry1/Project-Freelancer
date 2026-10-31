@@ -401,12 +401,15 @@ export const LecturerAssignPage: React.FC = () => {
 
     try {
       setIsPublishing(true);
-      await lecturerService.saveAssessment(updated);
+      await lecturerService.saveAssessment(updated, {
+        notifyStudents: true,
+        targetStudentIds: targetType === 'CUSTOM' ? selectedStudentIds : undefined,
+      });
       const targetMsg =
         targetType === 'CUSTOM'
           ? `cho ${selectedStudentIds.length} học sinh được chỉ định`
           : 'cho toàn bộ học sinh trong khóa học';
-      toast.success(`Đã giao "${updated.title}" thành công ${targetMsg}!`);
+      toast.success(`Đã giao "${updated.title}" thành công ${targetMsg} và tự động gửi thông báo đến học sinh!`);
       navigate('/lecturer/assignments');
     } catch {
       isSubmittedRef.current = false;
@@ -418,7 +421,7 @@ export const LecturerAssignPage: React.FC = () => {
     dueDate,
     startDate,
     targetType,
-    selectedStudentIds.length,
+    selectedStudentIds,
     buildUpdatedAssignment,
     navigate,
   ]);
