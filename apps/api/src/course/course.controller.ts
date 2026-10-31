@@ -134,6 +134,72 @@ export class CourseController {
     return this.courseService.getPublicCourses({ grade, search }, studentId);
   }
 
+  @Get('student/lessons')
+  @ApiOperation({ summary: 'Lấy dữ liệu tổng quan kho bài giảng dành cho học sinh' })
+  @ApiQuery({
+    name: 'grade',
+    required: false,
+    description: 'Lọc bài giảng theo khối lớp (all, 10, 11, 12, exam)',
+  })
+  @ApiQuery({
+    name: 'courseId',
+    required: false,
+    description: 'Lọc bài giảng theo khóa học cụ thể',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Tìm kiếm bài giảng theo tên hoặc chuyên đề',
+  })
+  @ApiResponse({ status: 200, description: 'Danh sách bài giảng, bài học đang dở và thống kê' })
+  async getStudentLessonsOverview(
+    @Query('grade') grade?: string,
+    @Query('courseId') courseId?: string,
+    @Query('search') search?: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    return this.courseService.getStudentLessonsOverview(studentId, {
+      grade,
+      courseId,
+      search,
+    });
+  }
+
+  @Get('discussions')
+  @ApiOperation({ summary: 'Lấy danh sách các câu hỏi thảo luận công khai (Student Q&A Hub)' })
+  @ApiQuery({
+    name: 'grade',
+    required: false,
+    description: 'Lọc theo khối lớp (all, 10, 11, 12, exam)',
+  })
+  @ApiQuery({
+    name: 'courseId',
+    required: false,
+    description: 'Lọc theo khóa học cụ thể',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    description: 'Tìm kiếm theo nội dung câu hỏi hoặc bài học',
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: 'Lọc theo trạng thái (ALL, ANSWERED, WAITING, MY_QUESTIONS)',
+  })
+  @ApiResponse({ status: 200, description: 'Danh sách câu hỏi thảo luận kèm phản hồi và thống kê' })
+  async getPublicDiscussions(
+    @Query('grade') grade?: string,
+    @Query('courseId') courseId?: string,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    return this.courseService.getPublicDiscussions({ grade, courseId, search, status }, studentId);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Xem chi tiết khóa học công khai theo ID' })
   @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })

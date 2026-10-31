@@ -1,0 +1,642 @@
+/* ==========================================================================
+   ACADEMIC ROADMAP PAGE STYLING (TKU E-LEARNING)
+   Đồng bộ 100% với coursesPage.css & design system TKU
+   Dữ liệu thực tế từ hệ thống, giao diện học thuật tinh chuẩn
+   ========================================================================== */
+
+/* Active Roadmap Category Header Row */
+.tku-roadmap-stat-pills-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  background: var(--tku-hub-surface, #ffffff);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin: 20px 0 0;
+  box-shadow: var(--tku-hub-shadow-xs, 0 1px 3px rgba(15, 23, 42, 0.04));
+}
+
+@media (max-width: 900px) {
+  .tku-roadmap-stat-pills-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .tku-roadmap-stat-pills-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-roadmap-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-roadmap-stat-pill svg {
+  color: var(--tku-hub-primary, #2563eb);
+  flex-shrink: 0;
+}
+
+.tku-roadmap-stat-pill__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--tku-hub-text-muted, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.tku-roadmap-stat-pill__value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tku-hub-text-title, #0f172a);
+}
+
+/* Overall Personal Progress Banner inside Roadmap */
+.tku-roadmap-progress-banner {
+  background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  padding: 16px 20px;
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.tku-roadmap-progress-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-roadmap-progress-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #dbeafe;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-roadmap-progress-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 2px;
+}
+
+.tku-roadmap-progress-desc {
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.tku-roadmap-progress-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+
+.tku-roadmap-progress-bar-bg {
+  flex: 1;
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.tku-roadmap-progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #2563eb 0%, #10b981 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.tku-roadmap-progress-bar-pct {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #10b981;
+}
+
+/* --------------------------------------------------------------------------
+   ROADMAP STAGES LIST (CÁC CHẶNG LỘ TRÌNH KHÓA HỌC THẬT)
+   -------------------------------------------------------------------------- */
+.tku-roadmap-milestones-container {
+  margin-bottom: 44px;
+}
+
+.tku-roadmap-section-header {
+  margin-bottom: 28px;
+}
+
+.tku-roadmap-stepper-list {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+/* Stage Course Step Card */
+.tku-roadmap-stage-block {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--tku-hub-surface, #ffffff);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: var(--tku-hub-radius-xl, 20px);
+  padding: 26px 30px;
+  box-shadow: var(--tku-hub-shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.05));
+  transition: var(--tku-hub-transition, all 0.22s ease);
+}
+
+.tku-roadmap-stage-block:hover {
+  border-color: #93c5fd;
+  box-shadow: var(--tku-hub-shadow-md, 0 6px 20px -2px rgba(15, 23, 42, 0.08));
+}
+
+.tku-roadmap-stage-block.is-enrolled {
+  border-left: 5px solid #10b981;
+}
+
+/* Step Header */
+.tku-roadmap-stage-badge-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.tku-roadmap-stage-num-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: linear-gradient(135deg, #1d68f2 0%, #2563eb 100%);
+  border-radius: var(--tku-hub-radius-pill, 999px);
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+}
+
+.tku-roadmap-stage-grade-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--tku-hub-radius-pill, 999px);
+}
+
+.tku-roadmap-stage-enrolled-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 10px;
+  border-radius: var(--tku-hub-radius-pill, 999px);
+}
+
+/* Course Main Content */
+.tku-roadmap-stage-main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .tku-roadmap-stage-main {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-roadmap-stage-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-roadmap-stage-title {
+  font-size: 21px;
+  font-weight: 800;
+  color: var(--tku-hub-text-title, #0f172a);
+  line-height: 1.35;
+  margin: 0 0 8px;
+}
+
+.tku-roadmap-stage-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--tku-hub-text-body, #334155);
+  margin: 0 0 16px;
+}
+
+.tku-roadmap-stage-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--tku-hub-text-muted, #64748b);
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tku-roadmap-stage-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-roadmap-stage-meta-item svg {
+  color: var(--tku-hub-primary, #2563eb);
+}
+
+/* Real Chapters List */
+.tku-roadmap-chapters-wrap {
+  margin-bottom: 20px;
+}
+
+.tku-roadmap-chapters-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--tku-hub-text-muted, #64748b);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-roadmap-chapters-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .tku-roadmap-chapters-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-roadmap-chapter-card {
+  background: var(--tku-hub-surface-subtle, #f8fafc);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tku-roadmap-chapter-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tku-hub-text-title, #0f172a);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tku-roadmap-chapter-count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--tku-hub-primary, #2563eb);
+  background: var(--tku-hub-primary-soft, #eff6ff);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+/* Stage Right Column: Card actions & teacher */
+.tku-roadmap-stage-side {
+  background: var(--tku-hub-surface-subtle, #f8fafc);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tku-roadmap-stage-teacher {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tku-roadmap-stage-teacher-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid #bfdbfe;
+  flex-shrink: 0;
+}
+
+.tku-roadmap-stage-teacher-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.tku-roadmap-stage-teacher-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--tku-hub-text-title, #0f172a);
+}
+
+.tku-roadmap-stage-teacher-role {
+  font-size: 12px;
+  color: var(--tku-hub-text-muted, #64748b);
+}
+
+/* Action CTA Buttons */
+.tku-roadmap-stage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tku-roadmap-stage-btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--tku-hub-primary, #2563eb);
+  border: 1px solid var(--tku-hub-primary, #2563eb);
+  border-radius: var(--tku-hub-radius-pill, 999px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--tku-hub-transition, all 0.22s ease);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+}
+
+.tku-roadmap-stage-btn-primary:hover {
+  background: var(--tku-hub-primary-hover, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.tku-roadmap-stage-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--tku-hub-text-body, #334155);
+  background: #ffffff;
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: var(--tku-hub-radius-pill, 999px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--tku-hub-transition, all 0.22s ease);
+}
+
+.tku-roadmap-stage-btn-secondary:hover {
+  background: var(--tku-hub-primary-soft, #eff6ff);
+  border-color: var(--tku-hub-primary-border, #bfdbfe);
+  color: var(--tku-hub-primary, #2563eb);
+}
+
+/* --------------------------------------------------------------------------
+   EMPTY STATE CHUẨN TKU
+   -------------------------------------------------------------------------- */
+.tku-roadmap-empty-state {
+  background: var(--tku-hub-surface, #ffffff);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: 20px;
+  padding: 60px 24px;
+  text-align: center;
+  margin-bottom: 40px;
+  box-shadow: var(--tku-hub-shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.05));
+}
+
+.tku-roadmap-empty-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  color: var(--tku-hub-primary, #2563eb);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  border: 1px solid var(--tku-hub-primary-border, #bfdbfe);
+}
+
+.tku-roadmap-empty-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--tku-hub-text-title, #0f172a);
+  margin: 0 0 8px;
+}
+
+.tku-roadmap-empty-desc {
+  font-size: 14px;
+  color: var(--tku-hub-text-muted, #64748b);
+  max-width: 520px;
+  margin: 0 auto 22px;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   ACADEMIC GUIDELINES / ADVISOR CARD
+   -------------------------------------------------------------------------- */
+.tku-roadmap-advisor-card {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  color: #ffffff;
+  border-radius: var(--tku-hub-radius-xl, 20px);
+  padding: 28px 32px;
+  margin: 40px 0 32px;
+  box-shadow: 0 10px 30px -4px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.tku-roadmap-advisor-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.tku-roadmap-advisor-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(59, 130, 246, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #93c5fd;
+  flex-shrink: 0;
+}
+
+.tku-roadmap-advisor-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.tku-roadmap-advisor-subtitle {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.tku-roadmap-advice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 860px) {
+  .tku-roadmap-advice-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-roadmap-advice-box {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 16px 18px;
+  backdrop-filter: blur(8px);
+}
+
+.tku-roadmap-advice-box__target {
+  font-size: 13px;
+  font-weight: 700;
+  color: #60a5fa;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tku-roadmap-advice-box__text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   BOTTOM CALL TO ACTION
+   -------------------------------------------------------------------------- */
+.tku-roadmap-bottom-cta {
+  background: var(--tku-hub-surface, #ffffff);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: var(--tku-hub-radius-xl, 18px);
+  padding: 26px 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-shadow: var(--tku-hub-shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.05));
+  margin-bottom: 40px;
+  flex-wrap: wrap;
+}
+
+.tku-roadmap-bottom-cta__left {
+  flex: 1;
+  min-width: 260px;
+}
+
+.tku-roadmap-bottom-cta__title {
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--tku-hub-text-title, #0f172a);
+  margin: 0 0 4px;
+}
+
+.tku-roadmap-bottom-cta__desc {
+  font-size: 13.5px;
+  color: var(--tku-hub-text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tku-roadmap-bottom-cta__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tku-roadmap-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  background: var(--tku-hub-primary, #2563eb);
+  border: 1px solid var(--tku-hub-primary, #2563eb);
+  border-radius: var(--tku-hub-radius-pill, 999px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--tku-hub-transition, all 0.22s ease);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+.tku-roadmap-btn-primary:hover {
+  background: var(--tku-hub-primary-hover, #1d4ed8);
+  border-color: var(--tku-hub-primary-hover, #1d4ed8);
+  transform: translateY(-1px);
+}
+
+.tku-roadmap-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--tku-hub-text-body, #334155);
+  background: var(--tku-hub-surface-subtle, #f8fafc);
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
+  border-radius: var(--tku-hub-radius-pill, 999px);
+  text-decoration: none;
+  cursor: pointer;
+  transition: var(--tku-hub-transition, all 0.22s ease);
+}
+
+.tku-roadmap-btn-secondary:hover {
+  background: var(--tku-hub-primary-soft, #eff6ff);
+  border-color: var(--tku-hub-primary-border, #bfdbfe);
+  color: var(--tku-hub-primary, #2563eb);
+  transform: translateY(-1px);
+}

@@ -22,6 +22,50 @@ export interface PublicCourseItem {
   isEnrolled?: boolean;
 }
 
+export interface StudentLessonItem {
+  id: string;
+  title: string;
+  sortOrder: number;
+  chapterId: string;
+  chapterTitle: string;
+  chapterOrder: number;
+  courseId: string;
+  courseTitle: string;
+  courseGrade: '10' | '11' | '12' | 'exam' | 'other';
+  teacher: PublicCourseTeacher;
+  hasVideo: boolean;
+  videoUrl?: string | null;
+  hasContent: boolean;
+  isEnrolled: boolean;
+  isCompleted: boolean;
+  progressPercent: number;
+  lastPosition: number;
+  updatedAt?: string | null;
+}
+
+export interface StudentEnrolledCourseItem {
+  id: string;
+  title: string;
+  grade: string;
+  totalLessons: number;
+  completedLessons: number;
+  progressPercent: number;
+}
+
+export interface StudentLessonsOverviewResponse {
+  lessons: StudentLessonItem[];
+  total: number;
+  recentLesson: StudentLessonItem | null;
+  enrolledCourses: StudentEnrolledCourseItem[];
+  stats: {
+    totalLessons: number;
+    completedLessons: number;
+    inProgressLessons: number;
+    notStartedLessons: number;
+    averageProgress: number;
+  };
+}
+
 export interface PublicCoursesResponse {
   courses: PublicCourseItem[];
   total: number;
@@ -139,6 +183,48 @@ export interface CreateCommentPayload {
   content: string;
   parentId?: string;
   videoTimestamp?: number | null;
+}
+
+export interface PublicDiscussionReply {
+  id: string;
+  content: string;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user: CommentUser;
+}
+
+export interface PublicDiscussionItem {
+  id: string;
+  content: string;
+  videoTimestamp?: number | null;
+  isPinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  user: CommentUser;
+  lessonId: string;
+  lessonTitle: string;
+  chapterId: string;
+  chapterTitle: string;
+  courseId: string;
+  courseTitle: string;
+  courseGrade: '10' | '11' | '12' | 'exam' | 'other';
+  teacher: PublicCourseTeacher;
+  replyCount: number;
+  hasTeacherReply: boolean;
+  replies: PublicDiscussionReply[];
+}
+
+export interface PublicDiscussionsResponse {
+  questions: PublicDiscussionItem[];
+  total: number;
+  stats: {
+    totalQuestions: number;
+    answeredCount: number;
+    waitingCount: number;
+  };
 }
 
 export interface LessonAiMessage {
@@ -648,6 +734,52 @@ export const courseService = {
   /**
    * Bước 4.1: Lấy danh sách hỏi đáp / thảo luận của bài học
    */
+  /**
+   * Lấy danh sách hỏi đáp toàn bộ hệ thống (Student Q&A Hub)
+   */
+  async getPublicDiscussions(params?: {
+    grade?: string;
+    search?: string;
+    courseId?: string;
+    status?: string;
+  }): Promise<PublicDiscussionsResponse> {
+    const token = getAuthToken();
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.grade && params.grade !== 'all') {
+      queryParams.set('grade', params.grade);
+    }
+    if (params?.search?.trim()) {
+      queryParams.set('search', params.search.trim());
+    }
+    if (params?.courseId) {
+      queryParams.set('courseId', params.courseId);
+    }
+    if (params?.status && params.status !== 'ALL') {
+      queryParams.set('status', params.status);
+    }
+
+    const qs = queryParams.toString();
+    const url = `${API_BASE_URL}/courses/discussions${qs ? `?${qs}` : ''}`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const err = (await response.json().catch(() => null)) as { message?: string } | null;
+      throw new Error(err?.message || 'Không thể tải danh sách câu hỏi thảo luận.');
+    }
+
+    return await response.json();
+  },
+
   async getLessonComments(courseId: string, lessonId: string): Promise<LessonCommentsResponse> {
     const token = getAuthToken();
     const headers: Record<string, string> = {
@@ -877,6 +1009,53 @@ export const courseService = {
   /**
    * Bước 4.2: Xóa toàn bộ lịch sử trò chuyện AI trong bài học này
    */
+  /**
+   * Lấy tổng quan kho bài giảng của học sinh (tiến độ, bài đang học dở, danh sách bài giảng)
+   */
+  async getStudentLessonsOverview(params?: {
+    grade?: string;
+    courseId?: string;
+    search?: string;
+  }): Promise<StudentLessonsOverviewResponse> {
+    const token = getAuthToken();
+    const searchParams = new URLSearchParams();
+    if (params?.grade && params.grade !== 'all') {
+      searchParams.set('grade', params.grade);
+    }
+    if (params?.courseId && params.courseId !== 'all') {
+      searchParams.set('courseId', params.courseId);
+    }
+    if (params?.search?.trim()) {
+      searchParams.set('search', params.search.trim());
+    }
+
+    const queryString = searchParams.toString();
+    const url = `${API_BASE_URL}/courses/student/lessons${queryString ? `?${queryString}` : ''}`;
+
+    const headers: Record<string, string> = {
+      Accept: 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers,
+    });
+
+    if (!response.ok) {
+      const errorJson = (await response.json().catch(() => null)) as {
+        message?: string;
+      } | null;
+      throw new Error(
+        errorJson?.message || `Không thể tải danh sách bài giảng (Mã lỗi: ${response.status})`,
+      );
+    }
+
+    return (await response.json()) as StudentLessonsOverviewResponse;
+  },
+
   async clearLessonAiHistory(
     courseId: string,
     lessonId: string,

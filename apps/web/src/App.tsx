@@ -14,6 +14,10 @@ import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
 const LandingPage = lazy(() => import('./pages/landing/LandingPage'));
 const CoursesPage = lazy(() => import('./pages/course/CoursesPage'));
+const LessonsPage = lazy(() => import('./pages/course/LessonsPage'));
+const RoadmapPage = lazy(() => import('./pages/roadmap/RoadmapPage'));
+const QAPage = lazy(() => import('./pages/qa/QAPage'));
+const SupportPage = lazy(() => import('./pages/support/SupportPage'));
 const CategoryCoursesPage = lazy(() => import('./pages/course/CategoryCoursesPage'));
 const CourseDetailPage = lazy(() => import('./pages/course/CourseDetailPage'));
 const CourseLearningRoomPage = lazy(() => import('./pages/course/CourseLearningRoomPage'));
@@ -89,6 +93,14 @@ export const App: React.FC = () => {
             <Routes>
               <Route path="/" element={<HomeRoute />} />
               <Route path="/courses" element={<CoursesPage />} />
+              <Route path="/lessons" element={<LessonsPage />} />
+              <Route path="/lectures" element={<Navigate to="/lessons" replace />} />
+              <Route path="/roadmap" element={<RoadmapPage />} />
+              <Route path="/lo-trinh" element={<Navigate to="/roadmap" replace />} />
+              <Route path="/qa" element={<QAPage />} />
+              <Route path="/hoi-dap" element={<Navigate to="/qa" replace />} />
+              <Route path="/support" element={<SupportPage />} />
+              <Route path="/ho-tro" element={<Navigate to="/support" replace />} />
               <Route path="/courses/category/:categoryKey" element={<CategoryCoursesPage />} />
               <Route path="/my-courses" element={<CategoryCoursesPage defaultCategory="my-courses" />} />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
