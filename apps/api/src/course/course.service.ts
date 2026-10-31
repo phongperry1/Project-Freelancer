@@ -24,6 +24,33 @@ export interface PublicCourseDto {
   lessonCount: number;
   grade: '10' | '11' | '12' | 'exam' | 'other';
   isEnrolled?: boolean;
+  chapters?: Array<{
+    id: string;
+    title: string;
+    sortOrder: number;
+    lessonCount?: number;
+  }>;
+}
+
+export interface FlattenedLesson {
+  id: string;
+  title: string;
+  sortOrder: number;
+  chapterId: string;
+  chapterTitle: string;
+  chapterOrder: number;
+  courseId: string;
+  courseTitle: string;
+  courseGrade: string;
+  teacher: { id: string; fullName: string; avatarUrl: string | null };
+  hasVideo: boolean;
+  videoUrl: string | null;
+  hasContent: boolean;
+  isEnrolled: boolean;
+  isCompleted: boolean;
+  progressPercent: number;
+  lastPosition: number;
+  updatedAt: string | null;
 }
 
 const UUID_REGEX =
@@ -177,9 +204,381 @@ export class CourseService {
   }
 
   /**
-   * Xem chi tiết khóa học công khai theo ID
-   * Có kiểm tra định dạng UUID bảo vệ cơ sở dữ liệu
+
+
    */
+  /**
+   * Lấy danh sách tổng quan các bài giảng dành cho học sinh
+   * Tự động nhận diện bài giảng của các khóa đã ghi danh hoặc toàn bộ khóa học khả dụng
+   */
+  async getStudentLessonsOverview(
+    studentId?: string | null,
+    query?: {
+      grade?: string;
+      courseId?: string;
+      search?: string;
+    },
+  ) {
+    let enrolledCourseIds = new Set<string>();
+    if (studentId) {
+      const myEnrollments = await this.prisma.courseEnrollment.findMany({
+        where: { studentId },
+        select: { courseId: true },
+      });
+      enrolledCourseIds = new Set(myEnrollments.map((e) => e.courseId));
+    }
+
+    // Lấy danh sách khóa học ACTIVE (tối ưu: chỉ lấy các trường cần thiết, bỏ _count không dùng)
+    const courses = await this.prisma.course.findMany({
+      where: {
+        status: 'ACTIVE',
+        ...(query?.courseId ? { id: query.courseId } : {}),
+        ...(query?.grade && query.grade !== 'all' ? { grade: query.grade } : {}),
+      },
+      include: {
+        teacher: {
+          select: { id: true, fullName: true, avatarUrl: true },
+        },
+        chapters: {
+          orderBy: { sortOrder: 'asc' },
+          include: {
+            lessons: {
+              orderBy: { sortOrder: 'asc' },
+              select: {
+                id: true,
+                title: true,
+                sortOrder: true,
+                videoUrl: true,
+                chapterId: true,
+                content: true,
+                progresses: studentId
+                  ? {
+                      where: { studentId },
+                      take: 1,
+                      select: {
+                        isCompleted: true,
+                        progressPercent: true,
+                        lastPosition: true,
+                        updatedAt: true,
+                      },
+                    }
+                  : false,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const allLessons: FlattenedLesson[] = [];
+    const enrolledCoursesList: Array<{
+      id: string;
+      title: string;
+      grade: string;
+      totalLessons: number;
+      completedLessons: number;
+      progressPercent: number;
+    }> = [];
+
+    let totalLessonsCount = 0;
+    let completedLessonsCount = 0;
+    let inProgressLessonsCount = 0;
+    let notStartedLessonsCount = 0;
+    let totalProgressSum = 0;
+
+    for (const c of courses) {
+      const isEnrolled = enrolledCourseIds.has(c.id);
+      const grade = (c.grade as any) || detectGradeLevel(c.title, c.description);
+      let courseLessonsCount = 0;
+      let courseCompletedCount = 0;
+
+      for (const ch of c.chapters) {
+        for (const les of ch.lessons) {
+          courseLessonsCount++;
+          const progress = les.progresses?.[0];
+          const isCompleted = Boolean(progress?.isCompleted);
+          const progressPercent = progress?.progressPercent ?? (isCompleted ? 100 : 0);
+          const lastPosition = progress?.lastPosition ?? 0;
+          const updatedAt = progress?.updatedAt ? progress.updatedAt.toISOString() : null;
+
+          if (isCompleted) {
+            courseCompletedCount++;
+          }
+
+          if (!studentId || isEnrolled) {
+            totalLessonsCount++;
+            if (isCompleted) {
+              completedLessonsCount++;
+            } else if (progressPercent > 0) {
+              inProgressLessonsCount++;
+            } else {
+              notStartedLessonsCount++;
+            }
+            totalProgressSum += progressPercent;
+          }
+
+          allLessons.push({
+            id: les.id,
+            title: les.title,
+            sortOrder: les.sortOrder,
+            chapterId: ch.id,
+            chapterTitle: ch.title,
+            chapterOrder: ch.sortOrder,
+            courseId: c.id,
+            courseTitle: c.title,
+            courseGrade: grade,
+            teacher: c.teacher,
+            hasVideo: Boolean(les.videoUrl),
+            videoUrl: les.videoUrl,
+            hasContent: Boolean(les.content),
+            isEnrolled,
+            isCompleted,
+            progressPercent,
+            lastPosition,
+            updatedAt,
+          });
+        }
+      }
+
+      if (isEnrolled) {
+        const percent =
+          courseLessonsCount > 0
+            ? Math.round((courseCompletedCount / courseLessonsCount) * 100)
+            : 0;
+        enrolledCoursesList.push({
+          id: c.id,
+          title: c.title,
+          grade,
+          totalLessons: courseLessonsCount,
+          completedLessons: courseCompletedCount,
+          progressPercent: percent,
+        });
+      }
+    }
+
+    // Tìm bài giảng gần nhất đang học dở (progressPercent > 0 và chưa hoàn thành)
+    let recentLesson: FlattenedLesson | null = null;
+    if (studentId) {
+      const recentProgress = await this.prisma.lessonProgress.findFirst({
+        where: {
+          studentId,
+          progressPercent: { gt: 0, lt: 100 },
+          isCompleted: false,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      if (recentProgress) {
+        recentLesson = allLessons.find((l) => l.id === recentProgress.lessonId) || null;
+      }
+    }
+
+    // Ưu tiên hiển thị bài học thuộc các khóa đã ghi danh lên đầu
+    allLessons.sort((a, b) => Number(b.isEnrolled) - Number(a.isEnrolled));
+
+    let filteredLessons = allLessons;
+    if (query?.grade && query.grade !== 'all') {
+      filteredLessons = filteredLessons.filter((l) => l.courseGrade === query.grade);
+    }
+    if (query?.search?.trim()) {
+      const s = query.search.trim().toLowerCase();
+      filteredLessons = filteredLessons.filter(
+        (l) =>
+          l.title.toLowerCase().includes(s) ||
+          l.chapterTitle.toLowerCase().includes(s) ||
+          l.courseTitle.toLowerCase().includes(s),
+      );
+    }
+
+    const averageProgress =
+      totalLessonsCount > 0 ? Math.round(totalProgressSum / totalLessonsCount) : 0;
+
+    return {
+      lessons: filteredLessons,
+      total: filteredLessons.length,
+      recentLesson,
+      enrolledCourses: enrolledCoursesList,
+      stats: {
+        totalLessons: totalLessonsCount,
+        completedLessons: completedLessonsCount,
+        inProgressLessons: inProgressLessonsCount,
+        notStartedLessons: notStartedLessonsCount,
+        averageProgress,
+      },
+    };
+  }
+
+  async getPublicDiscussions(query?: { grade?: string; search?: string; courseId?: string; status?: string }, studentId?: string | null) {
+    const whereClause: any = {
+      parentId: null,
+      lesson: {
+        chapter: {
+          course: {
+            status: 'ACTIVE',
+          },
+        },
+      },
+    };
+
+    if (query?.courseId && UUID_REGEX.test(query.courseId)) {
+      whereClause.lesson = {
+        ...whereClause.lesson,
+        chapter: {
+          ...whereClause.lesson?.chapter,
+          courseId: query.courseId,
+        },
+      };
+    }
+
+    if (query?.grade && query.grade !== 'all') {
+      whereClause.lesson = {
+        ...whereClause.lesson,
+        chapter: {
+          ...whereClause.lesson?.chapter,
+          course: {
+            ...whereClause.lesson?.chapter?.course,
+            grade: query.grade,
+          },
+        },
+      };
+    }
+
+    if (query?.search?.trim()) {
+      const s = query.search.trim();
+      whereClause.OR = [
+        { content: { contains: s, mode: 'insensitive' } },
+        { lesson: { title: { contains: s, mode: 'insensitive' } } },
+        { lesson: { chapter: { course: { title: { contains: s, mode: 'insensitive' } } } } },
+      ];
+    }
+
+    if (query?.status === 'MY_QUESTIONS' && studentId) {
+      whereClause.userId = studentId;
+    }
+
+    const comments = await this.prisma.comment.findMany({
+      where: whereClause,
+      orderBy: [
+        { isPinned: 'desc' },
+        { createdAt: 'desc' },
+      ],
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            avatarUrl: true,
+            role: true,
+          },
+        },
+        lesson: {
+          select: {
+            id: true,
+            title: true,
+            chapter: {
+              select: {
+                id: true,
+                title: true,
+                course: {
+                  select: {
+                    id: true,
+                    title: true,
+                    description: true,
+                    grade: true,
+                    teacher: {
+                      select: {
+                        id: true,
+                        fullName: true,
+                        avatarUrl: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+        replies: {
+          orderBy: [
+            { isPinned: 'desc' },
+            { createdAt: 'asc' },
+          ],
+          include: {
+            user: {
+              select: {
+                id: true,
+                fullName: true,
+                avatarUrl: true,
+                role: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let formatted = comments.map((c) => {
+      const hasTeacherReply = c.replies.some(
+        (r) => r.user?.role === 'TEACHER' || r.user?.role === 'ADMIN',
+      );
+      return {
+        id: c.id,
+        content: c.content,
+        videoTimestamp: c.videoTimestamp,
+        isPinned: c.isPinned,
+        createdAt: c.createdAt.toISOString(),
+        updatedAt: c.updatedAt.toISOString(),
+        userId: c.userId,
+        user: c.user,
+        lessonId: c.lesson.id,
+        lessonTitle: c.lesson.title,
+        chapterId: c.lesson.chapter.id,
+        chapterTitle: c.lesson.chapter.title,
+        courseId: c.lesson.chapter.course.id,
+        courseTitle: c.lesson.chapter.course.title,
+        courseGrade:
+          ['10', '11', '12', 'exam'].includes(c.lesson.chapter.course.grade)
+            ? c.lesson.chapter.course.grade
+            : detectGradeLevel(
+                c.lesson.chapter.course.title,
+                c.lesson.chapter.course.description,
+              ),
+        teacher: c.lesson.chapter.course.teacher,
+        replyCount: c.replies.length,
+        hasTeacherReply,
+        replies: c.replies.map((r) => ({
+          id: r.id,
+          content: r.content,
+          isPinned: r.isPinned,
+          createdAt: r.createdAt.toISOString(),
+          updatedAt: r.updatedAt.toISOString(),
+          userId: r.userId,
+          user: r.user,
+        })),
+      };
+    });
+
+    if (query?.status === 'ANSWERED') {
+      formatted = formatted.filter((q) => q.replyCount > 0);
+    } else if (query?.status === 'WAITING') {
+      formatted = formatted.filter((q) => q.replyCount === 0);
+    }
+
+    const totalQuestions = formatted.length;
+    const answeredCount = formatted.filter((q) => q.replyCount > 0).length;
+    const waitingCount = totalQuestions - answeredCount;
+
+    return {
+      questions: formatted,
+      total: totalQuestions,
+      stats: {
+        totalQuestions,
+        answeredCount,
+        waitingCount,
+      },
+    };
+  }
+
   async getPublicCourseById(id: string): Promise<
     PublicCourseDto & {
       chapters: Array<{
@@ -272,6 +671,7 @@ export class CourseService {
         id: ch.id,
         title: ch.title,
         sortOrder: ch.sortOrder,
+        lessonCount: ch.lessons.length,
         lessons: ch.lessons.map((ls) => ({
           id: ls.id,
           title: ls.title,
@@ -1410,7 +1810,13 @@ export class CourseService {
     ]);
 
     if (!isTeacherOrAdmin && !enrollment) {
-      throw new ForbiddenException('Bạn cần ghi danh vào khóa học để tham gia thảo luận.');
+      const activeCourse = await this.prisma.course.findFirst({
+        where: { id: courseId, status: 'ACTIVE' },
+        select: { id: true },
+      });
+      if (!activeCourse) {
+        throw new ForbiddenException('Bạn cần ghi danh vào khóa học để tham gia thảo luận.');
+      }
     }
     if (!lesson) {
       throw new NotFoundException('Bài học không tồn tại trong khóa học này.');
