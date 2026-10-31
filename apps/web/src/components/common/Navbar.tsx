@@ -121,7 +121,11 @@ export const Navbar: React.FC = () => {
 
           {isAuthenticated && user ? (
             <div className="tku-user-profile">
-              <div className="tku-user-chip" title={user.email}>
+              <Link
+                to="/profile"
+                className="tku-user-chip"
+                title="Hồ sơ cá nhân"
+              >
                 <div className="tku-user-avatar">
                   <img
                     src={user.avatarUrl || DEFAULT_AVATAR}
@@ -132,7 +136,7 @@ export const Navbar: React.FC = () => {
                   />
                 </div>
                 <span className="tku-user-name">{user.fullName}</span>
-              </div>
+              </Link>
               {user.role === 'ADMIN' && (
                 <Link
                   to="/admin"
@@ -215,7 +219,13 @@ export const Navbar: React.FC = () => {
             <div className="tku-mobile-actions">
               {isAuthenticated && user ? (
                 <>
-                  <div className="tku-user-chip w-full" style={{ justifyContent: 'flex-start' }}>
+                  <Link
+                    to="/profile"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="tku-user-chip w-full"
+                    style={{ justifyContent: 'flex-start', textDecoration: 'none' }}
+                    title="Hồ sơ cá nhân"
+                  >
                     <div className="tku-user-avatar">
                       <img
                         src={user.avatarUrl || DEFAULT_AVATAR}
@@ -233,7 +243,7 @@ export const Navbar: React.FC = () => {
                         {user.email}
                       </span>
                     </div>
-                  </div>
+                  </Link>
                   {user.role === 'ADMIN' && (
                     <Link
                       to="/admin"

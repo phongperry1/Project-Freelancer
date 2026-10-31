@@ -19,6 +19,8 @@ export interface AuthContextType {
   verifyDeviceOtp: (payload: VerifyDeviceOtpPayload) => Promise<AuthResponse>;
   resendDeviceOtp: (payload: ResendDeviceOtpPayload) => Promise<OtpResponse>;
   logout: () => void;
+  updateUser: (updatedUser: Partial<User>) => void;
+  refreshUserProfile: () => Promise<void>;
   isSessionTerminated: boolean;
   sessionTerminatedReason: string;
   closeSessionTerminatedModal: () => void;
