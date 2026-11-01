@@ -283,8 +283,9 @@ export const LecturerScoringPage: React.FC = () => {
 
   // Validate and Navigate to Page 3
   const handleContinueToAssign = useCallback(async () => {
-    if (!assignment) return;
-    for (const q of assignment.questions) {
+    const current = assignmentRef.current || assignment;
+    if (!current) return;
+    for (const q of current.questions) {
       if (q.type === 'SINGLE_CHOICE' || q.type === 'MULTIPLE_CHOICE' || q.type === 'TRUE_FALSE') {
         const hasCorrect = q.options.some((opt) => opt.isCorrect);
         if (!hasCorrect) {
@@ -293,8 +294,15 @@ export const LecturerScoringPage: React.FC = () => {
         }
       }
     }
-    await lecturerService.saveAssessment(assignment);
-    navigate(`/lecturer/assignments/${assignment.id}/assign`);
+    try {
+      setIsSaving(true);
+      await lecturerService.saveAssessment(current);
+      navigate(`/lecturer/assignments/${current.id}/assign`);
+    } catch {
+      toast.error('Không thể lưu thiết lập đáp án. Vui lòng thử lại.');
+    } finally {
+      setIsSaving(false);
+    }
   }, [assignment, navigate]);
 
   if (!assignment) {
@@ -578,11 +586,19 @@ export const LecturerScoringPage: React.FC = () => {
                           {/\.(pdf)($|\?)/i.test(q.solutionFileUrl) ? (
                             <FileText size={24} className="tku-text-red" />
                           ) : (
-                            <img
-                              src={q.solutionFileUrl}
-                              alt="Lời giải viết tay"
-                              className="tku-solution-file-thumb" loading="lazy"
-                            />
+                            <a
+                              href={q.solutionFileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Bấm để xem ảnh phóng to"
+                            >
+                              <img
+                                src={q.solutionFileUrl}
+                                alt="Lời giải viết tay"
+                                className="tku-solution-file-thumb"
+                                loading="lazy"
+                              />
+                            </a>
                           )}
                           <div className="tku-solution-file-meta">
                             <span className="tku-solution-file-name">
