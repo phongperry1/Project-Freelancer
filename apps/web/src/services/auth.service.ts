@@ -14,9 +14,11 @@ import type {
   ResendDeviceOtpPayload,
   CheckSessionResponse,
   User,
+  UserDevice,
   ApiErrorResponse,
   UpdateProfilePayload,
   ChangePasswordPayload,
+  SetInitialPasswordPayload,
 } from '../types/auth.types';
 import { getOrCreateDeviceId, getDeviceName } from '../utils/device';
 
@@ -591,6 +593,115 @@ export const authService = {
       const message = await extractErrorMessage(
         response,
         'Đổi mật khẩu không thành công. Vui lòng thử lại.',
+      );
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  async setInitialPassword(payload: SetInitialPasswordPayload): Promise<{ message: string }> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/set-initial-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Thiết lập mật khẩu không thành công. Vui lòng thử lại.',
+      );
+      throw new Error(message);
+    }
+
+    const storedUser = this.getStoredUser();
+    if (storedUser) {
+      storedUser.hasPassword = true;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(USER_KEY, JSON.stringify(storedUser));
+      }
+    }
+
+    return response.json();
+  },
+
+  async getDevices(): Promise<UserDevice[]> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/devices`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Không thể tải danh sách thiết bị.',
+      );
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  async logoutDevice(deviceIdOrId: string): Promise<{ message: string }> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/devices/${encodeURIComponent(deviceIdOrId)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Đăng xuất thiết bị thất bại.',
+      );
+      throw new Error(message);
+    }
+
+    return response.json();
+  },
+
+  async logoutOtherDevices(): Promise<{ message: string; revokedCount: number }> {
+    const token = this.getStoredToken();
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập để tiếp tục.');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/auth/devices/others`, {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const message = await extractErrorMessage(
+        response,
+        'Đăng xuất các thiết bị khác thất bại.',
       );
       throw new Error(message);
     }

@@ -12,6 +12,19 @@ export interface User {
   phoneNumber?: string | null;
   dateOfBirth?: string | Date | null;
   createdAt?: string | Date;
+  hasPassword?: boolean;
+}
+
+export interface UserDevice {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  ipAddress?: string | null;
+  isTrusted: boolean;
+  isActive: boolean;
+  isCurrent: boolean;
+  lastLoginAt: string | Date;
+  createdAt: string | Date;
 }
 
 export interface UpdateProfilePayload {
@@ -23,6 +36,10 @@ export interface UpdateProfilePayload {
 
 export interface ChangePasswordPayload {
   currentPassword: string;
+  newPassword: string;
+}
+
+export interface SetInitialPasswordPayload {
   newPassword: string;
 }
 

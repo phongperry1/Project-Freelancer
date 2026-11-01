@@ -832,3 +832,168 @@
 .tku-spin {
   animation: tkuSpin 1s linear infinite;
 }
+
+
+/* ==========================================================================
+   DEVICE MANAGEMENT STYLES (GIAI ĐOẠN 2)
+   ========================================================================== */
+.tku-devices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.tku-device-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  transition: all 0.2s ease;
+}
+
+.tku-device-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.tku-device-card--current {
+  border-color: #93c5fd;
+  background: #f8faff;
+}
+
+.tku-device-card__left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+}
+
+.tku-device-card__icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f1f5f9;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-device-card--current .tku-device-card__icon-box {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.tku-device-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-device-card__name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-device-card__name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tku-device-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  color: #64748b;
+  flex-wrap: wrap;
+}
+
+.tku-device-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.tku-device-badge--current {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-device-badge--active {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.tku-device-badge--inactive {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-btn-logout-device {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid #fee2e2;
+  background: #fff5f5;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-btn-logout-device:hover:not(:disabled) {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.tku-btn-logout-device:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tku-btn-logout-others {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #fed7aa;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-btn-logout-others:hover:not(:disabled) {
+  background: #ffedd5;
+  border-color: #fdba74;
+  color: #9a3412;
+}
+
+.tku-btn-logout-others:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

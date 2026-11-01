@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 
@@ -6,7 +6,9 @@ import { MailModule } from '../mail/mail.module.js';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { JwtAuthGuard, RolesGuard } from './guards/index.js';
 
+@Global()
 @Module({
   imports: [
     MailModule,
@@ -25,7 +27,7 @@ import { AuthService } from './auth.service.js';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService],
-  exports: [AuthService, JwtModule],
+  providers: [AuthService, JwtAuthGuard, RolesGuard],
+  exports: [AuthService, JwtModule, JwtAuthGuard, RolesGuard],
 })
 export class AuthModule {}

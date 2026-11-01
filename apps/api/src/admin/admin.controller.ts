@@ -15,6 +15,7 @@ import {
   UnauthorizedException,
   UploadedFile,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -24,6 +25,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
+import { JwtAuthGuard, RolesGuard } from '../auth/guards/index.js';
+import { Roles } from '../auth/decorators/index.js';
 import { ConfigService } from '@nestjs/config';
 
 import {
@@ -56,6 +59,8 @@ import {
 
 @ApiTags('Admin')
 @Controller('api/v1/admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
 export class AdminController {
   constructor(
     private readonly adminService: AdminService,
@@ -64,36 +69,8 @@ export class AdminController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  private async verifyAdmin(authorization?: string): Promise<void> {
-    if (!authorization) {
-      throw new UnauthorizedException('Thiếu mã token xác thực.');
-    }
-
-    const token = authorization.replace(/^Bearer\s+/i, '').trim();
-    if (!token) {
-      throw new UnauthorizedException('Token không hợp lệ.');
-    }
-
-    const secret =
-      this.configService.get<string>('JWT_SECRET') ??
-      'tku-learning-platform-secret-jwt-key-2026';
-
-    let payload: { sub?: string; role?: string } | null = null;
-    try {
-      payload = await this.jwtService.verifyAsync(token, { secret });
-    } catch {
-      throw new UnauthorizedException('Phiên đăng nhập đã hết hạn.');
-    }
-
-    if (!payload?.sub) {
-      throw new UnauthorizedException('Token không hợp lệ.');
-    }
-
-    if (payload.role !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Bạn không có quyền truy cập trang quản trị hệ thống.',
-      );
-    }
+  private async verifyAdmin(_authorization?: string): Promise<void> {
+    // Đã được bảo vệ tối ưu bởi JwtAuthGuard và RolesGuard cấp Controller
   }
 
   @Get('dashboard')

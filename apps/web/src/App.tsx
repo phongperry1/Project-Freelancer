@@ -8,6 +8,7 @@ import { useAuth } from './context/useAuth';
 
 import { AdminRoute } from './components/auth/AdminRoute';
 import { LecturerRoute } from './components/auth/LecturerRoute';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { RouteTransitionLoader } from './components/common/RouteTransitionLoader';
 
 import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
@@ -102,13 +103,55 @@ export const App: React.FC = () => {
               <Route path="/support" element={<SupportPage />} />
               <Route path="/ho-tro" element={<Navigate to="/support" replace />} />
               <Route path="/courses/category/:categoryKey" element={<CategoryCoursesPage />} />
-              <Route path="/my-courses" element={<CategoryCoursesPage defaultCategory="my-courses" />} />
+              <Route
+                path="/my-courses"
+                element={
+                  <ProtectedRoute>
+                    <CategoryCoursesPage defaultCategory="my-courses" />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/courses/:id" element={<CourseDetailPage />} />
-              <Route path="/courses/:courseId/learn" element={<CourseLearningRoomPage />} />
-              <Route path="/courses/:courseId/learn/:lessonId" element={<CourseLearningRoomPage />} />
-              <Route path="/courses/:courseId/lessons/:lessonId" element={<CourseLearningRoomPage />} />
-              <Route path="/courses/:courseId/exams/:assessmentId" element={<CourseExamRoomPage />} />
-              <Route path="/courses/:courseId/exams/:assessmentId/results/:submissionId" element={<CourseExamResultPage />} />
+              <Route
+                path="/courses/:courseId/learn"
+                element={
+                  <ProtectedRoute>
+                    <CourseLearningRoomPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseId/learn/:lessonId"
+                element={
+                  <ProtectedRoute>
+                    <CourseLearningRoomPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseId/lessons/:lessonId"
+                element={
+                  <ProtectedRoute>
+                    <CourseLearningRoomPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseId/exams/:assessmentId"
+                element={
+                  <ProtectedRoute>
+                    <CourseExamRoomPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/courses/:courseId/exams/:assessmentId/results/:submissionId"
+                element={
+                  <ProtectedRoute>
+                    <CourseExamResultPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/login"
                 element={
@@ -126,8 +169,22 @@ export const App: React.FC = () => {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/profile/security" element={<SecurityPage />} />
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/profile/security"
+                element={
+                  <ProtectedRoute>
+                    <SecurityPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
               <Route path="/session-terminated" element={<SessionTerminatedPage />} />
               <Route

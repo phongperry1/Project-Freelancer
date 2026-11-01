@@ -10,15 +10,22 @@ import {
   Shield,
   ShieldCheck,
   Sparkles,
+  Smartphone,
+  Tablet,
+  Monitor,
+  Laptop,
+  LogOut,
+  Globe,
   X,
 } from 'lucide-react';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Footer } from '../../components/common/Footer';
 import { Navbar } from '../../components/common/Navbar';
 import { useAuth } from '../../context/useAuth';
 import { useToast } from '../../context/useToast';
 import { authService } from '../../services/auth.service';
+import type { UserDevice } from '../../types/auth.types';
 import { ProfileSidebar } from './ProfileSidebar';
 import './profile.css';
 
@@ -36,6 +43,109 @@ export const SecurityPage: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const hasPassword = user?.hasPassword !== false;
+
+  // Device Management State (Giai đoạn 2)
+  const [devices, setDevices] = useState<UserDevice[]>([]);
+  const [isLoadingDevices, setIsLoadingDevices] = useState<boolean>(true);
+  const [revokingDeviceId, setRevokingDeviceId] = useState<string | null>(null);
+  const [isRevokingOthers, setIsRevokingOthers] = useState<boolean>(false);
+
+  const fetchDevices = useCallback(async () => {
+    try {
+      setIsLoadingDevices(true);
+      const data = await authService.getDevices();
+      setDevices(data);
+    } catch {
+      // silently fallback
+    } finally {
+      setIsLoadingDevices(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let isMounted = true;
+    authService
+      .getDevices()
+      .then((data) => {
+        if (!isMounted) return;
+        setDevices(data);
+      })
+      .catch(() => {
+        // silently fallback
+      })
+      .finally(() => {
+        if (!isMounted) return;
+        setIsLoadingDevices(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isAuthenticated]);
+
+  const handleLogoutDevice = async (device: UserDevice) => {
+    if (!window.confirm(`Bạn có chắc muốn đăng xuất khỏi thiết bị "${device.deviceName}"?`)) {
+      return;
+    }
+    try {
+      setRevokingDeviceId(device.id);
+      const res = await authService.logoutDevice(device.id);
+      toast.success(res.message || 'Đã đăng xuất thiết bị thành công.');
+      await fetchDevices();
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || 'Đăng xuất thiết bị thất bại.');
+    } finally {
+      setRevokingDeviceId(null);
+    }
+  };
+
+  const handleLogoutOthers = async () => {
+    if (!window.confirm('Bạn có chắc muốn đăng xuất khỏi tất cả các thiết bị khác? Phiên trên thiết bị này sẽ được giữ nguyên.')) {
+      return;
+    }
+    try {
+      setIsRevokingOthers(true);
+      const res = await authService.logoutOtherDevices();
+      toast.success(res.message || 'Đã đăng xuất tất cả các thiết bị khác thành công.');
+      await fetchDevices();
+    } catch (err: unknown) {
+      toast.error((err as Error)?.message || 'Đăng xuất thiết bị khác thất bại.');
+    } finally {
+      setIsRevokingOthers(false);
+    }
+  };
+
+  const getDeviceIcon = (deviceName: string) => {
+    const lower = deviceName.toLowerCase();
+    if (lower.includes('iphone') || lower.includes('android') || lower.includes('phone') || lower.includes('mobile')) {
+      return <Smartphone size={22} />;
+    }
+    if (lower.includes('ipad') || lower.includes('tablet')) {
+      return <Tablet size={22} />;
+    }
+    if (lower.includes('windows') || lower.includes('mac') || lower.includes('linux') || lower.includes('laptop')) {
+      return <Laptop size={22} />;
+    }
+    return <Monitor size={22} />;
+  };
+
+  const formatDeviceTime = (dateStr: string | Date) => {
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleString('vi-VN', {
+        hour: '2-digit',
+        minute: '2-digit',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return 'Không xác định';
+    }
+  };
+
 
   // Fetch fresh profile on mount to guarantee latest DB data
   useEffect(() => {
@@ -110,7 +220,7 @@ export const SecurityPage: React.FC = () => {
     e.preventDefault();
     setPasswordError(null);
 
-    if (!currentPassword) {
+    if (hasPassword && !currentPassword) {
       setPasswordError('Vui lòng nhập mật khẩu hiện tại.');
       return;
     }
@@ -125,7 +235,7 @@ export const SecurityPage: React.FC = () => {
       return;
     }
 
-    if (newPassword === currentPassword) {
+    if (hasPassword && newPassword === currentPassword) {
       setPasswordError('Mật khẩu mới không được trùng với mật khẩu hiện tại.');
       return;
     }
@@ -137,17 +247,27 @@ export const SecurityPage: React.FC = () => {
 
     try {
       setIsChangingPassword(true);
-      const res = await authService.changePassword({
-        currentPassword,
-        newPassword,
-      });
+      if (!hasPassword) {
+        const res = await authService.setInitialPassword({
+          newPassword,
+        });
+        toast.success(res.message || 'Thiết lập mật khẩu thành công!');
+        updateUser({ ...user, hasPassword: true });
+      } else {
+        const res = await authService.changePassword({
+          currentPassword,
+          newPassword,
+        });
+        toast.success(res.message || 'Đổi mật khẩu thành công!');
+      }
 
-      toast.success(res.message || 'Đổi mật khẩu thành công!');
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
     } catch (err: unknown) {
-      const msg = (err as Error)?.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.';
+      const msg =
+        (err as Error)?.message ||
+        (hasPassword ? 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại.' : 'Thiết lập mật khẩu thất bại.');
       setPasswordError(msg);
       toast.error(msg);
     } finally {
@@ -240,7 +360,7 @@ export const SecurityPage: React.FC = () => {
                 <span>Hồ sơ cá nhân</span>
               </Link>
               <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
-              <span className="tku-hero-breadcrumb-current">Đổi mật khẩu</span>
+              <span className="tku-hero-breadcrumb-current">{hasPassword ? 'Đổi mật khẩu' : 'Thiết lập mật khẩu'}</span>
             </nav>
 
             <div className="tku-profile-hero__grid">
@@ -252,12 +372,10 @@ export const SecurityPage: React.FC = () => {
                   </span>
                 </div>
 
-                <h1 className="tku-profile-hero__title">
-                  Đổi mật khẩu
-                </h1>
+                <h1 className="tku-profile-hero__title">{hasPassword ? 'Đổi mật khẩu' : 'Thiết lập mật khẩu lần đầu'}</h1>
 
                 <p className="tku-profile-hero__desc">
-                  Thiết lập mật khẩu bảo vệ tài khoản với thuật toán mã hóa Argon2 hiện đại, đảm bảo an toàn tối đa cho dữ liệu học tập của bạn.
+                  {hasPassword ? 'Thiết lập mật khẩu bảo vệ tài khoản với thuật toán mã hóa Argon2 hiện đại, đảm bảo an toàn tối đa cho dữ liệu học tập của bạn.' : 'Tài khoản của bạn đang đăng nhập qua Google. Bạn có thể thiết lập mật khẩu riêng để đăng nhập bằng Email và Mật khẩu bất cứ khi nào.'}
                 </p>
               </div>
             </div>
@@ -281,10 +399,8 @@ export const SecurityPage: React.FC = () => {
                     <Shield size={24} />
                   </div>
                   <div>
-                    <h2 className="tku-profile-panel-header__title">Đổi mật khẩu</h2>
-                    <p className="tku-profile-panel-header__subtitle">
-                      Bảo vệ an toàn tài khoản học tập với mật khẩu mạnh theo tiêu chuẩn an toàn thông tin.
-                    </p>
+                    <h2 className="tku-profile-panel-header__title">{hasPassword ? 'Đổi mật khẩu' : 'Thiết lập mật khẩu tài khoản'}</h2>
+                    <p className="tku-profile-panel-header__subtitle">{hasPassword ? 'Bảo vệ an toàn tài khoản học tập với mật khẩu mạnh theo tiêu chuẩn an toàn thông tin.' : 'Sau khi thiết lập mật khẩu, bạn có thể đăng nhập linh hoạt bằng cả tài khoản Google hoặc Email & Mật khẩu.'}</p>
                   </div>
                 </div>
               </div>
@@ -311,7 +427,8 @@ export const SecurityPage: React.FC = () => {
 
               <form onSubmit={handleChangePassword} className="tku-profile-form">
                 {/* Section 1 */}
-                <div>
+                {hasPassword && (
+<div>
                   <div className="tku-profile-section-title">
                     <span>1. Xác thực tài khoản hiện tại</span>
                   </div>
@@ -343,11 +460,12 @@ export const SecurityPage: React.FC = () => {
                     </div>
                   </div>
                 </div>
+)}
 
                 {/* Section 2 */}
                 <div>
                   <div className="tku-profile-section-title">
-                    <span>2. Thiết lập mật khẩu mới</span>
+                    <span>{hasPassword ? '2. Thiết lập mật khẩu mới' : 'Thiết lập mật khẩu bảo mật'}</span>
                   </div>
 
                   <div className="tku-profile-form-grid">
@@ -511,7 +629,7 @@ export const SecurityPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={
-                      !currentPassword ||
+                      (hasPassword && !currentPassword) ||
                       !newPassword ||
                       !confirmPassword ||
                       newPassword !== confirmPassword ||
@@ -534,6 +652,138 @@ export const SecurityPage: React.FC = () => {
                 </div>
               </form>
             </section>
+
+            {/* =================================================================
+                CỘT PHẢI: QUẢN LÝ THIẾT BỊ ĐĂNG NHẬP (GIAI ĐOẠN 2)
+                ================================================================= */}
+            <section className="tku-profile-main-panel" style={{ marginTop: '28px' }}>
+              <div className="tku-profile-panel-header">
+                <div className="tku-profile-panel-header__left">
+                  <div
+                    className="tku-profile-panel-header__icon-box"
+                    style={{ background: '#ecfdf5', color: '#059669', borderColor: '#a7f3d0' }}
+                  >
+                    <Monitor size={24} />
+                  </div>
+                  <div>
+                    <h2 className="tku-profile-panel-header__title">Quản lý thiết bị đăng nhập</h2>
+                    <p className="tku-profile-panel-header__subtitle">
+                      Hệ thống khống chế tối đa <strong>2 thiết bị học cùng lúc</strong> nhằm bảo vệ bản quyền bài giảng.
+                    </p>
+                  </div>
+                </div>
+
+                {devices.some((d) => !d.isCurrent && d.isActive) && (
+                  <button
+                    type="button"
+                    onClick={handleLogoutOthers}
+                    disabled={isRevokingOthers}
+                    className="tku-btn-logout-others"
+                    title="Đăng xuất khỏi tất cả các thiết bị khác"
+                  >
+                    {isRevokingOthers ? (
+                      <Loader2 size={15} className="tku-spin" />
+                    ) : (
+                      <LogOut size={15} />
+                    )}
+                    <span>Đăng xuất thiết bị khác</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Security Policy Notice Box */}
+              <div
+                className="tku-profile-notice-box tku-profile-notice-box--security"
+                style={{ marginBottom: '20px' }}
+              >
+                <ShieldCheck size={20} className="tku-profile-notice-icon" style={{ color: '#059669' }} />
+                <div style={{ fontSize: '13.5px', lineHeight: 1.55 }}>
+                  <strong>Quy chuẩn bản quyền TKU:</strong> Mỗi tài khoản được duy trì tối đa 2 phiên đăng nhập đồng thời (ví dụ: Máy tính & Điện thoại). Khi thiết bị thứ 3 đăng nhập, phiên đăng nhập cũ nhất sẽ tự động được thu hồi an toàn.
+                </div>
+              </div>
+
+              {/* Devices List */}
+              {isLoadingDevices ? (
+                <div style={{ textAlign: 'center', padding: '36px 0', color: '#64748b' }}>
+                  <Loader2
+                    size={28}
+                    className="tku-spin"
+                    style={{ margin: '0 auto 10px', display: 'block', color: '#2563eb' }}
+                  />
+                  <span style={{ fontSize: '14px' }}>Đang tải danh sách thiết bị...</span>
+                </div>
+              ) : devices.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#94a3b8', fontSize: '14px' }}>
+                  Chưa ghi nhận thiết bị nào khác.
+                </div>
+              ) : (
+                <div className="tku-devices-list">
+                  {devices.map((device) => (
+                    <div
+                      key={device.id}
+                      className={`tku-device-card ${device.isCurrent ? 'tku-device-card--current' : ''}`}
+                    >
+                      <div className="tku-device-card__left">
+                        <div className="tku-device-card__icon-box">
+                          {getDeviceIcon(device.deviceName)}
+                        </div>
+                        <div className="tku-device-card__info">
+                          <div className="tku-device-card__name-row">
+                            <span className="tku-device-card__name">{device.deviceName}</span>
+                            {device.isCurrent && (
+                              <span className="tku-device-badge tku-device-badge--current">
+                                <Check size={12} /> Thiết bị hiện tại
+                              </span>
+                            )}
+                            {device.isActive ? (
+                              <span className="tku-device-badge tku-device-badge--active">
+                                Đang hoạt động
+                              </span>
+                            ) : (
+                              <span className="tku-device-badge tku-device-badge--inactive">
+                                Đã ngắt phiên
+                              </span>
+                            )}
+                          </div>
+                          <div className="tku-device-card__meta-row">
+                            <span>
+                              <Globe size={13} style={{ display: 'inline', verticalAlign: '-1px', marginRight: '4px' }} />
+                              IP: {device.ipAddress || '127.0.0.1'}
+                            </span>
+                            <span>•</span>
+                            <span>Đăng nhập: {formatDeviceTime(device.lastLoginAt)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="tku-device-card__right">
+                        {device.isCurrent ? (
+                          <span style={{ fontSize: '13px', color: '#2563eb', fontWeight: 600 }}>
+                            Đang dùng
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleLogoutDevice(device)}
+                            disabled={revokingDeviceId === device.id}
+                            className="tku-btn-logout-device"
+                            title="Ngắt kết nối thiết bị này"
+                          >
+                            {revokingDeviceId === device.id ? (
+                              <Loader2 size={14} className="tku-spin" />
+                            ) : (
+                              <LogOut size={14} />
+                            )}
+                            <span>Đăng xuất</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
           </div>
         </div>
       </main>

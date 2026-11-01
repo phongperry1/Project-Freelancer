@@ -2,11 +2,13 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpCode,
   HttpStatus,
   Ip,
+  Param,
   Patch,
   Post,
   Req,
@@ -40,6 +42,7 @@ import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto.js';
 import { type UploadedFileDto } from '../cloudinary/cloudinary.service.js';
 import {
   AuthService,
@@ -49,6 +52,7 @@ import {
   type VerifyResetOtpResponse,
   type ResetPasswordResponse,
   type UserResponse,
+  UserDeviceResponse,
 } from './auth.service.js';
 
 @ApiTags('Auth')
@@ -368,6 +372,51 @@ export class AuthController {
   ): Promise<{ message: string }> {
     return this.authService.logout(authorization, refreshToken);
   }
+
+  @Get('devices')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Lấy danh sách các thiết bị đã đăng nhập của người dùng',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách thiết bị đăng nhập.',
+  })
+  async getDevices(
+    @Headers('authorization') authorization?: string,
+  ): Promise<UserDeviceResponse[]> {
+    const { userId, sessionId } = await this.authService.extractSessionInfo(authorization);
+    return this.authService.getUserDevices(userId, sessionId);
+  }
+
+  @Delete('devices/others')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Đăng xuất khỏi tất cả các thiết bị khác',
+  })
+  async logoutOtherDevices(
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string; revokedCount: number }> {
+    const { userId, sessionId } = await this.authService.extractSessionInfo(authorization);
+    return this.authService.revokeOtherDevices(userId, sessionId);
+  }
+
+  @Delete('devices/:id')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Đăng xuất khỏi một thiết bị cụ thể',
+  })
+  async logoutDevice(
+    @Param('id') id: string,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string }> {
+    const { userId } = await this.authService.extractSessionInfo(authorization);
+    return this.authService.revokeDevice(userId, id);
+  }
+
   @Get('profile')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth()
@@ -404,6 +453,28 @@ export class AuthController {
   ): Promise<UserResponse> {
     const userId = await this.authService.extractUserIdFromHeader(authorization);
     return this.authService.updateProfile(userId, updateProfileDto);
+  }
+
+
+  @Post('set-initial-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Thiết lập mật khẩu lần đầu cho tài khoản (dành cho người dùng Google)',
+  })
+  @ApiBody({
+    type: SetInitialPasswordDto,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Thiết lập mật khẩu thành công.',
+  })
+  async setInitialPassword(
+    @Body() setInitialPasswordDto: SetInitialPasswordDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ message: string }> {
+    const userId = await this.authService.extractUserIdFromHeader(authorization);
+    return this.authService.setInitialPassword(userId, setInitialPasswordDto);
   }
 
   @Post('change-password')

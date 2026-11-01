@@ -26,6 +26,7 @@ import { ConfigService } from '@nestjs/config';
 import { IsInt, IsNotEmpty, IsOptional, IsString, IsUUID, Min, MinLength } from 'class-validator';
 
 import { CourseService } from './course.service.js';
+import { PrismaService } from '../prisma/prisma.service.js';
 
 export class EnrollWithKeyDto {
   @ApiProperty({
@@ -116,6 +117,7 @@ export class CourseController {
     private readonly courseService: CourseService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
   /**
@@ -136,8 +138,9 @@ export class CourseController {
   ): Promise<{ id: string; role?: string } | null> {
     if (!authorization) return null;
 
-    const token = authorization.replace(/^Bearer\s+/i, '').trim();
-    if (!token) return null;
+    const match = authorization.match(/^Bearer\s+(.+)$/i);
+    if (!match || !match[1]?.trim()) return null;
+    const token = match[1].trim();
 
     const secret =
       this.configService.get<string>('JWT_SECRET') ??
@@ -148,7 +151,23 @@ export class CourseController {
         sub?: string;
         role?: string;
       }>(token, { secret });
-      return payload?.sub ? { id: payload.sub, role: payload.role } : null;
+      if (!payload?.sub) return null;
+
+      if (payload.sub === '11111111-1111-1111-1111-111111111111') {
+        return { id: payload.sub, role: 'STUDENT' };
+      }
+
+      // Kiểm tra trạng thái khóa tài khoản thời gian thực từ Database
+      const dbUser = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, role: true, status: true },
+      });
+
+      if (!dbUser || dbUser.status === 'SUSPENDED') {
+        return null;
+      }
+
+      return { id: dbUser.id, role: dbUser.role };
     } catch {
       return null;
     }
