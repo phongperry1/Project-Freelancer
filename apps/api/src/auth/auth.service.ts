@@ -32,7 +32,20 @@ import { ResendDeviceOtpDto } from './dto/resend-device-otp.dto.js';
 import { RefreshTokenDto } from './dto/refresh-token.dto.js';
 import { UpdateProfileDto } from './dto/update-profile.dto.js';
 import { ChangePasswordDto } from './dto/change-password.dto.js';
+import { SetInitialPasswordDto } from './dto/set-initial-password.dto.js';
 import { CloudinaryService, type UploadedFileDto } from '../cloudinary/cloudinary.service.js';
+
+export interface UserDeviceResponse {
+  id: string;
+  deviceId: string;
+  deviceName: string;
+  ipAddress?: string | null;
+  isTrusted: boolean;
+  isActive: boolean;
+  isCurrent: boolean;
+  lastLoginAt: Date | string;
+  createdAt: Date | string;
+}
 
 export interface UserResponse {
   id: string;
@@ -44,6 +57,7 @@ export interface UserResponse {
   phoneNumber?: string | null;
   dateOfBirth?: Date | string | null;
   createdAt?: Date | string;
+  hasPassword?: boolean;
 }
 
 export interface AuthResponse {
@@ -497,6 +511,7 @@ export class AuthService {
         role: 'STUDENT',
         status: 'ACTIVE',
         avatarUrl: null,
+
       };
 
       AuthService.devUsers.set(pending.email, devRecord);
@@ -861,8 +876,7 @@ export class AuthService {
         };
       } else {
         // CASE 2: Tài khoản Google mới -> Tự động đăng ký
-        const randomPassword = randomUUID();
-        const passwordHash = await this.hashPassword(randomPassword);
+        const passwordHash = 'GOOGLE_NO_PASSWORD';
 
         const newUser = await this.prisma.user.create({
           data: {
@@ -1333,25 +1347,17 @@ export class AuthService {
     if (currentDevice && currentDevice.isTrusted) {
       const sessionToken = randomUUID();
       try {
-        await this.prisma.$transaction([
-          this.prisma.userDevice.updateMany({
-            where: { userId: user.id, sessionToken: { not: null } },
-            data: { sessionToken: null },
-          }),
-          this.prisma.authToken.updateMany({
-            where: { userId: user.id, revokedAt: null, type: 'REFRESH_TOKEN' },
-            data: { revokedAt: new Date() },
-          }),
-          this.prisma.userDevice.update({
-            where: { id: currentDevice.id },
-            data: {
-              sessionToken,
-              lastLoginAt: new Date(),
-              deviceName: resolvedDeviceName,
-              ipAddress: ipAddress || null,
-            },
-          }),
-        ]);
+        await this.enforceConcurrentDeviceLimit(user.id, currentDevice.deviceId);
+
+        await this.prisma.userDevice.update({
+          where: { id: currentDevice.id },
+          data: {
+            sessionToken,
+            lastLoginAt: new Date(),
+            deviceName: resolvedDeviceName,
+            ipAddress: ipAddress || null,
+          },
+        });
       } catch (err: unknown) {
         this.logger.warn(
           `Không thể cập nhật session thiết bị: ${(err as Error)?.message}`,
@@ -1435,40 +1441,32 @@ export class AuthService {
     const sessionToken = randomUUID();
 
     try {
-      await this.prisma.$transaction([
-        this.prisma.userDevice.updateMany({
-          where: { userId: pending.userId, sessionToken: { not: null } },
-          data: { sessionToken: null },
-        }),
-        this.prisma.authToken.updateMany({
-          where: { userId: pending.userId, revokedAt: null, type: 'REFRESH_TOKEN' },
-          data: { revokedAt: new Date() },
-        }),
-        this.prisma.userDevice.upsert({
-          where: {
-            userId_deviceId: {
-              userId: pending.userId,
-              deviceId: pending.deviceId,
-            },
-          },
-          update: {
-            isTrusted: true,
-            sessionToken,
-            lastLoginAt: new Date(),
-            deviceName: pending.deviceName,
-            ipAddress: pending.ipAddress || null,
-          },
-          create: {
+      await this.enforceConcurrentDeviceLimit(pending.userId, pending.deviceId);
+
+      await this.prisma.userDevice.upsert({
+        where: {
+          userId_deviceId: {
             userId: pending.userId,
             deviceId: pending.deviceId,
-            deviceName: pending.deviceName,
-            ipAddress: pending.ipAddress || null,
-            isTrusted: true,
-            sessionToken,
-            lastLoginAt: new Date(),
           },
-        }),
-      ]);
+        },
+        update: {
+          isTrusted: true,
+          sessionToken,
+          lastLoginAt: new Date(),
+          deviceName: pending.deviceName,
+          ipAddress: pending.ipAddress || null,
+        },
+        create: {
+          userId: pending.userId,
+          deviceId: pending.deviceId,
+          deviceName: pending.deviceName,
+          ipAddress: pending.ipAddress || null,
+          isTrusted: true,
+          sessionToken,
+          lastLoginAt: new Date(),
+        },
+      });
     } catch (err: unknown) {
       this.logger.warn(`Lỗi lưu thiết bị xác thực: ${(err as Error)?.message}`);
     }
@@ -1802,6 +1800,7 @@ async updateProfile(
             role: devUser.role,
             status: devUser.status,
             avatarUrl: devUser.avatarUrl,
+            hasPassword: this.computeHasPassword(devUser.passwordHash),
           };
         }
       }
@@ -1841,6 +1840,238 @@ async updateProfile(
       avatarUrl: updated.avatarUrl,
       createdAt: updated.createdAt,
     };
+  }
+
+  private readonly MAX_CONCURRENT_DEVICES = 2;
+
+  private async enforceConcurrentDeviceLimit(
+    userId: string,
+    currentDeviceId: string,
+  ): Promise<void> {
+    try {
+      const activeDevices = await this.prisma.userDevice.findMany({
+        where: {
+          userId,
+          sessionToken: { not: null },
+          deviceId: { not: currentDeviceId },
+        },
+        orderBy: { lastLoginAt: 'asc' },
+      });
+
+      if (activeDevices.length >= this.MAX_CONCURRENT_DEVICES) {
+        const countToRevoke = activeDevices.length - (this.MAX_CONCURRENT_DEVICES - 1);
+        const deviceIdsToRevoke = activeDevices.slice(0, countToRevoke).map((d) => d.id);
+        if (deviceIdsToRevoke.length > 0) {
+          await this.prisma.userDevice.updateMany({
+            where: { id: { in: deviceIdsToRevoke } },
+            data: { sessionToken: null },
+          });
+        }
+      }
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi kiểm tra giới hạn thiết bị: ${(err as Error)?.message}`);
+    }
+  }
+
+  async getUserDevices(
+    userId: string,
+    currentSessionId?: string,
+  ): Promise<UserDeviceResponse[]> {
+    try {
+      const devices = await this.prisma.userDevice.findMany({
+        where: { userId },
+        orderBy: { lastLoginAt: 'desc' },
+      });
+
+      if (devices.length > 0) {
+        let hasCurrent = false;
+        const mapped = devices.map((d) => {
+          const isCurrent = Boolean(currentSessionId && d.sessionToken === currentSessionId);
+          if (isCurrent) hasCurrent = true;
+          return {
+            id: d.id,
+            deviceId: d.deviceId,
+            deviceName: d.deviceName,
+            ipAddress: d.ipAddress,
+            isTrusted: d.isTrusted,
+            isActive: Boolean(d.sessionToken),
+            isCurrent,
+            lastLoginAt: d.lastLoginAt,
+            createdAt: d.createdAt,
+          };
+        });
+
+        if (!hasCurrent && mapped.length > 0) {
+          const fallbackCurrent = mapped.find((d) => d.isActive) || mapped[0];
+          fallbackCurrent.isCurrent = true;
+        }
+
+        return mapped;
+      }
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi lấy danh sách thiết bị: ${(err as Error)?.message}`);
+    }
+
+    const now = new Date();
+    return [
+      {
+        id: 'dev-device-current',
+        deviceId: 'device-current',
+        deviceName: 'Trình duyệt Web hiện tại (Máy tính)',
+        ipAddress: '127.0.0.1',
+        isTrusted: true,
+        isActive: true,
+        isCurrent: true,
+        lastLoginAt: now,
+        createdAt: now,
+      },
+    ];
+  }
+
+  async revokeDevice(
+    userId: string,
+    deviceIdOrId: string,
+  ): Promise<{ message: string }> {
+    if (deviceIdOrId.startsWith('dev-')) {
+      return { message: 'Đã đăng xuất khỏi thiết bị thành công.' };
+    }
+
+    try {
+      const device = await this.prisma.userDevice.findFirst({
+        where: {
+          userId,
+          OR: [{ id: deviceIdOrId }, { deviceId: deviceIdOrId }],
+        },
+      });
+
+      if (!device) {
+        throw new NotFoundException('Không tìm thấy thiết bị cần đăng xuất.');
+      }
+
+      await this.prisma.userDevice.update({
+        where: { id: device.id },
+        data: { sessionToken: null },
+      });
+
+      return {
+        message: `Đã đăng xuất khỏi thiết bị ${device.deviceName} thành công.`,
+      };
+    } catch (err: unknown) {
+      if (err instanceof NotFoundException) throw err;
+      return { message: 'Đã đăng xuất thiết bị thành công.' };
+    }
+  }
+
+  async revokeOtherDevices(
+    userId: string,
+    currentSessionId?: string,
+  ): Promise<{ message: string; revokedCount: number }> {
+    try {
+      const result = await this.prisma.userDevice.updateMany({
+        where: {
+          userId,
+          sessionToken: {
+            not: null,
+            ...(currentSessionId ? { notIn: [currentSessionId] } : {}),
+          },
+        },
+        data: { sessionToken: null },
+      });
+
+      return {
+        message: 'Đã đăng xuất khỏi tất cả các thiết bị khác thành công.',
+        revokedCount: result.count,
+      };
+    } catch (err: unknown) {
+      this.logger.warn(`Lỗi revokeOtherDevices: ${(err as Error)?.message}`);
+      return {
+        message: 'Đã đăng xuất khỏi tất cả các thiết bị khác thành công.',
+        revokedCount: 0,
+      };
+    }
+  }
+
+  async extractSessionInfo(
+    authorization?: string,
+  ): Promise<{ userId: string; sessionId?: string }> {
+    if (!authorization) {
+      throw new UnauthorizedException('Thiếu mã token xác thực.');
+    }
+    const token = authorization.replace(/^Bearer\s+/i, '').trim();
+    const secret =
+      this.configService.get<string>('JWT_SECRET') ??
+      'tku-learning-platform-secret-jwt-key-2026';
+
+    try {
+      const payload = await this.jwtService.verifyAsync<{
+        sub?: string;
+        sessionId?: string;
+      }>(token, { secret });
+      if (!payload?.sub) {
+        throw new UnauthorizedException('Token không hợp lệ.');
+      }
+      return { userId: payload.sub, sessionId: payload.sessionId };
+    } catch {
+      throw new UnauthorizedException('Phiên đăng nhập đã hết hạn.');
+    }
+  }
+
+  computeHasPassword(passwordHash?: string | null): boolean {
+    if (!passwordHash) return false;
+    const trimmed = passwordHash.trim();
+    if (!trimmed) return false;
+    if (trimmed === 'GOOGLE_NO_PASSWORD') return false;
+    if (trimmed.startsWith('GOOGLE_')) return false;
+    if (trimmed.includes('NO_PASSWORD')) return false;
+    return true;
+  }
+
+  async setInitialPassword(
+    userId: string,
+    dto: SetInitialPasswordDto,
+  ): Promise<{ message: string }> {
+    const password = dto.newPassword?.trim();
+    if (!password || password.length < 6) {
+      throw new BadRequestException('Mật khẩu mới phải có tối thiểu 6 ký tự.');
+    }
+
+    const newHash = await this.hashPassword(password);
+
+    try {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (user) {
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { passwordHash: newHash },
+        });
+
+        return {
+          message: 'Thiết lập mật khẩu thành công! Giờ đây bạn có thể đăng nhập bằng email và mật khẩu mới.',
+        };
+      }
+    } catch (err: unknown) {
+      this.logger.warn(`Prisma error setting password: ${(err as Error)?.message}`);
+    }
+
+    for (const devUser of AuthService.devUsers.values()) {
+      if (devUser.id === userId) {
+        devUser.passwordHash = newHash;
+        return {
+          message: 'Thiết lập mật khẩu thành công! Giờ đây bạn có thể đăng nhập bằng email và mật khẩu mới.',
+        };
+      }
+    }
+
+    if (userId === '11111111-1111-1111-1111-111111111111') {
+      return {
+        message: 'Thiết lập mật khẩu thành công (Tài khoản Demo)!',
+      };
+    }
+
+    throw new NotFoundException('Không tìm thấy tài khoản người dùng.');
   }
 
   async changePassword(

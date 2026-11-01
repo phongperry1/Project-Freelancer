@@ -14,6 +14,7 @@ import {
   BadRequestException,
   UseInterceptors,
   UploadedFile,
+  UseGuards,
   Query,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -24,6 +25,8 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { JwtService } from '@nestjs/jwt';
+import { JwtAuthGuard, RolesGuard } from '../auth/guards/index.js';
+import { Roles } from '../auth/decorators/index.js';
 import { ConfigService } from '@nestjs/config';
 
 import {
@@ -43,6 +46,8 @@ import {
 
 @ApiTags('Lecturer')
 @Controller('api/v1/lecturer')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('TEACHER', 'ADMIN')
 export class LecturerController {
   constructor(
     private readonly lecturerService: LecturerService,
@@ -51,9 +56,9 @@ export class LecturerController {
     private readonly cloudinaryService: CloudinaryService,
   ) {}
 
-  private async verifyLecturer(
+  private verifyLecturer(
     authorization?: string,
-  ): Promise<{ userId: string; role: string }> {
+  ): { userId: string; role: string } {
     if (!authorization) {
       throw new UnauthorizedException('Thiếu mã token xác thực.');
     }
@@ -63,28 +68,15 @@ export class LecturerController {
       throw new UnauthorizedException('Token không hợp lệ.');
     }
 
-    const secret =
-      this.configService.get<string>('JWT_SECRET') ??
-      'tku-learning-platform-secret-jwt-key-2026';
-
-    let payload: { sub?: string; role?: string } | null = null;
-    try {
-      payload = await this.jwtService.verifyAsync(token, { secret });
-    } catch {
-      throw new UnauthorizedException('Phiên đăng nhập đã hết hạn.');
-    }
+    // Do JwtAuthGuard và RolesGuard đã xác thực chữ ký và kiểm tra DB,
+    // ta chỉ cần decode payload nhanh chóng mà không cần tính lại mã hash
+    const payload = this.jwtService.decode(token) as { sub?: string; role?: string } | null;
 
     if (!payload?.sub) {
       throw new UnauthorizedException('Token không hợp lệ.');
     }
 
-    if (payload.role !== 'TEACHER' && payload.role !== 'ADMIN') {
-      throw new ForbiddenException(
-        'Bạn không có quyền truy cập vào Không gian Giảng viên.',
-      );
-    }
-
-    return { userId: payload.sub, role: payload.role };
+    return { userId: payload.sub, role: payload.role ?? 'TEACHER' };
   }
 
   @Get('courses')
