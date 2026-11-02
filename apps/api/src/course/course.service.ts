@@ -818,6 +818,68 @@ export class CourseService {
   }
 
   /**
+   * Đăng ký tham gia khóa học miễn phí (1-click Free Enrollment không cần Key)
+   */
+  async enrollFree(
+    courseId: string,
+    studentId: string,
+  ): Promise<{
+    success: boolean;
+    message: string;
+    courseId: string;
+    enrolledAt: Date;
+  }> {
+    if (!UUID_REGEX.test(courseId)) {
+      throw new BadRequestException('Mã ID khóa học không đúng định dạng UUID.');
+    }
+
+    // 1. Kiểm tra khóa học có tồn tại và đang hoạt động không
+    const course = await this.prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true, status: true },
+    });
+
+    if (!course || course.status !== 'ACTIVE') {
+      throw new NotFoundException('Khóa học không tồn tại hoặc đã tạm dừng tiếp nhận học sinh.');
+    }
+
+    // 2. Kiểm tra nếu học sinh đã từng ghi danh trước đó -> trả về kết quả ngay và giữ nguyên mốc thời gian tham gia ban đầu
+    const existingEnrollment = await this.prisma.courseEnrollment.findUnique({
+      where: {
+        courseId_studentId: {
+          courseId,
+          studentId,
+        },
+      },
+    });
+
+    if (existingEnrollment) {
+      return {
+        success: true,
+        message: `Bạn đã tham gia khóa học "${course.title}" trước đó. Hãy tiếp tục tiến trình học tập!`,
+        courseId,
+        enrolledAt: existingEnrollment.enrolledAt,
+      };
+    }
+
+    // 3. Ghi danh mới học sinh vào khóa học
+    const enrollment = await this.prisma.courseEnrollment.create({
+      data: {
+        courseId,
+        studentId,
+        enrolledAt: new Date(),
+      },
+    });
+
+    return {
+      success: true,
+      message: `Chúc mừng bạn đã đăng ký tham gia khóa học "${course.title}" thành công!`,
+      courseId,
+      enrolledAt: enrollment.enrolledAt,
+    };
+  }
+
+  /**
    * Lấy toàn bộ dữ liệu phòng học (Course Learning Room) cho học sinh đã ghi danh
    */
   async getCourseLearningRoom(courseId: string, studentId: string) {

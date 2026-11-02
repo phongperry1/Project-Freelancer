@@ -8,6 +8,8 @@ import {
   Query,
   Body,
   Headers,
+  HttpCode,
+  HttpStatus,
   UnauthorizedException,
   BadRequestException,
   ParseUUIDPipe,
@@ -307,6 +309,28 @@ export class CourseController {
     }
 
     return this.courseService.enrollWithKey(id, studentId, body.key);
+  }
+
+  @Post(':id/enroll-free')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Học sinh đăng ký tham gia khóa học miễn phí (không cần mã Key)' })
+  @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
+  @ApiResponse({ status: 200, description: 'Đăng ký thành công và ghi danh khóa học' })
+  @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 404, description: 'Khóa học không tồn tại' })
+  async enrollFree(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const studentId = await this.getStudentIdFromHeader(authorization);
+    if (!studentId) {
+      throw new UnauthorizedException(
+        'Vui lòng đăng nhập tài khoản học sinh để đăng ký tham gia khóa học.',
+      );
+    }
+
+    return this.courseService.enrollFree(id, studentId);
   }
 
   @Get(':id/learn')

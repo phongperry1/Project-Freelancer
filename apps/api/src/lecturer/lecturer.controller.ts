@@ -316,6 +316,22 @@ export class LecturerController {
     return { url };
   }
 
+  @Post('upload/document')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Tải lên tài liệu hoặc slide bài giảng lên Cloudinary' })
+  async uploadDocument(
+    @UploadedFile() file: UploadedFileDto,
+    @Headers('authorization') authorization?: string,
+  ): Promise<{ url: string; originalname: string }> {
+    await this.verifyLecturer(authorization);
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn tệp tài liệu để tải lên.');
+    }
+    return this.cloudinaryService.uploadDocument(file, 'documents');
+  }
+
   // ============================================================
   // ASSESSMENT & ASSIGNMENT ENDPOINTS
   // ============================================================
