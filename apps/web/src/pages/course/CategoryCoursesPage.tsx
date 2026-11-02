@@ -20,6 +20,7 @@ import { Footer } from '../../components/common/Footer';
 import { EmptyState } from '../../components/common/EmptyState';
 import { courseService, type PublicCourseItem } from '../../services/course.service';
 import { AcademicCourseCard } from './components/AcademicCourseCard';
+import { useAuth } from '../../context/useAuth';
 import type { GradeLevel } from '../../types/course.types';
 import './coursesPage.css';
 import './categoryCoursesPage.css';
@@ -97,6 +98,7 @@ interface CategoryCoursesPageProps {
 export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaultCategory }) => {
   const { categoryKey: paramCategoryKey } = useParams<{ categoryKey?: string }>();
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
 
   const currentCategoryKey = defaultCategory || paramCategoryKey || 'my-courses';
   const categoryConfig: CategoryConfig =
@@ -157,10 +159,11 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
   // Danh sách khóa học thuộc phân mục hiện tại
   const rawTargetCourses = useMemo(() => {
     if (currentCategoryKey === 'my-courses') {
+      if (!isAuthenticated || !user) return [];
       return courses.filter((c) => Boolean(c.isEnrolled));
     }
     return courses.filter((c) => c.grade === currentCategoryKey);
-  }, [courses, currentCategoryKey]);
+  }, [courses, currentCategoryKey, isAuthenticated, user]);
 
   // Tìm kiếm và sắp xếp kết quả
   const displayedCourses = useMemo(() => {
@@ -209,9 +212,14 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
     (courseId: string) => {
       const selected = courses.find((c) => c.id === courseId);
       const isEnrolled =
-        Boolean(selected?.isEnrolled) ||
-        (typeof window !== 'undefined' &&
-          localStorage.getItem(`tku_enrolled_${courseId}`) === 'true');
+        isAuthenticated &&
+        Boolean(
+          selected?.isEnrolled ||
+            (user?.id &&
+              typeof window !== 'undefined' &&
+              (localStorage.getItem(`tku_enrolled_${user.id}_${courseId}`) === 'true' ||
+                localStorage.getItem(`tku_enrolled_${courseId}`) === 'true')),
+        );
 
       if (isEnrolled) {
         navigate(`/courses/${courseId}/learn`);
@@ -219,7 +227,7 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
         navigate(`/courses/${courseId}`);
       }
     },
-    [navigate, courses],
+    [navigate, courses, isAuthenticated, user],
   );
 
   const IconComponent = categoryConfig.icon;

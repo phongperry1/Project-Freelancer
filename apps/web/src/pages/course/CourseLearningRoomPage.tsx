@@ -9,10 +9,11 @@ import {
   ChevronDown,
   Circle,
   Clock,
-  Trash2,
-  Plus,
+  Download,
   Edit3,
+  ExternalLink,
   FileCheck,
+  FileDown,
   FileText,
   GraduationCap,
   HelpCircle,
@@ -21,8 +22,12 @@ import {
   MessageSquare,
   Play,
   PlayCircle,
+  Plus,
+  Presentation,
+  Printer,
   RotateCcw,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -99,6 +104,120 @@ const formatVideoTime = (seconds: number): string => {
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+export interface LessonAttachment {
+  id: string;
+  title: string;
+  url: string;
+  type: 'pdf' | 'slide' | 'doc' | 'archive' | 'link';
+}
+
+const extractLessonAttachments = (content?: string | null): LessonAttachment[] => {
+  if (!content) return [];
+  const results: LessonAttachment[] = [];
+  const seenUrls = new Set<string>();
+
+  // 1. Kiểm tra định dạng markdown link: [Tên tài liệu](url)
+  const mdRegex = /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g;
+  let mdMatch: RegExpExecArray | null;
+  while ((mdMatch = mdRegex.exec(content)) !== null) {
+    // Bỏ qua nếu là cú pháp nhúng ảnh ![Ảnh](url)
+    if (mdMatch.index > 0 && content[mdMatch.index - 1] === '!') {
+      continue;
+    }
+
+    const rawTitle = mdMatch[1].trim();
+    const rawUrl = mdMatch[2].trim();
+    if (seenUrls.has(rawUrl)) continue;
+
+    // Bỏ qua nếu là file hình ảnh hoặc video
+    if (/\.(png|jpe?g|gif|webp|svg|mp4|webm|mov)($|\?)/i.test(rawUrl)) continue;
+    if (/youtube\.com|youtu\.be|vimeo\.com/i.test(rawUrl)) continue;
+
+    seenUrls.add(rawUrl);
+
+    let type: LessonAttachment['type'] = 'link';
+    const lower = rawUrl.toLowerCase();
+    if (lower.includes('.pdf') || lower.includes('/pdf')) type = 'pdf';
+    else if (
+      lower.includes('.ppt') ||
+      lower.includes('.pptx') ||
+      lower.includes('presentation') ||
+      lower.includes('slideshare') ||
+      lower.includes('canva.com')
+    ) {
+      type = 'slide';
+    } else if (lower.includes('.doc') || lower.includes('.docx')) {
+      type = 'doc';
+    } else if (lower.includes('.zip') || lower.includes('.rar') || lower.includes('.7z')) {
+      type = 'archive';
+    } else if (lower.includes('drive.google.com') || lower.includes('docs.google.com')) {
+      type = 'doc';
+    }
+
+    results.push({
+      id: `att_md_${results.length}_${rawUrl.slice(-8)}`,
+      title: rawTitle,
+      url: rawUrl,
+      type,
+    });
+  }
+
+  // 2. Kiểm tra link file trực tiếp (.pdf, .pptx, .ppt, .docx, .zip)
+  const urlRegex = /(https?:\/\/[^\s<>"'()]+\.(?:pdf|pptx?|docx?|zip|rar)(?:\?[^\s<>"'()]*)?)/gi;
+  let urlMatch: RegExpExecArray | null;
+  while ((urlMatch = urlRegex.exec(content)) !== null) {
+    const rawUrl = urlMatch[1].trim();
+    if (seenUrls.has(rawUrl)) continue;
+    seenUrls.add(rawUrl);
+
+    const fileName = rawUrl.split('/').pop()?.split('?')[0] || 'Tài liệu bài học';
+    let type: LessonAttachment['type'] = 'link';
+    const lower = rawUrl.toLowerCase();
+    if (lower.includes('.pdf')) type = 'pdf';
+    else if (lower.includes('.ppt')) type = 'slide';
+    else if (lower.includes('.doc')) type = 'doc';
+    else if (lower.includes('.zip') || lower.includes('.rar')) type = 'archive';
+
+    results.push({
+      id: `att_file_${results.length}_${rawUrl.slice(-8)}`,
+      title: decodeURIComponent(fileName),
+      url: rawUrl,
+      type,
+    });
+  }
+
+  // 3. Kiểm tra liên kết tài liệu đám mây Google Drive / Docs / Slides
+  const driveRegex = /(https?:\/\/(?:docs|drive)\.google\.com\/[^\s<>"'()]+)/gi;
+  let driveMatch: RegExpExecArray | null;
+  while ((driveMatch = driveRegex.exec(content)) !== null) {
+    const rawUrl = driveMatch[1].trim();
+    if (seenUrls.has(rawUrl)) continue;
+    seenUrls.add(rawUrl);
+
+    let title = 'Tài liệu bài giảng (Google Drive)';
+    let type: LessonAttachment['type'] = 'doc';
+    if (rawUrl.includes('presentation')) {
+      title = 'Slide bài giảng (Google Slides)';
+      type = 'slide';
+    } else if (rawUrl.includes('document')) {
+      title = 'Văn bản bài học (Google Docs)';
+      type = 'doc';
+    } else if (rawUrl.includes('spreadsheets')) {
+      title = 'Bảng tính thực hành (Google Sheets)';
+      type = 'doc';
+    }
+
+    results.push({
+      id: `att_drive_${results.length}_${rawUrl.slice(-8)}`,
+      title,
+      url: rawUrl,
+      type,
+    });
+  }
+
+  return results;
 };
 
 // Tự động tải YouTube script động chỉ khi người dùng vào phòng học (Lazy Load & Singleton Promise)
@@ -1002,7 +1121,7 @@ export const CourseLearningRoomPage: React.FC = () => {
 
   // Quản lý tab bài học: đồng bộ mượt mà với URL query param theo chuẩn React
   const queryTab = searchParams.get('tab');
-  const [userTab, setUserTab] = useState<'content' | 'teacher' | 'notes' | 'discussion' | 'ai' | null>(null);
+  const [userTab, setUserTab] = useState<'content' | 'resources' | 'teacher' | 'notes' | 'discussion' | 'ai' | null>(null);
   const [prevQueryTab, setPrevQueryTab] = useState<string | null>(queryTab);
 
   if (queryTab !== prevQueryTab) {
@@ -1010,9 +1129,9 @@ export const CourseLearningRoomPage: React.FC = () => {
     setUserTab(null);
   }
 
-  const activeTab: 'content' | 'teacher' | 'notes' | 'discussion' | 'ai' =
+  const activeTab: 'content' | 'resources' | 'teacher' | 'notes' | 'discussion' | 'ai' =
     userTab ??
-    (queryTab === 'discussion' || queryTab === 'ai' || queryTab === 'notes' || queryTab === 'teacher'
+    (queryTab === 'discussion' || queryTab === 'ai' || queryTab === 'notes' || queryTab === 'teacher' || queryTab === 'resources'
       ? queryTab
       : 'content');
   const setActiveTab = setUserTab;
@@ -1158,6 +1277,81 @@ export const CourseLearningRoomPage: React.FC = () => {
     }
     return null;
   }, [allLessons, activeLessonIndex]);
+
+  // 6. Tài liệu đính kèm & Slide bài học (PDF / Slide / Docs / Drive)
+  const lessonAttachments = useMemo<LessonAttachment[]>(() => {
+    return extractLessonAttachments(activeLesson?.content);
+  }, [activeLesson?.content]);
+
+  const handleDownloadAttachment = useCallback((att: LessonAttachment) => {
+    if (att.url.startsWith('http')) {
+      window.open(att.url, '_blank', 'noopener,noreferrer');
+      toast.success(`Đang mở / tải tài liệu: ${att.title}`);
+    } else {
+      const a = document.createElement('a');
+      a.href = att.url;
+      a.download = att.title;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      toast.success(`Đã bắt đầu tải tài liệu: ${att.title}`);
+    }
+  }, []);
+
+  const handleDownloadLessonNotesText = useCallback(() => {
+    if (!activeLesson) return;
+    const rawText = activeLesson.content
+      ? activeLesson.content
+          .replace(/<[^>]+>/g, '')
+          .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+      : 'Bài học này chưa có nội dung văn bản.';
+
+    const fileContent = `TKU ACADEMY - TÀI LIỆU BÀI HỌC
+Khóa học: ${data?.course?.title || 'Khóa học'}
+Chương: ${activeChapter?.title || 'Chương học'}
+Bài học: ${activeLesson.title}
+Giảng viên: ${data?.course?.teacher?.fullName || 'TKU'}
+Ngày tải về: ${new Date().toLocaleDateString('vi-VN')}
+
+========================================
+NỘI DUNG TÓM TẮT BÀI GIẢNG:
+========================================
+
+${rawText}
+
+----------------------------------------
+© Bản quyền học liệu thuộc về Giảng viên và Nền tảng Giáo dục TKU Academy.
+`;
+
+    const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${activeLesson.title.replace(/[\\/:*?"<>|]/g, '_')}_Tai_Lieu.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success('Đã tải tài liệu tóm tắt bài giảng về máy!');
+  }, [activeLesson, data?.course, activeChapter]);
+
+  const handlePrintLesson = useCallback(() => {
+    window.print();
+  }, []);
+
+  const handleQuickDownload = useCallback(() => {
+    if (lessonAttachments.length === 1) {
+      handleDownloadAttachment(lessonAttachments[0]);
+    } else if (lessonAttachments.length > 1) {
+      setActiveTab('resources');
+      toast.info(`Bài học có ${lessonAttachments.length} tài liệu đính kèm. Vui lòng chọn tệp muốn tải.`);
+    } else if (activeLesson?.content) {
+      handleDownloadLessonNotesText();
+    } else {
+      toast.info('Bài học này chưa có tài liệu đính kèm từ giảng viên.');
+    }
+  }, [lessonAttachments, handleDownloadAttachment, setActiveTab, activeLesson, handleDownloadLessonNotesText]);
 
 
   // 7. Navigation to lesson
@@ -1515,6 +1709,17 @@ export const CourseLearningRoomPage: React.FC = () => {
               </div>
 
               <div className="tku-learning-nav-btns">
+                {/* Nút Tải tài liệu đính kèm (PDF/Slide) */}
+                <button
+                  type="button"
+                  className="tku-learning-btn tku-learning-btn--download"
+                  onClick={handleQuickDownload}
+                  title="Tải tài liệu và Slide bài giảng đính kèm bài học này"
+                >
+                  <Download size={15} />
+                  <span>Tải tài liệu {lessonAttachments.length > 0 ? `(${lessonAttachments.length})` : ''}</span>
+                </button>
+
                 {/* Previous Lesson */}
                 <button
                   type="button"
@@ -1552,6 +1757,18 @@ export const CourseLearningRoomPage: React.FC = () => {
               >
                 <BookOpen size={16} />
                 <span>Nội dung bài học</span>
+              </button>
+
+              <button
+                type="button"
+                className={`tku-learning-tab-btn ${activeTab === 'resources' ? 'is-active' : ''}`}
+                onClick={() => setActiveTab('resources')}
+              >
+                <FileDown size={16} />
+                <span>Tài liệu & Slide</span>
+                {lessonAttachments.length > 0 && (
+                  <span className="tku-learning-tab-count">{lessonAttachments.length}</span>
+                )}
               </button>
 
               <button
@@ -1595,6 +1812,27 @@ export const CourseLearningRoomPage: React.FC = () => {
               {/* TAB 1: NỘI DUNG BÀI HỌC */}
               {activeTab === 'content' && (
                 <div className="tku-learning-content-pane">
+                  {/* Banner gợi ý tài liệu đính kèm nếu bài học có tài liệu */}
+                  {lessonAttachments.length > 0 && (
+                    <div className="tku-learning-attachment-banner">
+                      <div className="tku-learning-attachment-banner__left">
+                        <span className="tku-learning-attachment-banner__badge">
+                          <FileDown size={13} />
+                          {lessonAttachments.length} tài liệu
+                        </span>
+                        <span>Bài học này có tài liệu và Slide học tập đính kèm từ giảng viên.</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="tku-learning-attachment-banner__btn"
+                        onClick={() => setActiveTab('resources')}
+                      >
+                        <Download size={13} />
+                        <span>Xem và tải tài liệu</span>
+                      </button>
+                    </div>
+                  )}
+
                   {activeLesson?.content ? (
                     <article className="tku-learning-markdown-body">
                       <div
@@ -1614,6 +1852,114 @@ export const CourseLearningRoomPage: React.FC = () => {
                       </p>
                     </div>
                   )}
+                </div>
+              )}
+
+              {/* TAB MỚI: TÀI LIỆU & SLIDE BÀI GIẢNG ĐÍNH KÈM */}
+              {activeTab === 'resources' && (
+                <div className="tku-learning-resources-pane">
+                  <div className="tku-learning-resources-header">
+                    <h3 className="tku-learning-resources-title">
+                      <FileDown size={20} style={{ color: '#166534' }} />
+                      <span>Tài liệu học tập & Slide đính kèm bài giảng</span>
+                    </h3>
+                    <p className="tku-learning-resources-subtitle">
+                      Tải về tài liệu PDF, Slide thuyết trình hoặc tệp thực hành do giảng viên cung cấp để ôn tập và làm bài tập.
+                    </p>
+                  </div>
+
+                  {lessonAttachments.length > 0 ? (
+                    <div className="tku-learning-resources-list">
+                      {lessonAttachments.map((att) => (
+                        <div key={att.id} className="tku-resource-card">
+                          <div className="tku-resource-card__left">
+                            <div className={`tku-resource-card__icon-box tku-resource-card__icon-box--${att.type}`}>
+                              {att.type === 'slide' ? (
+                                <Presentation size={22} />
+                              ) : att.type === 'doc' ? (
+                                <FileCheck size={22} />
+                              ) : (
+                                <FileText size={22} />
+                              )}
+                            </div>
+                            <div className="tku-resource-card__info">
+                              <div className="tku-resource-card__title-row">
+                                <h4 className="tku-resource-card__title">{att.title}</h4>
+                                <span className={`tku-resource-card__tag tku-resource-card__tag--${att.type}`}>
+                                  {att.type.toUpperCase()}
+                                </span>
+                              </div>
+                              <p className="tku-resource-card__desc">
+                                Học liệu bổ trợ chính thức cho bài học "{activeLesson?.title}"
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="tku-resource-card__actions">
+                            <button
+                              type="button"
+                              className="tku-resource-btn tku-resource-btn--primary"
+                              onClick={() => handleDownloadAttachment(att)}
+                              title={`Tải xuống ${att.title}`}
+                            >
+                              <Download size={14} />
+                              <span>Tải về</span>
+                            </button>
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="tku-resource-btn tku-resource-btn--secondary"
+                              title="Mở xem trong tab mới"
+                            >
+                              <ExternalLink size={14} />
+                              <span>Xem trực tiếp</span>
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="tku-learning-placeholder-card">
+                      <div className="tku-learning-placeholder-card__icon">
+                        <FileText size={24} />
+                      </div>
+                      <h4 className="tku-learning-placeholder-card__title">Chưa có tệp đính kèm riêng biệt</h4>
+                      <p className="tku-learning-placeholder-card__desc">
+                        Giảng viên chưa tải lên tệp PDF hoặc Slide riêng cho bài học này. Bạn có thể xuất bản tóm tắt nội dung bài học bên dưới để đọc ngoại tuyến.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* TIỆN ÍCH HỌC NGOẠI TUYẾN & IN ẤN */}
+                  <div className="tku-offline-tools-card">
+                    <h4 className="tku-offline-tools-title">
+                      <BookOpen size={17} style={{ color: '#1d68f2' }} />
+                      <span>Tài liệu tóm tắt & Tiện ích in ấn</span>
+                    </h4>
+                    <p className="tku-offline-tools-desc">
+                      Lưu trữ nội dung lý thuyết bài học để học tập không cần kết nối mạng hoặc in thành tài liệu ôn tập cá nhân.
+                    </p>
+                    <div className="tku-offline-tools-actions">
+                      <button
+                        type="button"
+                        className="tku-resource-btn tku-resource-btn--secondary"
+                        onClick={handleDownloadLessonNotesText}
+                        disabled={!activeLesson?.content}
+                      >
+                        <Download size={14} />
+                        <span>Tải tóm tắt bài giảng (.txt)</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="tku-resource-btn tku-resource-btn--secondary"
+                        onClick={handlePrintLesson}
+                      >
+                        <Printer size={14} />
+                        <span>In bài học / Lưu PDF</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
 

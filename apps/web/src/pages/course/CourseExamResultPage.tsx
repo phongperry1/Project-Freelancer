@@ -22,8 +22,10 @@ import {
   type AssessmentResultResponse,
   type AssessmentHistoryItem,
 } from '../../services/course.service';
+import { useAuth } from '../../context/useAuth';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
+import { MathText } from '../../components/common/MathText';
 import './courseExamRoom.css';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -34,9 +36,26 @@ export const CourseExamResultPage: React.FC = () => {
     assessmentId: string;
     submissionId: string;
   }>();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const feedbackCardRef = useRef<HTMLDivElement | null>(null);
+
+  // Xử lý làm lại bài thi: xóa dữ liệu lưu tạm bài cũ và điều hướng về phòng làm bài
+  const handleRetakeExam = () => {
+    if (!courseId || !assessmentId) return;
+    if (typeof window !== 'undefined') {
+      try {
+        if (user?.id) {
+          localStorage.removeItem(`tku_exam_draft_${user.id}_${assessmentId}`);
+        }
+        localStorage.removeItem(`tku_exam_draft_guest_${assessmentId}`);
+      } catch (e) {
+        console.error('Không thể dọn dẹp nháp:', e);
+      }
+    }
+    navigate(`/courses/${courseId}/exams/${assessmentId}`);
+  };
 
   // Khi học viên bấm nút Lui trên trình duyệt ở trang kết quả, đưa học viên về lại phòng học
   useEffect(() => {
@@ -297,15 +316,27 @@ export const CourseExamResultPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Nút quay về bài học */}
-          <Link
-            to={`/courses/${courseId}/learn`}
-            className="tku-result-back-learn-btn"
-            title="Quay lại phòng học bài giảng"
-          >
-            <ArrowLeft size={16} />
-            <span>Về bài học</span>
-          </Link>
+          {/* Nhóm nút thao tác học thuật: Làm lại bài thi & Về bài học */}
+          <div className="tku-result-header-actions">
+            <button
+              type="button"
+              className="tku-result-retake-btn"
+              onClick={handleRetakeExam}
+              title="Làm lại bài thi này để cải thiện điểm số và rèn luyện kiến thức"
+            >
+              <RotateCcw size={15} />
+              <span>Làm lại bài thi</span>
+            </button>
+
+            <Link
+              to={`/courses/${courseId}/learn`}
+              className="tku-result-back-learn-btn"
+              title="Quay lại phòng học bài giảng"
+            >
+              <ArrowLeft size={16} />
+              <span>Về bài học</span>
+            </Link>
+          </div>
         </div>
 
         {/* HERO CARD: ĐIỂM SỐ & THỐNG KÊ KẾT QUẢ */}
@@ -648,7 +679,9 @@ export const CourseExamResultPage: React.FC = () => {
                     </div>
 
                     {/* Nội dung câu hỏi */}
-                    <div className="tku-question-card__content">{q.content}</div>
+                    <div className="tku-question-card__content">
+                      <MathText content={q.content} />
+                    </div>
 
                     {/* Danh sách lựa chọn A, B, C, D (cho trắc nghiệm) hoặc câu trả lời tự luận */}
                     {q.type === 'TEXT' ? (
@@ -682,7 +715,7 @@ export const CourseExamResultPage: React.FC = () => {
                                 {letter}
                               </span>
                               <span style={{ flex: 1, fontSize: 14.5, color: 'inherit' }}>
-                                {opt.content}
+                                <MathText content={opt.content} />
                               </span>
 
                               {/* Badge chỉ định trạng thái lựa chọn */}
@@ -745,7 +778,9 @@ export const CourseExamResultPage: React.FC = () => {
                         </div>
 
                         {q.solutionText && (
-                          <div className="tku-solution-box__text">{q.solutionText}</div>
+                          <div className="tku-solution-box__text">
+                            <MathText content={q.solutionText} />
+                          </div>
                         )}
 
                         {/* Nút xem lời giải viết tay do giảng viên upload */}
@@ -814,6 +849,38 @@ export const CourseExamResultPage: React.FC = () => {
                   </p>
                 </div>
               )}
+
+              {/* KHỐI KÊU GỌI LÀM LẠI BÀI THI SAU KHI ÔN TẬP XONG ĐÁP ÁN */}
+              <div className="tku-result-retake-card">
+                <div className="tku-result-retake-card__info">
+                  <h3 className="tku-result-retake-card__title">
+                    <Sparkles size={18} style={{ color: '#1d68f2' }} />
+                    <span>Bạn đã xem xong đáp án và lời giải chi tiết!</span>
+                  </h3>
+                  <p className="tku-result-retake-card__desc">
+                    Hãy thử sức làm lại bài thi để kiểm tra sự tiến bộ và nâng cao thành tích học tập nhé.
+                  </p>
+                </div>
+                <div className="tku-result-retake-card__actions">
+                  <button
+                    type="button"
+                    className="tku-result-retake-btn"
+                    onClick={handleRetakeExam}
+                    title="Bắt đầu lượt làm bài thi mới"
+                  >
+                    <RotateCcw size={15} />
+                    <span>Làm lại bài thi ngay</span>
+                  </button>
+                  <Link
+                    to={`/courses/${courseId}/learn`}
+                    className="tku-result-back-learn-btn"
+                    title="Quay lại danh sách bài giảng"
+                  >
+                    <ArrowLeft size={15} />
+                    <span>Về bài học</span>
+                  </Link>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -833,14 +900,16 @@ export const CourseExamResultPage: React.FC = () => {
               <h2 style={{ fontSize: 17, fontWeight: 700, margin: 0, color: '#0f172a' }}>
                 Lịch sử làm bài thi của bạn ({historyList.length} lần thi)
               </h2>
-              <Link
-                to={`/courses/${courseId}/exams/${assessmentId}`}
+              <button
+                type="button"
                 className="tku-exam-submit-header-btn"
-                style={{ padding: '8px 16px', fontSize: 13.5 }}
+                style={{ padding: '8px 16px', fontSize: 13.5, cursor: 'pointer' }}
+                onClick={handleRetakeExam}
+                title="Bắt đầu làm lại bài thi"
               >
                 <RotateCcw size={14} />
                 <span>Làm lại bài thi</span>
-              </Link>
+              </button>
             </div>
 
             {historyList.length > 0 ? (

@@ -1203,6 +1203,311 @@
   cursor: not-allowed;
 }
 
+/* ============================================================
+   LESSON ATTACHMENTS & SLIDES UPLOADER
+   ============================================================ */
+
+.tku-attachments-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-attachments-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tku-attachments-header-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-attachments-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-doc-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px 16px;
+  background-color: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  user-select: none;
+}
+
+.tku-doc-dropzone:hover {
+  background-color: #f1f5f9;
+  border-color: #3b82f6;
+}
+
+.tku-doc-dropzone--active {
+  background-color: #eff6ff;
+  border-color: #1d68f2;
+  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.15);
+}
+
+.tku-doc-dropzone--uploading {
+  pointer-events: none;
+  opacity: 0.85;
+  background-color: #f8fafc;
+}
+
+.tku-doc-dropzone-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+  transition: transform 0.2s ease;
+}
+
+.tku-doc-dropzone:hover .tku-doc-dropzone-icon {
+  transform: translateY(-2px);
+}
+
+.tku-doc-dropzone-text {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.tku-doc-dropzone-text strong {
+  color: #1d68f2;
+  text-decoration: underline;
+}
+
+.tku-doc-dropzone-hint {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.tku-add-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: 1px dashed #cbd5e1;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-add-link-btn:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.tku-add-link-card {
+  padding: 12px 14px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-add-link-inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .tku-add-link-inputs {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-add-link-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.tku-attachment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.tku-attachment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+  gap: 12px;
+}
+
+.tku-attachment-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+
+.tku-attachment-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-attachment-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-attachment-icon-wrap--pdf {
+  background-color: #fee2e2;
+  color: #ef4444;
+}
+
+.tku-attachment-icon-wrap--slide {
+  background-color: #ffedd5;
+  color: #ea580c;
+}
+
+.tku-attachment-icon-wrap--doc {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.tku-attachment-icon-wrap--archive {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.tku-attachment-icon-wrap--link {
+  background-color: #f3e8ff;
+  color: #9333ea;
+}
+
+.tku-attachment-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-attachment-title-input {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  background: transparent;
+  border: 1px solid transparent;
+  padding: 2px 4px;
+  border-radius: 4px;
+  width: 100%;
+  transition: all 0.15s ease;
+}
+
+.tku-attachment-title-input:hover {
+  border-color: #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.tku-attachment-title-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  background-color: #ffffff;
+}
+
+.tku-attachment-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.tku-attachment-type-tag {
+  text-transform: uppercase;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+.tku-attachment-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.tku-attachment-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.tku-attachment-action-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-attachment-action-btn--delete:hover {
+  background-color: #fee2e2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.tku-curriculum-media-badge--attachment {
+  background-color: #faf5ff;
+  color: #9333ea;
+  border-color: #e9d5ff;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .tku-curriculum-page {

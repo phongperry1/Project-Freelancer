@@ -153,7 +153,7 @@ export const LessonsPage: React.FC = () => {
                     teacher: c.teacher,
                     hasVideo: true,
                     hasContent: false,
-                    isEnrolled: Boolean(c.isEnrolled),
+                    isEnrolled: Boolean(isAuthenticated && c.isEnrolled),
                     isCompleted: false,
                     progressPercent: 0,
                     lastPosition: 0,
@@ -192,7 +192,7 @@ export const LessonsPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [refreshTrigger]);
+  }, [refreshTrigger, isAuthenticated]);
 
   // Danh sách khóa học khả dụng cho dropdown lọc (kể cả khi chưa ghi danh)
   const availableCourses = useMemo(() => {

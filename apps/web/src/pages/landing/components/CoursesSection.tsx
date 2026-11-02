@@ -1,8 +1,7 @@
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
-  ArrowRight,
   RefreshCw,
   Sparkles,
 } from 'lucide-react';
@@ -10,6 +9,7 @@ import { Badge } from '../../../components/common/Badge';
 import { EmptyState } from '../../../components/common/EmptyState';
 import { courseService, type PublicCourseItem } from '../../../services/course.service';
 import { AcademicCourseCard } from '../../course/components/AcademicCourseCard';
+import { useAuth } from '../../../context/useAuth';
 
 // Subcomponent: Skeleton Loading
 const CourseSkeleton: React.FC = memo(() => {
@@ -36,6 +36,7 @@ CourseSkeleton.displayName = 'CourseSkeleton';
 
 export const CoursesSection: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [courses, setCourses] = useState<PublicCourseItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -85,9 +86,24 @@ export const CoursesSection: React.FC = () => {
 
   const handleSelectCourse = useCallback(
     (courseId: string) => {
-      navigate(`/courses/${courseId}`);
+      const selected = courses.find((c) => c.id === courseId);
+      const isEnrolled =
+        isAuthenticated &&
+        Boolean(
+          selected?.isEnrolled ||
+            (user?.id &&
+              typeof window !== 'undefined' &&
+              (localStorage.getItem(`tku_enrolled_${user.id}_${courseId}`) === 'true' ||
+                localStorage.getItem(`tku_enrolled_${courseId}`) === 'true')),
+        );
+
+      if (isEnrolled) {
+        navigate(`/courses/${courseId}/learn`);
+      } else {
+        navigate(`/courses/${courseId}`);
+      }
     },
-    [navigate],
+    [navigate, courses, isAuthenticated, user],
   );
 
   return (
@@ -146,17 +162,6 @@ export const CoursesSection: React.FC = () => {
             actionText="Tải lại trang"
             onAction={handleRetry}
           />
-        )}
-
-        {/* Nút Khám phá toàn bộ khóa học chuyển sang trang chuyên biệt /courses */}
-        {!isLoading && !errorMessage && courses.length > 0 && (
-          <div className="tku-courses-view-all-wrap">
-            <Link to="/courses" className="tku-courses-view-all-btn">
-              <Sparkles size={16} />
-              <span>Khám phá toàn bộ khóa học</span>
-              <ArrowRight size={17} />
-            </Link>
-          </div>
         )}
       </div>
     </section>

@@ -8,6 +8,7 @@ import {
   GraduationCap,
 } from 'lucide-react';
 import type { PublicCourseItem } from '../../../services/course.service';
+import { useAuth } from '../../../context/useAuth';
 
 function getGradeLabel(grade: PublicCourseItem['grade']): string {
   switch (grade) {
@@ -47,6 +48,7 @@ export interface AcademicCourseCardProps {
 }
 
 export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ course, onSelect }) => {
+  const { isAuthenticated, user } = useAuth();
   const [imageFailed, setImageFailed] = useState(false);
   const [avatarFailed, setAvatarFailed] = useState(false);
 
@@ -68,11 +70,30 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
     course.teacher.avatarUrl?.trim() !== '' &&
     !avatarFailed;
 
-  // Dữ liệu thật từ database thông qua CourseEnrollment kèm fallback tức thì từ localStorage khi vừa kích hoạt mã key
-  const isEnrolled =
-    Boolean(course.isEnrolled) ||
-    (typeof window !== 'undefined' &&
-      localStorage.getItem(`tku_enrolled_${course.id}`) === 'true');
+  // Khóa học chỉ được hiển thị "Đã tham gia" / "Vào học ngay" khi và chỉ khi:
+  // 1. Tài khoản đã đăng nhập (isAuthenticated === true và user hợp lệ)
+  // 2. Tài khoản đã thực sự ghi danh trong database (course.isEnrolled) hoặc có cache ghi danh hợp lệ
+  const isEnrolled = useMemo(() => {
+    if (!isAuthenticated || !user) {
+      return false;
+    }
+    if (course.isEnrolled) {
+      return true;
+    }
+    if (typeof window !== 'undefined') {
+      const userSpecificEnrolled = user.id
+        ? localStorage.getItem(`tku_enrolled_${user.id}_${course.id}`)
+        : null;
+      if (userSpecificEnrolled === 'true') {
+        return true;
+      }
+      const genericEnrolled = localStorage.getItem(`tku_enrolled_${course.id}`);
+      if (genericEnrolled === 'true') {
+        return true;
+      }
+    }
+    return false;
+  }, [isAuthenticated, user, course.isEnrolled, course.id]);
 
   return (
     <article className="tku-course-card" aria-label={`Khóa học ${course.title}`}>
@@ -102,19 +123,14 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
           <span>{getGradeLabel(course.grade)}</span>
         </span>
 
-        {/* Floating Status Tag - Hoàn toàn đồng bộ theo trạng thái database */}
-        {isEnrolled ? (
+        {/* Floating Status Tag - Chỉ hiển thị khi học sinh đã ghi danh khóa học */}
+        {isEnrolled && (
           <span className="tku-course-card__status-tag tku-course-card__status-tag--enrolled">
             <span
               className="tku-course-card__status-dot tku-course-card__status-dot--enrolled"
               aria-hidden="true"
             />
             <span>Đã tham gia</span>
-          </span>
-        ) : (
-          <span className="tku-course-card__status-tag">
-            <span className="tku-course-card__status-dot" aria-hidden="true" />
-            <span>Đang diễn ra</span>
           </span>
         )}
       </div>

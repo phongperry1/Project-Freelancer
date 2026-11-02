@@ -555,6 +555,42 @@ export const courseService = {
   },
 
   /**
+   * Đăng ký tham gia khóa học miễn phí không cần mã Key
+   */
+  async enrollFree(courseId: string): Promise<{
+    success: boolean;
+    message: string;
+    courseId: string;
+    enrolledAt: string;
+  }> {
+    const token = getAuthToken();
+
+    if (!token) {
+      throw new Error('Vui lòng đăng nhập tài khoản học sinh để đăng ký khóa học.');
+    }
+
+    const url = `${API_BASE_URL}/courses/${encodeURIComponent(courseId)}/enroll-free`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.message || 'Không thể đăng ký khóa học. Vui lòng thử lại.',
+      );
+    }
+
+    return data;
+  },
+
+  /**
    * Lấy dữ liệu phòng học bài giảng cho học sinh đã ghi danh
    */
   async getCourseLearningRoom(courseId: string): Promise<CourseLearningRoomResponse> {

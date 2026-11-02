@@ -3243,3 +3243,657 @@ input:checked + .tku-slider:before {
     transform: rotate(360deg);
   }
 }
+
+/* ============================================================
+   AUTHORING TOP TOOLBAR & QUICK ACTIONS
+   ============================================================ */
+.tku-authoring-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tku-authoring-toolbar__info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-authoring-toolbar__tip {
+  font-size: 12.5px;
+  color: #475569;
+}
+
+.tku-authoring-toolbar__tip code {
+  background-color: #f1f5f9;
+  color: #1d68f2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.tku-authoring-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tku-btn-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border: 1px solid transparent;
+}
+
+.tku-btn-toolbar--template {
+  background-color: #f8fafc;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.tku-btn-toolbar--template:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.tku-btn-toolbar--excel {
+  background-color: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.tku-btn-toolbar--excel:hover {
+  background-color: #d1fae5;
+  color: #047857;
+  border-color: #6ee7b7;
+}
+
+.tku-btn-toolbar--preview {
+  background-color: #eff6ff;
+  color: #1d68f2;
+  border-color: #bfdbfe;
+}
+
+.tku-btn-toolbar--preview:hover {
+  background-color: #dbeafe;
+  color: #1558d6;
+  border-color: #93c5fd;
+}
+
+/* Live LaTeX preview below question textarea */
+.tku-q-latex-live-preview {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tku-q-latex-live-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tku-q-latex-live-preview-body {
+  font-size: 14px;
+  color: #0f172a;
+  line-height: 1.6;
+}
+
+.tku-option-latex-preview {
+  margin-top: 4px;
+  margin-left: 36px;
+  font-size: 13px;
+  color: #1d4ed8;
+  background-color: #eff6ff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  width: fit-content;
+}
+
+/* ============================================================
+   EXCEL IMPORT MODAL
+   ============================================================ */
+.tku-excel-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.tku-excel-modal {
+  background-color: #ffffff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 840px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.tku-excel-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tku-excel-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-excel-modal-close-btn {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  transition: all 0.15s ease;
+}
+
+.tku-excel-modal-close-btn:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-excel-modal-body {
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.tku-excel-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 26px 20px;
+  background-color: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.tku-excel-dropzone:hover {
+  background-color: #f0fdf4;
+  border-color: #10b981;
+}
+
+.tku-excel-dropzone-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: #ecfdf5;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.tku-excel-dropzone-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.tku-excel-dropzone-title strong {
+  color: #059669;
+  text-decoration: underline;
+}
+
+.tku-excel-dropzone-sub {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tku-excel-parsed-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background-color: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #065f46;
+  font-weight: 600;
+}
+
+.tku-excel-mode-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: #f8fafc;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.tku-excel-mode-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.tku-excel-mode-options {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.tku-excel-mode-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+}
+
+.tku-excel-preview-table-wrap {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.tku-excel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  text-align: left;
+}
+
+.tku-excel-table th {
+  background-color: #f1f5f9;
+  padding: 8px 10px;
+  font-weight: 700;
+  color: #334155;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+}
+
+.tku-excel-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #1e293b;
+  vertical-align: top;
+}
+
+.tku-excel-table tr:hover td {
+  background-color: #f8fafc;
+}
+
+.tku-excel-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+/* ============================================================
+   STUDENT EXAM PREVIEW MODAL
+   ============================================================ */
+.tku-preview-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.7);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.tku-preview-modal-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: #f8fafc;
+}
+
+.tku-preview-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.tku-preview-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.tku-preview-student-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  background-color: #eff6ff;
+  color: #1d68f2;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-preview-exam-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin: 0;
+}
+
+.tku-preview-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.tku-preview-answers-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  background-color: #f1f5f9;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #cbd5e1;
+  transition: all 0.15s ease;
+}
+
+.tku-preview-answers-toggle:hover {
+  background-color: #e2e8f0;
+}
+
+.tku-preview-close-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 8px;
+  background-color: #0f172a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-preview-close-btn:hover {
+  background-color: #334155;
+}
+
+.tku-preview-modal-body {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 20px;
+  padding: 20px 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+@media (max-width: 900px) {
+  .tku-preview-modal-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tku-preview-main-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.tku-preview-q-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #f1f5f9;
+  padding-bottom: 14px;
+}
+
+.tku-preview-q-tag {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1d68f2;
+}
+
+.tku-preview-q-score {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #64748b;
+  background-color: #f1f5f9;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.tku-preview-q-content {
+  font-size: 16px;
+  color: #0f172a;
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+.tku-preview-options-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-preview-opt-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e8f0;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.tku-preview-opt-card:hover {
+  border-color: #93c5fd;
+  background-color: #f8fafc;
+}
+
+.tku-preview-opt-card--selected {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.tku-preview-opt-card--correct {
+  border-color: #10b981 !important;
+  background-color: #ecfdf5 !important;
+}
+
+.tku-preview-opt-card--incorrect {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.tku-preview-opt-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  background-color: #f1f5f9;
+  color: #334155;
+  flex-shrink: 0;
+}
+
+.tku-preview-opt-text {
+  font-size: 14.5px;
+  color: #1e293b;
+  flex: 1;
+}
+
+.tku-preview-solution-box {
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  border: 1.5px solid #a7f3d0;
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tku-preview-solution-header {
+  font-size: 14px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.tku-preview-solution-text {
+  font-size: 14px;
+  color: #1e293b;
+  line-height: 1.6;
+}
+
+.tku-preview-q-nav-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.tku-preview-sidebar-card {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: fit-content;
+}
+
+.tku-preview-grid-title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.tku-preview-grid-nums {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.tku-preview-num-btn {
+  height: 38px;
+  border-radius: 8px;
+  border: 1.5px solid #e2e8f0;
+  background-color: #f8fafc;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  position: relative;
+}
+
+.tku-preview-num-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.tku-preview-num-btn--active {
+  border-color: #1d68f2;
+  background-color: #eff6ff;
+  color: #1d68f2;
+}
+
+.tku-preview-num-btn--answered {
+  background-color: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.tku-preview-num-btn-correct-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #10b981;
+}

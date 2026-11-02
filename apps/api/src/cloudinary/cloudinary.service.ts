@@ -146,4 +146,56 @@ export class CloudinaryService {
       uploadStream.end(file.buffer);
     });
   }
+
+  async uploadDocument(
+    file: UploadedFileDto,
+    folder: string = 'documents',
+  ): Promise<{ url: string; originalname: string }> {
+    const cloudName = this.configService.get<string>('CLOUDINARY_CLOUD_NAME');
+    const apiKey = this.configService.get<string>('CLOUDINARY_API_KEY');
+    const apiSecret = this.configService.get<string>('CLOUDINARY_API_SECRET');
+
+    if (!cloudName || !apiKey || !apiSecret) {
+      throw new BadRequestException(
+        'Hệ thống chưa được cấu hình tài khoản Cloudinary.',
+      );
+    }
+
+    if (!file || !file.buffer) {
+      throw new BadRequestException('Không tìm thấy tệp tài liệu để tải lên.');
+    }
+
+    if (file.size > 30 * 1024 * 1024) {
+      throw new BadRequestException(
+        'Dung lượng tệp tài liệu vượt quá giới hạn cho phép (tối đa 30MB).',
+      );
+    }
+
+    const originalname = file.originalname || 'document';
+
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder: `tku-learning/${folder}`,
+          resource_type: 'auto',
+          use_filename: true,
+          unique_filename: true,
+        },
+        (error, result?: UploadApiResponse) => {
+          if (error || !result) {
+            return reject(
+              new BadRequestException(
+                error?.message || 'Không thể tải tài liệu lên Cloudinary.',
+              ),
+            );
+          }
+          resolve({
+            url: result.secure_url,
+            originalname,
+          });
+        },
+      );
+      uploadStream.end(file.buffer);
+    });
+  }
 }

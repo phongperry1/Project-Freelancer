@@ -386,22 +386,24 @@ export const NotificationDropdown: React.FC = () => {
             )}
           </div>
 
-          {/* Footer: Xem tất cả thông báo (dành cho Giảng viên & Quản trị viên) */}
-          {(user?.role === 'TEACHER' || user?.role === 'ADMIN') && (
-            <div className="tku-notif-dropdown-footer">
-              <button
-                type="button"
-                className="tku-notif-view-all-btn"
-                onClick={() => {
-                  setIsOpen(false);
+          {/* Footer: Xem tất cả thông báo */}
+          <div className="tku-notif-dropdown-footer">
+            <button
+              type="button"
+              className="tku-notif-view-all-btn"
+              onClick={() => {
+                setIsOpen(false);
+                if (user?.role === 'TEACHER') {
                   navigate('/lecturer/notifications');
-                }}
-              >
-                <span>Xem tất cả thông báo</span>
-                <ArrowRight size={13} />
-              </button>
-            </div>
-          )}
+                } else {
+                  navigate('/notifications');
+                }
+              }}
+            >
+              <span>Xem tất cả thông báo</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
         </div>
       )}
     </div>

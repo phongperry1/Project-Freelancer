@@ -513,6 +513,16 @@ export const authService = {
       localStorage.removeItem('tku_token');
       localStorage.removeItem(REFRESH_TOKEN_KEY);
       localStorage.removeItem(USER_KEY);
+
+      // Dọn dẹp triệt để cache ghi danh khóa học trong localStorage khi đăng xuất
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('tku_enrolled_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
     }
   },
 

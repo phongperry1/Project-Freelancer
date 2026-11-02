@@ -4286,3 +4286,332 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+
+
+/* ==========================================================================
+   TÀI LIỆU ĐÍNH KÈM & SLIDE BÀI GIẢNG (ACADEMIC RESOURCES & DOWNLOADS)
+   ========================================================================== */
+.tku-learning-btn--download {
+  background: #f0fdf4;
+  border-color: #bbf7d0;
+  color: #166534;
+}
+
+.tku-learning-btn--download:hover:not(:disabled) {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #14532d;
+  box-shadow: 0 2px 6px rgba(22, 101, 52, 0.12);
+}
+
+.tku-learning-attachment-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.tku-learning-attachment-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #166534;
+  font-weight: 500;
+}
+
+.tku-learning-attachment-banner__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.tku-learning-attachment-banner__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 7px;
+  background: #166534;
+  color: #ffffff;
+  border: none;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tku-learning-attachment-banner__btn:hover {
+  background: #14532d;
+  transform: translateY(-1px);
+}
+
+.tku-learning-resources-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tku-learning-resources-header {
+  background: #ffffff;
+  border: 1px solid var(--tku-lr-border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.tku-learning-resources-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-learning-resources-subtitle {
+  font-size: 13.5px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.tku-learning-resources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tku-resource-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+  flex-wrap: wrap;
+}
+
+.tku-resource-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+  transform: translateY(-1px);
+}
+
+.tku-resource-card__left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tku-resource-card__icon-box {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.tku-resource-card__icon-box--pdf {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fecaca;
+}
+
+.tku-resource-card__icon-box--slide {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
+.tku-resource-card__icon-box--doc {
+  background: #eff6ff;
+  color: #2563eb;
+  border: 1px solid #bfdbfe;
+}
+
+.tku-resource-card__icon-box--archive {
+  background: #faf5ff;
+  color: #9333ea;
+  border: 1px solid #e9d5ff;
+}
+
+.tku-resource-card__icon-box--link {
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.tku-resource-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.tku-resource-card__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tku-resource-card__title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0;
+  word-break: break-word;
+}
+
+.tku-resource-card__tag {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tku-resource-card__tag--pdf {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.tku-resource-card__tag--slide {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.tku-resource-card__tag--doc {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tku-resource-card__tag--archive {
+  background: #faf5ff;
+  color: #7e22ce;
+}
+
+.tku-resource-card__tag--link {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.tku-resource-card__desc {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0;
+}
+
+.tku-resource-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tku-resource-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.tku-resource-btn--primary {
+  background: #1d68f2;
+  border: 1px solid #1d68f2;
+  color: #ffffff;
+}
+
+.tku-resource-btn--primary:hover {
+  background: #1652c4;
+  border-color: #1652c4;
+  transform: translateY(-1px);
+}
+
+.tku-resource-btn--secondary {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.tku-resource-btn--secondary:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.tku-offline-tools-card {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+
+.tku-offline-tools-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tku-offline-tools-desc {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.tku-offline-tools-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+
+@media (max-width: 640px) {
+  .tku-resource-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tku-resource-card__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .tku-offline-tools-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tku-learning-btn--download span {
+    display: none;
+  }
+}

@@ -20,6 +20,7 @@ import { Footer } from '../../components/common/Footer';
 import { EmptyState } from '../../components/common/EmptyState';
 import { courseService, type PublicCourseItem } from '../../services/course.service';
 import { AcademicCourseCard } from './components/AcademicCourseCard';
+import { useAuth } from '../../context/useAuth';
 import type { GradeLevel } from '../../types/course.types';
 import './coursesPage.css';
 
@@ -109,6 +110,7 @@ const ACADEMIC_CATEGORIES: AcademicCategory[] = [
 
 export const CoursesPage: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user } = useAuth();
   const [courses, setCourses] = useState<PublicCourseItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -176,8 +178,9 @@ export const CoursesPage: React.FC = () => {
 
   // Danh sách các khóa học học sinh đã đăng ký / tham gia (từ database thực tế)
   const enrolledCourses = useMemo(() => {
+    if (!isAuthenticated || !user) return [];
     return courses.filter((c) => Boolean(c.isEnrolled));
-  }, [courses]);
+  }, [courses, isAuthenticated, user]);
 
   // Thống kê toàn hệ thống từ cơ sở dữ liệu thật
   const totalCourses = courses.length;
@@ -218,9 +221,14 @@ export const CoursesPage: React.FC = () => {
     (courseId: string) => {
       const selected = courses.find((c) => c.id === courseId);
       const isEnrolled =
-        Boolean(selected?.isEnrolled) ||
-        (typeof window !== 'undefined' &&
-          localStorage.getItem(`tku_enrolled_${courseId}`) === 'true');
+        isAuthenticated &&
+        Boolean(
+          selected?.isEnrolled ||
+            (user?.id &&
+              typeof window !== 'undefined' &&
+              (localStorage.getItem(`tku_enrolled_${user.id}_${courseId}`) === 'true' ||
+                localStorage.getItem(`tku_enrolled_${courseId}`) === 'true')),
+        );
 
       if (isEnrolled) {
         navigate(`/courses/${courseId}/learn`);
@@ -228,7 +236,7 @@ export const CoursesPage: React.FC = () => {
         navigate(`/courses/${courseId}`);
       }
     },
-    [navigate, courses],
+    [navigate, courses, isAuthenticated, user],
   );
 
   const currentCategoryInfo = useMemo(() => {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 export const HeroSection: React.FC = () => {
@@ -26,13 +27,10 @@ export const HeroSection: React.FC = () => {
 
             {/* Action Buttons */}
             <div className="tku-hero__cta-group">
-              <a href="#courses" className="tku-btn tku-btn--primary">
+              <Link to="/courses" className="tku-btn tku-btn--primary">
                 <span>Khám phá khóa học</span>
                 <ArrowRight size={18} />
-              </a>
-              <a href="#features" className="tku-btn tku-btn--outline">
-                Tìm hiểu thêm
-              </a>
+              </Link>
             </div>
           </div>
 
