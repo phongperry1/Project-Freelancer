@@ -13,6 +13,7 @@ import {
   Home,
   KeyRound,
   Layers,
+  Loader2,
   Lock,
   PlayCircle,
   RefreshCw,
@@ -201,6 +202,7 @@ interface ActivationKeyModalProps {
 
 const ActivationKeyModal: React.FC<ActivationKeyModalProps> = React.memo(
   ({ courseId, courseTitle, onClose, onSuccess }) => {
+    const { user } = useAuth();
     const [activationKey, setActivationKey] = useState<string>('');
     const [keyError, setKeyError] = useState<string | null>(null);
     const [isActivating, setIsActivating] = useState<boolean>(false);
@@ -261,6 +263,9 @@ const ActivationKeyModal: React.FC<ActivationKeyModalProps> = React.memo(
       try {
         const result = await courseService.enrollWithKey(courseId, cleanKey);
         setIsActivating(false);
+        if (user?.id) {
+          localStorage.setItem(`tku_enrolled_${user.id}_${courseId}`, 'true');
+        }
         localStorage.setItem(`tku_enrolled_${courseId}`, 'true');
         toast.success(
           result.message ||
@@ -446,7 +451,7 @@ const ActivationKeyModal: React.FC<ActivationKeyModalProps> = React.memo(
 export const CourseDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   const [course, setCourse] = useState<PublicCourseDetailResponse | null>(null);
   const [isLoadingState, setIsLoadingState] = useState<boolean>(true);
@@ -462,13 +467,15 @@ export const CourseDetailPage: React.FC = () => {
   const [enrolledMap, setEnrolledMap] = useState<Record<string, boolean>>({});
 
   const hasEnrolledKey = useMemo(() => {
-    if (!id) return false;
+    if (!id || !isAuthenticated) return false;
     if (id in enrolledMap) return enrolledMap[id];
     if (typeof window !== 'undefined') {
-      return localStorage.getItem(`tku_enrolled_${id}`) === 'true';
+      const userKey = user?.id ? localStorage.getItem(`tku_enrolled_${user.id}_${id}`) : null;
+      const genericKey = localStorage.getItem(`tku_enrolled_${id}`);
+      return userKey === 'true' || genericKey === 'true';
     }
     return false;
-  }, [id, enrolledMap]);
+  }, [id, enrolledMap, isAuthenticated, user]);
 
   const isEnrolled = isAuthenticated && hasEnrolledKey;
 
@@ -530,8 +537,10 @@ export const CourseDetailPage: React.FC = () => {
         if (isMounted) {
           setEnrolledMap((prev) => ({ ...prev, [id]: res.isEnrolled }));
           if (res.isEnrolled) {
+            if (user?.id) localStorage.setItem(`tku_enrolled_${user.id}_${id}`, 'true');
             localStorage.setItem(`tku_enrolled_${id}`, 'true');
           } else {
+            if (user?.id) localStorage.removeItem(`tku_enrolled_${user.id}_${id}`);
             localStorage.removeItem(`tku_enrolled_${id}`);
           }
         }
@@ -543,7 +552,7 @@ export const CourseDetailPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [id, isAuthenticated]);
+  }, [id, isAuthenticated, user]);
 
   const handleRetry = useCallback(() => {
     setIsLoadingState(true);
@@ -608,7 +617,43 @@ export const CourseDetailPage: React.FC = () => {
     setIsKeyModalOpen(false);
   }, [id]);
 
-  // Hành động kích hoạt / Tham gia khóa học
+  const [isEnrollingFree, setIsEnrollingFree] = useState<boolean>(false);
+
+  // Đăng ký tham gia khóa học trực tiếp (Miễn phí 1-click không cần Key)
+  const handleFreeEnroll = useCallback(async () => {
+    if (isEnrolled) {
+      if (id) navigate(`/courses/${id}/learn`);
+      return;
+    }
+
+    if (!isAuthenticated) {
+      toast.info('Vui lòng đăng nhập để đăng ký tham gia khóa học.');
+      navigate(`/login?redirect=/courses/${id}`);
+      return;
+    }
+
+    if (!id) return;
+
+    try {
+      setIsEnrollingFree(true);
+      const res = await courseService.enrollFree(id);
+      toast.success(res.message || 'Đăng ký khóa học thành công!');
+      setEnrolledMap((prev) => ({ ...prev, [id]: true }));
+      if (typeof window !== 'undefined') {
+        if (user?.id) localStorage.setItem(`tku_enrolled_${user.id}_${id}`, 'true');
+        localStorage.setItem(`tku_enrolled_${id}`, 'true');
+      }
+      navigate(`/courses/${id}/learn`);
+    } catch (err: unknown) {
+      toast.error(
+        (err as Error)?.message || 'Đăng ký khóa học thất bại. Vui lòng thử lại.',
+      );
+    } finally {
+      setIsEnrollingFree(false);
+    }
+  }, [id, isAuthenticated, isEnrolled, navigate, user]);
+
+  // Hành động kích hoạt / Tham gia khóa học bằng mã Key
   const handleEnroll = useCallback(() => {
     if (isEnrolled) {
       if (id) {
@@ -1127,25 +1172,70 @@ export const CourseDetailPage: React.FC = () => {
 
                         {/* Card Body */}
                         <div className="tku-cd-enroll-body">
-                          {/* CTA Button */}
-                          <button
-                            type="button"
-                            onClick={handleEnroll}
-                            className={`tku-cd-enroll-btn ${isEnrolled ? 'tku-cd-enroll-btn--enrolled' : ''}`}
-                          >
-                            {isEnrolled ? (
-                              <>
-                                <CheckCircle2 size={18} />
-                                <span>Vào học ngay</span>
-                              </>
-                            ) : (
-                              <>
-                                <KeyRound size={18} />
-                                <span>Nhập mã Key</span>
-                                <ArrowRight size={18} />
-                              </>
-                            )}
-                          </button>
+                          {/* CTA Button Group */}
+                          {isEnrolled ? (
+                            <button
+                              type="button"
+                              onClick={handleEnroll}
+                              className="tku-cd-enroll-btn tku-cd-enroll-btn--enrolled"
+                            >
+                              <CheckCircle2 size={18} />
+                              <span>Vào học ngay</span>
+                              <ArrowRight size={18} />
+                            </button>
+                          ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                              <button
+                                type="button"
+                                onClick={handleFreeEnroll}
+                                disabled={isEnrollingFree}
+                                className="tku-cd-enroll-btn tku-cd-enroll-btn--free"
+                                style={{
+                                  background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                                  color: '#ffffff',
+                                  boxShadow: '0 4px 14px rgba(37, 99, 235, 0.3)',
+                                }}
+                              >
+                                {isEnrollingFree ? (
+                                  <>
+                                    <Loader2 size={18} className="tku-learning-spinner" />
+                                    <span>Đang ghi danh...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles size={18} />
+                                    <span>Đăng ký học ngay (Miễn phí)</span>
+                                    <ArrowRight size={18} />
+                                  </>
+                                )}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={handleOpenModal}
+                                className="tku-cd-key-alt-btn"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '11px 16px',
+                                  background: '#f8fafc',
+                                  border: '1px solid #cbd5e1',
+                                  borderRadius: '12px',
+                                  color: '#334155',
+                                  fontSize: '14px',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  transition: 'all 0.15s ease',
+                                }}
+                              >
+                                <KeyRound size={16} style={{ color: '#d97706' }} />
+                                <span>Kích hoạt bằng mã Key</span>
+                              </button>
+                            </div>
+                          )}
 
                           {/* Bảng thông tin thực tế từ Database */}
                           <h4 className="tku-cd-meta-table-title">
@@ -1234,19 +1324,49 @@ export const CourseDetailPage: React.FC = () => {
                 <span className="tku-cd-mobile-title">{course.title}</span>
                 <span
                   className="tku-cd-mobile-price"
-                  style={{ color: isEnrolled ? '#10b981' : '#d97706' }}
+                  style={{ color: isEnrolled ? '#10b981' : '#2563eb' }}
                 >
-                  {isEnrolled ? 'Đã kích hoạt' : 'Yêu cầu mã Key'} ·{' '}
+                  {isEnrolled ? 'Đã tham gia' : 'Miễn phí'} ·{' '}
                   {course.lessonCount} bài học
                 </span>
               </div>
-              <button
-                type="button"
-                onClick={handleEnroll}
-                className={`tku-cd-mobile-btn ${isEnrolled ? 'tku-cd-mobile-btn--enrolled' : ''}`}
-              >
-                {isEnrolled ? 'Vào học ngay' : 'Nhập mã Key'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                {isEnrolled ? (
+                  <button
+                    type="button"
+                    onClick={handleEnroll}
+                    className="tku-cd-mobile-btn tku-cd-mobile-btn--enrolled"
+                  >
+                    Vào học ngay
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleFreeEnroll}
+                      disabled={isEnrollingFree}
+                      className="tku-cd-mobile-btn"
+                      style={{ padding: '0 16px', background: '#2563eb', color: '#fff' }}
+                    >
+                      {isEnrollingFree ? 'Đang ghi danh...' : 'Đăng ký học'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleOpenModal}
+                      className="tku-cd-mobile-btn"
+                      style={{
+                        background: '#f1f5f9',
+                        color: '#334155',
+                        padding: '0 12px',
+                        border: '1px solid #cbd5e1',
+                      }}
+                      title="Nhập mã Key kích hoạt"
+                    >
+                      <KeyRound size={16} />
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* MODAL NHẬP MÃ KEY KÍCH HOẠT (ADMIN TẠO KEY DÙNG 1 LẦN) */}

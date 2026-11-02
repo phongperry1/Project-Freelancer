@@ -665,6 +665,32 @@ class LecturerService {
     return await res.json();
   }
 
+  async uploadDocument(file: File): Promise<{ url: string; originalname: string }> {
+    if (!file) {
+      throw new Error('Vui lòng chọn tệp tài liệu để tải lên.');
+    }
+    if (file.size > 30 * 1024 * 1024) {
+      throw new Error('Dung lượng tệp tài liệu vượt quá giới hạn cho phép (tối đa 30MB).');
+    }
+
+    const token = authService.getStoredToken();
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE_URL}/lecturer/upload/document`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || 'Không thể tải lên tệp tài liệu bài giảng.');
+    }
+    return await res.json();
+  }
+
   // ============================================================
   // ASSESSMENTS & EXAMS (POSTGRESQL DATABASE VIA NESTJS API)
   // ============================================================

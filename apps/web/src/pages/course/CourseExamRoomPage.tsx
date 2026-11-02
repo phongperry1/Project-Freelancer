@@ -25,6 +25,7 @@ import { toast } from '../../context/useToast';
 import { useAuth } from '../../context/useAuth';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
+import { MathText } from '../../components/common/MathText';
 import './courseExamRoom.css';
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -63,13 +64,18 @@ export const CourseExamRoomPage: React.FC = () => {
   const isIgnoringNextPopRef = useRef<boolean>(false);
   const rearmTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Local storage draft key
+  // Local storage draft key (hỗ trợ fallback guest nếu user chưa kịp rehydrate)
   const storageDraftKey = useMemo(() => {
-    if (!assessmentId || !user?.id) return null;
-    return `tku_exam_draft_${user.id}_${assessmentId}`;
-  }, [assessmentId, user]);
+    if (!assessmentId) return null;
+    return user?.id
+      ? `tku_exam_draft_${user.id}_${assessmentId}`
+      : `tku_exam_draft_guest_${assessmentId}`;
+  }, [assessmentId, user?.id]);
 
-  // Load Exam Data
+  // Thời gian lưu nháp tự động gần nhất
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+
+  // 1. Tải dữ liệu đề thi và khôi phục nháp (chạy an toàn theo vòng đời bất đồng bộ)
   useEffect(() => {
     let isMounted = true;
 
@@ -85,23 +91,43 @@ export const CourseExamRoomPage: React.FC = () => {
         setExamData(data);
 
         // Khôi phục câu trả lời nháp từ localStorage nếu có
-        if (storageDraftKey) {
-          try {
-            const raw = localStorage.getItem(storageDraftKey);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (parsed.answers && typeof parsed.answers === 'object') {
-                setSelectedAnswers(parsed.answers);
-              }
-              if (parsed.flags && typeof parsed.flags === 'object') {
-                setFlaggedQuestions(parsed.flags);
+        const draftKey = user?.id
+          ? `tku_exam_draft_${user.id}_${assessmentId}`
+          : `tku_exam_draft_guest_${assessmentId}`;
+
+        try {
+          const raw = localStorage.getItem(draftKey);
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            let restoredCount = 0;
+            if (parsed.answers && typeof parsed.answers === 'object') {
+              setSelectedAnswers(parsed.answers);
+              restoredCount = Object.keys(parsed.answers).length;
+            }
+            if (parsed.flags && typeof parsed.flags === 'object') {
+              setFlaggedQuestions(parsed.flags);
+            }
+            if (parsed.updatedAt) {
+              try {
+                const savedDate = new Date(parsed.updatedAt);
+                setLastSavedTime(
+                  savedDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+                );
+              } catch {
+                // ignore
               }
             }
-          } catch (e) {
-            console.error('Không thể đọc bản nháp bài thi từ bộ nhớ:', e);
+            if (restoredCount > 0) {
+              toast.info(
+                `Đã tự động khôi phục ${restoredCount} câu trả lời chưa nộp từ bản lưu gần nhất.`,
+              );
+            }
           }
+        } catch (e) {
+          console.error('Không thể đọc bản nháp bài thi từ bộ nhớ:', e);
+        } finally {
+          hasRestoredDraftRef.current = true;
         }
-        hasRestoredDraftRef.current = true;
 
         // Khởi tạo thời gian làm bài nếu bài thi có giới hạn thời gian (durationMinutes)
         if (data.assessment.durationMinutes && data.assessment.durationMinutes > 0) {
@@ -124,18 +150,19 @@ export const CourseExamRoomPage: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [courseId, assessmentId, storageDraftKey]);
+  }, [courseId, assessmentId, user?.id]);
 
   // Save draft to localStorage whenever answers or flags change (chỉ lưu sau khi đã nạp nháp ban đầu)
   useEffect(() => {
     if (!hasRestoredDraftRef.current || !storageDraftKey || !examData) return;
     try {
+      const now = new Date();
       localStorage.setItem(
         storageDraftKey,
         JSON.stringify({
           answers: selectedAnswers,
           flags: flaggedQuestions,
-          updatedAt: new Date().toISOString(),
+          updatedAt: now.toISOString(),
         }),
       );
     } catch (e) {
@@ -149,6 +176,9 @@ export const CourseExamRoomPage: React.FC = () => {
       ...prev,
       [questionId]: optionId,
     }));
+    setLastSavedTime(
+      new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    );
   }, []);
 
   // Toggle flag handler
@@ -157,6 +187,9 @@ export const CourseExamRoomPage: React.FC = () => {
       ...prev,
       [questionId]: !prev[questionId],
     }));
+    setLastSavedTime(
+      new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+    );
   }, []);
 
   // Submit test action
@@ -546,6 +579,15 @@ export const CourseExamRoomPage: React.FC = () => {
                 <span className="tku-exam-room-badge tku-exam-room-badge--attempt">
                   Lần thi số {assessment.attemptNumber}
                 </span>
+                <div
+                  className="tku-exam-autosave-badge"
+                  title="Hệ thống tự động lưu câu trả lời vào trình duyệt để bảo vệ bài thi không bị mất khi gặp sự cố mạng hoặc tải lại trang"
+                >
+                  <span className="tku-exam-autosave-dot" />
+                  <span>
+                    {lastSavedTime ? `Đã lưu nháp (${lastSavedTime})` : 'Tự động lưu nháp'}
+                  </span>
+                </div>
               </div>
 
               <div className="tku-exam-room-card__meta">
@@ -620,7 +662,9 @@ export const CourseExamRoomPage: React.FC = () => {
                 </div>
 
                 {/* Nội dung câu hỏi */}
-                <div className="tku-question-card__content">{currentQuestion.content}</div>
+                <div className="tku-question-card__content">
+                  <MathText content={currentQuestion.content} />
+                </div>
 
                 {/* Danh sách các lựa chọn A, B, C, D */}
                 <div className="tku-choice-list" role="radiogroup" aria-label="Các phương án trả lời">
@@ -644,7 +688,9 @@ export const CourseExamRoomPage: React.FC = () => {
                         }}
                       >
                         <span className="tku-choice-letter">{letter}</span>
-                        <span className="tku-choice-text">{option.content}</span>
+                        <span className="tku-choice-text">
+                          <MathText content={option.content} />
+                        </span>
                       </div>
                     );
                   })}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   BookOpen,
@@ -20,6 +20,11 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
+  Paperclip,
+  UploadCloud,
+  FileArchive,
+  Presentation,
+  Link2,
 } from 'lucide-react';
 import {
   lecturerService,
@@ -29,6 +34,14 @@ import {
 import { toast } from '../../context/toastService';
 import './lecturerCurriculum.css';
 
+export interface LessonAttachmentItem {
+  id: string;
+  title: string;
+  url: string;
+  type: 'pdf' | 'slide' | 'doc' | 'archive' | 'link';
+  sizeStr?: string;
+}
+
 interface LessonFormState {
   mode: 'create' | 'edit';
   chapterId: string;
@@ -36,6 +49,7 @@ interface LessonFormState {
   lessonId?: string;
   title: string;
   content: string;
+  attachments: LessonAttachmentItem[];
   videoUrl: string;
 }
 
@@ -44,6 +58,127 @@ interface DeleteTarget {
   id: string;
   title: string;
 }
+
+const inferAttachmentType = (url: string, filename?: string): LessonAttachmentItem['type'] => {
+  const target = (filename || url).toLowerCase();
+  if (target.includes('.pdf') || target.includes('/pdf')) return 'pdf';
+  if (
+    target.includes('.ppt') ||
+    target.includes('.pptx') ||
+    target.includes('presentation') ||
+    target.includes('slideshare') ||
+    target.includes('canva.com')
+  ) {
+    return 'slide';
+  }
+  if (
+    target.includes('.doc') ||
+    target.includes('.docx') ||
+    target.includes('docs.google.com') ||
+    target.includes('drive.google.com')
+  ) {
+    return 'doc';
+  }
+  if (
+    target.includes('.zip') ||
+    target.includes('.rar') ||
+    target.includes('.7z') ||
+    target.includes('.tar') ||
+    target.includes('.gz')
+  ) {
+    return 'archive';
+  }
+  return 'link';
+};
+
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+};
+
+const parseAttachmentsFromContent = (
+  rawContent?: string | null,
+): { notes: string; attachments: LessonAttachmentItem[] } => {
+  if (!rawContent) return { notes: '', attachments: [] };
+
+  const attachments: LessonAttachmentItem[] = [];
+  const seenUrls = new Set<string>();
+
+  // Extract markdown links: [Title](url)
+  const mdRegex = /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g;
+  let mdMatch: RegExpExecArray | null;
+  while ((mdMatch = mdRegex.exec(rawContent)) !== null) {
+    if (mdMatch.index > 0 && rawContent[mdMatch.index - 1] === '!') {
+      continue; // Skip images ![alt](url)
+    }
+    const rawTitle = mdMatch[1].trim();
+    const rawUrl = mdMatch[2].trim();
+    if (seenUrls.has(rawUrl)) continue;
+    if (/\.(png|jpe?g|gif|webp|svg|mp4|webm|mov)($|\?)/i.test(rawUrl)) continue;
+    if (/youtube\.com|youtu\.be|vimeo\.com/i.test(rawUrl)) continue;
+
+    seenUrls.add(rawUrl);
+    attachments.push({
+      id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      title: rawTitle,
+      url: rawUrl,
+      type: inferAttachmentType(rawUrl, rawTitle),
+    });
+  }
+
+  // Clean the notes so raw repeated markdown headings don't clutter the textarea
+  const cleanedNotes = rawContent
+    .replace(/###\s*(?:📁)?\s*Tài liệu & Slide đính kèm:?/gi, '')
+    .replace(/###\s*(?:📁)?\s*Tài liệu đính kèm:?/gi, '')
+    .split('\n')
+    .filter((line) => {
+      const trimmed = line.trim();
+      return !/^[-*]\s*\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)$/.test(trimmed);
+    })
+    .join('\n')
+    .trim();
+
+  return { notes: cleanedNotes, attachments };
+};
+
+const composeContentWithAttachments = (
+  notes: string,
+  attachments: LessonAttachmentItem[],
+): string => {
+  const cleanNotes = notes.trim();
+  if (!attachments || attachments.length === 0) {
+    return cleanNotes;
+  }
+
+  const attachmentsSection = [
+    '### 📁 Tài liệu & Slide đính kèm:',
+    ...attachments.map((att) => `- [${att.title.trim() || 'Tài liệu học tập'}](${att.url.trim()})`),
+  ].join('\n');
+
+  if (!cleanNotes) {
+    return attachmentsSection;
+  }
+
+  return `${cleanNotes}\n\n${attachmentsSection}`;
+};
+
+const countAttachments = (content?: string | null): number => {
+  if (!content) return 0;
+  const mdRegex = /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)]+)\)/g;
+  let count = 0;
+  let match: RegExpExecArray | null;
+  while ((match = mdRegex.exec(content)) !== null) {
+    if (match.index > 0 && content[match.index - 1] === '!') continue;
+    const url = match[2].trim();
+    if (/\.(png|jpe?g|gif|webp|svg|mp4|webm|mov)($|\?)/i.test(url)) continue;
+    if (/youtube\.com|youtu\.be|vimeo\.com/i.test(url)) continue;
+    count++;
+  }
+  return count;
+};
 
 const getYouTubeVideoId = (url: string | null | undefined): string | null => {
   if (!url) return null;
@@ -88,6 +223,14 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
   // Lesson Modal State
   const [lessonForm, setLessonForm] = useState<LessonFormState | null>(null);
   const [isSubmittingLesson, setIsSubmittingLesson] = useState<boolean>(false);
+
+  // Lesson Attachment Uploader State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingDocument, setIsUploadingDocument] = useState<boolean>(false);
+  const [isDraggingOver, setIsDraggingOver] = useState<boolean>(false);
+  const [showAddLinkForm, setShowAddLinkForm] = useState<boolean>(false);
+  const [linkTitle, setLinkTitle] = useState<string>('');
+  const [linkUrl, setLinkUrl] = useState<string>('');
 
   // Preview Video Modal
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
@@ -260,24 +403,135 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
       chapterTitle,
       title: '',
       content: '',
+      attachments: [],
       videoUrl: '',
     });
+    setShowAddLinkForm(false);
+    setLinkTitle('');
+    setLinkUrl('');
   }, []);
 
   const handleOpenEditLesson = useCallback(
     (chapterId: string, chapterTitle: string, lesson: LessonSummary) => {
+      const { notes, attachments } = parseAttachmentsFromContent(lesson.content);
       setLessonForm({
         mode: 'edit',
         chapterId,
         chapterTitle,
         lessonId: lesson.id,
         title: lesson.title,
-        content: lesson.content || '',
+        content: notes,
+        attachments,
         videoUrl: lesson.videoUrl || '',
       });
+      setShowAddLinkForm(false);
+      setLinkTitle('');
+      setLinkUrl('');
     },
     [],
   );
+
+  // 4. Lesson Attachment Handlers
+  const handleUploadDocumentFile = async (file: File) => {
+    if (!file) return;
+
+    if (file.size > 30 * 1024 * 1024) {
+      toast.error('Dung lượng tệp vượt quá giới hạn cho phép (tối đa 30MB).');
+      return;
+    }
+
+    setIsUploadingDocument(true);
+    try {
+      const res = await lecturerService.uploadDocument(file);
+      const originalname = res.originalname || file.name;
+      const type = inferAttachmentType(res.url, originalname);
+
+      const newAttachment: LessonAttachmentItem = {
+        id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+        title: originalname,
+        url: res.url,
+        type,
+        sizeStr: formatFileSize(file.size),
+      };
+
+      setLessonForm((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          attachments: [...prev.attachments, newAttachment],
+        };
+      });
+
+      toast.success(`Đã tải lên tài liệu: "${originalname}"`);
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error ? err.message : 'Không thể tải lên tệp tài liệu.',
+      );
+    } finally {
+      setIsUploadingDocument(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleAddExternalLink = () => {
+    if (!linkUrl.trim()) {
+      toast.warning('Vui lòng nhập đường dẫn liên kết.');
+      return;
+    }
+
+    const cleanUrl = linkUrl.trim();
+    if (!/^https?:\/\//i.test(cleanUrl)) {
+      toast.warning('Đường dẫn phải bắt đầu bằng http:// hoặc https://');
+      return;
+    }
+
+    const title = linkTitle.trim() || cleanUrl;
+    const type = inferAttachmentType(cleanUrl, title);
+
+    const newAttachment: LessonAttachmentItem = {
+      id: `att_link_${Date.now()}`,
+      title,
+      url: cleanUrl,
+      type,
+    };
+
+    setLessonForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        attachments: [...prev.attachments, newAttachment],
+      };
+    });
+
+    setLinkTitle('');
+    setLinkUrl('');
+    setShowAddLinkForm(false);
+    toast.success('Đã thêm liên kết tài liệu thành công.');
+  };
+
+  const handleRemoveAttachment = (attId: string) => {
+    setLessonForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        attachments: prev.attachments.filter((a) => a.id !== attId),
+      };
+    });
+  };
+
+  const handleUpdateAttachmentTitle = (attId: string, newTitle: string) => {
+    setLessonForm((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        attachments: prev.attachments.map((a) =>
+          a.id === attId ? { ...a, title: newTitle } : a,
+        ),
+      };
+    });
+  };
 
   // 5. Save Lesson
   const handleSaveLesson = async () => {
@@ -289,17 +543,22 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
 
     setIsSubmittingLesson(true);
     try {
+      const finalContent = composeContentWithAttachments(
+        lessonForm.content,
+        lessonForm.attachments,
+      );
+
       if (lessonForm.mode === 'create') {
         await lecturerService.addLesson(lessonForm.chapterId, {
           title: lessonForm.title.trim(),
-          content: lessonForm.content.trim() || null,
+          content: finalContent || null,
           videoUrl: lessonForm.videoUrl.trim() || null,
         });
         toast.success(`Đã thêm bài học: "${lessonForm.title.trim()}"`);
       } else if (lessonForm.mode === 'edit' && lessonForm.lessonId) {
         await lecturerService.updateLesson(lessonForm.lessonId, {
           title: lessonForm.title.trim(),
-          content: lessonForm.content.trim() || null,
+          content: finalContent || null,
           videoUrl: lessonForm.videoUrl.trim() || null,
         });
         toast.success(`Đã cập nhật bài học: "${lessonForm.title.trim()}"`);
@@ -716,6 +975,16 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
                                   </span>
                                 )}
 
+                                {countAttachments(lesson.content) > 0 && (
+                                  <span
+                                    className="tku-curriculum-media-badge tku-curriculum-media-badge--attachment"
+                                    title={`Có ${countAttachments(lesson.content)} tệp tài liệu / slide đính kèm`}
+                                  >
+                                    <Paperclip size={11} />
+                                    <span>{countAttachments(lesson.content)} tài liệu</span>
+                                  </span>
+                                )}
+
                                 {lesson.videoUrl && (
                                   <button
                                     type="button"
@@ -915,6 +1184,211 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+              </div>
+
+              {/* Tài liệu & Slide bài giảng đính kèm */}
+              <div className="tku-form-group tku-attachments-section">
+                <div className="tku-attachments-header">
+                  <div className="tku-attachments-header-title">
+                    <label className="tku-form-label" style={{ margin: 0 }}>
+                      <Paperclip size={15} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 4 }} />
+                      Tài liệu & Slide bài giảng đính kèm
+                    </label>
+                    {lessonForm.attachments.length > 0 && (
+                      <span className="tku-attachments-badge">
+                        {lessonForm.attachments.length} tệp
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className="tku-add-link-btn"
+                    onClick={() => setShowAddLinkForm(!showAddLinkForm)}
+                  >
+                    <Plus size={13} />
+                    <span>{showAddLinkForm ? 'Đóng thêm link' : 'Thêm link ngoài (Drive, Canva)'}</span>
+                  </button>
+                </div>
+
+                <span className="tku-form-sublabel">
+                  Tải lên slide bài giảng (PPTX, PPT, PDF), tài liệu học tập (DOCX, ZIP) hoặc dán link Google Drive, Canva Slides. Học sinh có thể tải về trực tiếp trong phòng học.
+                </span>
+
+                {/* Form thêm link ngoài (Drive, Canva, Slides) */}
+                {showAddLinkForm && (
+                  <div className="tku-add-link-card">
+                    <div className="tku-add-link-inputs">
+                      <input
+                        type="text"
+                        className="tku-curriculum-input"
+                        placeholder="Tiêu đề tài liệu (Ví dụ: Slide thuyết trình Canva...)"
+                        value={linkTitle}
+                        onChange={(e) => setLinkTitle(e.target.value)}
+                      />
+                      <input
+                        type="text"
+                        className="tku-curriculum-input"
+                        placeholder="Đường link URL (https://drive.google.com/... hoặc Canva)"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                      />
+                    </div>
+                    <div className="tku-add-link-actions">
+                      <button
+                        type="button"
+                        className="tku-curriculum-btn-cancel"
+                        style={{ height: '32px', padding: '0 12px', fontSize: '12px' }}
+                        onClick={() => {
+                          setShowAddLinkForm(false);
+                          setLinkTitle('');
+                          setLinkUrl('');
+                        }}
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="button"
+                        className="tku-curriculum-btn-submit"
+                        style={{ height: '32px', padding: '0 14px', fontSize: '12px' }}
+                        onClick={handleAddExternalLink}
+                        disabled={!linkUrl.trim()}
+                      >
+                        <Check size={13} />
+                        <span>Thêm tài liệu</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Dropzone Upload file */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  style={{ display: 'none' }}
+                  accept=".pdf,.pptx,.ppt,.docx,.doc,.xlsx,.xls,.zip,.rar,.7z,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      void handleUploadDocumentFile(file);
+                    }
+                  }}
+                />
+
+                <div
+                  className={`tku-doc-dropzone ${isDraggingOver ? 'tku-doc-dropzone--active' : ''} ${
+                    isUploadingDocument ? 'tku-doc-dropzone--uploading' : ''
+                  }`}
+                  onClick={() => {
+                    if (!isUploadingDocument) {
+                      fileInputRef.current?.click();
+                    }
+                  }}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOver(true);
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOver(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsDraggingOver(false);
+                    const file = e.dataTransfer.files?.[0];
+                    if (file) {
+                      void handleUploadDocumentFile(file);
+                    }
+                  }}
+                >
+                  <div className="tku-doc-dropzone-icon">
+                    {isUploadingDocument ? (
+                      <Loader2 size={22} className="animate-spin" />
+                    ) : (
+                      <UploadCloud size={24} />
+                    )}
+                  </div>
+                  <div className="tku-doc-dropzone-text">
+                    {isUploadingDocument ? (
+                      <span>Đang tải tệp lên Cloudinary... Vui lòng chờ</span>
+                    ) : (
+                      <span>
+                        Kéo thả tệp tài liệu / slide vào đây, hoặc <strong>duyệt tệp từ thiết bị</strong>
+                      </span>
+                    )}
+                  </div>
+                  <span className="tku-doc-dropzone-hint">
+                    Hỗ trợ: PDF, PPTX, PPT, DOCX, ZIP, RAR (Tối đa 30MB/file)
+                  </span>
+                </div>
+
+                {/* Danh sách các tài liệu đã đính kèm */}
+                {lessonForm.attachments.length > 0 && (
+                  <div className="tku-attachment-list">
+                    {lessonForm.attachments.map((att) => {
+                      let IconComponent = FileText;
+                      let iconModifier = 'pdf';
+                      if (att.type === 'slide') {
+                        IconComponent = Presentation;
+                        iconModifier = 'slide';
+                      } else if (att.type === 'doc') {
+                        IconComponent = FileText;
+                        iconModifier = 'doc';
+                      } else if (att.type === 'archive') {
+                        IconComponent = FileArchive;
+                        iconModifier = 'archive';
+                      } else if (att.type === 'link') {
+                        IconComponent = Link2;
+                        iconModifier = 'link';
+                      }
+
+                      return (
+                        <div key={att.id} className="tku-attachment-card">
+                          <div className="tku-attachment-left">
+                            <div className={`tku-attachment-icon-wrap tku-attachment-icon-wrap--${iconModifier}`}>
+                              <IconComponent size={18} />
+                            </div>
+                            <div className="tku-attachment-info">
+                              <input
+                                type="text"
+                                className="tku-attachment-title-input"
+                                value={att.title}
+                                onChange={(e) => handleUpdateAttachmentTitle(att.id, e.target.value)}
+                                title="Nhấp để sửa tên hiển thị của tài liệu"
+                              />
+                              <div className="tku-attachment-meta">
+                                <span className="tku-attachment-type-tag">{att.type}</span>
+                                {att.sizeStr && <span>• {att.sizeStr}</span>}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="tku-attachment-actions">
+                            <a
+                              href={att.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="tku-attachment-action-btn"
+                              title="Mở xem tài liệu trong tab mới"
+                            >
+                              <ExternalLink size={13} />
+                            </a>
+                            <button
+                              type="button"
+                              className="tku-attachment-action-btn tku-attachment-action-btn--delete"
+                              onClick={() => handleRemoveAttachment(att.id)}
+                              title="Xóa tài liệu này"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Nội dung bài học */}

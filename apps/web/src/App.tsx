@@ -53,6 +53,7 @@ const LecturerStudentsPage = lazy(() => import('./pages/lecturer/LecturerStudent
 const LecturerStudentProgressPage = lazy(() => import('./pages/lecturer/LecturerStudentProgressPage'));
 const LecturerDiscussionsPage = lazy(() => import('./pages/lecturer/LecturerDiscussionsPage'));
 const LecturerNotificationsPage = lazy(() => import('./pages/lecturer/LecturerNotificationsPage'));
+const StudentNotificationsPage = lazy(() => import('./pages/notification/StudentNotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
 const SecurityPage = lazy(() => import('./pages/profile/SecurityPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
@@ -185,6 +186,15 @@ export const App: React.FC = () => {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <StudentNotificationsPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/thong-bao" element={<Navigate to="/notifications" replace />} />
               <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
               <Route path="/session-terminated" element={<SessionTerminatedPage />} />
               <Route

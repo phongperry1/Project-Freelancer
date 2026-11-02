@@ -631,7 +631,7 @@ export const RoadmapPage: React.FC = () => {
                 {activeCourses.map((course, index) => {
                   const detail = courseDetails[course.id];
                   const chapters = detail?.chapters || [];
-                  const isEnrolled = Boolean(course.isEnrolled);
+                  const isEnrolled = Boolean(isAuthenticated && course.isEnrolled);
 
                   // Tìm tiến độ cụ thể của khóa này nếu có
                   const progressItem = studentProgress?.enrolledCourses?.find(
