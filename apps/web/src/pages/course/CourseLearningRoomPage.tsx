@@ -24,7 +24,6 @@ import {
   PlayCircle,
   Plus,
   Presentation,
-  Printer,
   RotateCcw,
   Sparkles,
   Trash2,
@@ -1336,10 +1335,6 @@ ${rawText}
     toast.success('Đã tải tài liệu tóm tắt bài giảng về máy!');
   }, [activeLesson, data?.course, activeChapter]);
 
-  const handlePrintLesson = useCallback(() => {
-    window.print();
-  }, []);
-
   const handleQuickDownload = useCallback(() => {
     if (lessonAttachments.length === 1) {
       handleDownloadAttachment(lessonAttachments[0]);
@@ -1926,40 +1921,10 @@ ${rawText}
                       </div>
                       <h4 className="tku-learning-placeholder-card__title">Chưa có tệp đính kèm riêng biệt</h4>
                       <p className="tku-learning-placeholder-card__desc">
-                        Giảng viên chưa tải lên tệp PDF hoặc Slide riêng cho bài học này. Bạn có thể xuất bản tóm tắt nội dung bài học bên dưới để đọc ngoại tuyến.
+                        Giảng viên chưa tải lên tệp tài liệu PDF hoặc Slide riêng cho bài học này.
                       </p>
                     </div>
                   )}
-
-                  {/* TIỆN ÍCH HỌC NGOẠI TUYẾN & IN ẤN */}
-                  <div className="tku-offline-tools-card">
-                    <h4 className="tku-offline-tools-title">
-                      <BookOpen size={17} style={{ color: '#1d68f2' }} />
-                      <span>Tài liệu tóm tắt & Tiện ích in ấn</span>
-                    </h4>
-                    <p className="tku-offline-tools-desc">
-                      Lưu trữ nội dung lý thuyết bài học để học tập không cần kết nối mạng hoặc in thành tài liệu ôn tập cá nhân.
-                    </p>
-                    <div className="tku-offline-tools-actions">
-                      <button
-                        type="button"
-                        className="tku-resource-btn tku-resource-btn--secondary"
-                        onClick={handleDownloadLessonNotesText}
-                        disabled={!activeLesson?.content}
-                      >
-                        <Download size={14} />
-                        <span>Tải tóm tắt bài giảng (.txt)</span>
-                      </button>
-                      <button
-                        type="button"
-                        className="tku-resource-btn tku-resource-btn--secondary"
-                        onClick={handlePrintLesson}
-                      >
-                        <Printer size={14} />
-                        <span>In bài học / Lưu PDF</span>
-                      </button>
-                    </div>
-                  </div>
                 </div>
               )}
 

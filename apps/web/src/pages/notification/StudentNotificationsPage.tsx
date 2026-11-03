@@ -20,6 +20,7 @@ import {
   notificationService,
   type NotificationItem,
 } from '../../services/notification.service';
+import '../course/coursesPage.css';
 import './studentNotifications.css';
 
 type TabType = 'ALL' | 'UNREAD' | 'EXAM' | 'QA';
@@ -96,38 +97,33 @@ export const StudentNotificationsPage: React.FC = () => {
   const [isMarkingAll, setIsMarkingAll] = useState<boolean>(false);
 
   useEffect(() => {
+    document.title = 'Thông báo học tập | TKU E-Learning';
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     let isMounted = true;
-
-    const loadNotifications = () => {
-      notificationService
-        .getNotifications(50)
-        .then((data) => {
-          if (!isMounted) return;
-          setNotifications(data.notifications || []);
-          setUnreadCount(data.unreadCount || 0);
-        })
-        .catch(() => {
-          if (!isMounted) return;
-          toast.error('Không thể tải danh sách thông báo.');
-        })
-        .finally(() => {
-          if (!isMounted) return;
+    notificationService
+      .getNotifications(50)
+      .then((res) => {
+        if (!isMounted) return;
+        setNotifications(res.notifications || []);
+        setUnreadCount(res.unreadCount || 0);
+      })
+      .catch((err: unknown) => {
+        if (!isMounted) return;
+        const message =
+          err instanceof Error ? err.message : 'Không thể tải thông báo học tập';
+        toast.error(message);
+      })
+      .finally(() => {
+        if (isMounted) {
           setIsLoading(false);
-        });
-    };
-
-    loadNotifications();
-
-    // Lắng nghe thông báo thời gian thực để cập nhật trang ngay lập tức
-    const handleNewNotification = () => {
-      loadNotifications();
-    };
-
-    window.addEventListener('tku:new-notification', handleNewNotification);
+        }
+      });
 
     return () => {
       isMounted = false;
-      window.removeEventListener('tku:new-notification', handleNewNotification);
     };
   }, []);
 
@@ -135,15 +131,17 @@ export const StudentNotificationsPage: React.FC = () => {
     if (unreadCount === 0 || isMarkingAll) return;
     try {
       setIsMarkingAll(true);
-      setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      window.dispatchEvent(
-        new CustomEvent('tku:notification-read', { detail: { count: 0 } }),
-      );
       await notificationService.markAllAsRead();
-      toast.success('Đã đánh dấu tất cả thông báo là đã đọc.');
+      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+      toast.success('Đã đánh dấu tất cả thông báo là đã đọc');
+      window.dispatchEvent(
+        new CustomEvent('tku:notification-read', {
+          detail: { all: true, count: 0 },
+        }),
+      );
     } catch {
-      toast.error('Không thể cập nhật trạng thái thông báo.');
+      toast.error('Không thể đánh dấu đã đọc. Vui lòng thử lại.');
     } finally {
       setIsMarkingAll(false);
     }
@@ -225,105 +223,172 @@ export const StudentNotificationsPage: React.FC = () => {
       <Navbar />
 
       <main className="tku-notif-page__main">
-        {/* HERO SECTION */}
-        <section className="tku-notif-hero">
-          <div className="tku-notif-hero__container">
-            <nav className="tku-notif-breadcrumbs" aria-label="Đường dẫn điều hướng">
-              <Link to="/" className="tku-notif-breadcrumb-link">
+        {/* ================================================================
+            1. ACADEMIC HERO BANNER (ĐỒNG BỘ 100% TOÀN HỆ THỐNG TKU)
+            ================================================================ */}
+        <section className="tku-courses-hub-hero">
+          <div className="tku-container">
+            {/* Breadcrumb Trail */}
+            <nav className="tku-hero-breadcrumbs" aria-label="Đường dẫn điều hướng">
+              <Link to="/" className="tku-hero-breadcrumb-link">
                 <Home size={14} />
                 <span>Trang chủ</span>
               </Link>
-              <ChevronRight size={13} className="tku-notif-breadcrumb-sep" />
-              <span className="tku-notif-breadcrumb-current">Thông báo của tôi</span>
+              <ChevronRight size={13} className="tku-hero-breadcrumb-sep" />
+              <span className="tku-hero-breadcrumb-current">Thông báo của tôi</span>
             </nav>
 
-            <div className="tku-notif-hero__header">
-              <div className="tku-notif-hero__title-wrap">
-                <div className="tku-notif-hero__icon-box">
-                  <Bell size={26} />
+            <div className="tku-courses-hub-hero__grid">
+              {/* Cột Trái: Tiêu đề & Thông tin */}
+              <div className="tku-courses-hub-hero__main">
+                <div className="tku-courses-hub-hero__tag-wrap">
+                  <span className="tku-courses-hub-hero__tag">
+                    <Bell size={14} />
+                    <span>TRUNG TÂM THÔNG BÁO HỌC TẬP</span>
+                  </span>
+                  <span className="tku-courses-hub-hero__subtag">
+                    Cập nhật trực tiếp từ Giảng viên
+                  </span>
                 </div>
-                <div>
-                  <h1 className="tku-notif-hero__title">Trung tâm thông báo học tập</h1>
-                  <p className="tku-notif-hero__desc">
-                    Cập nhật kịp thời mọi phản hồi thảo luận bài học, bài kiểm tra mới và tin tức quan trọng từ giảng viên.
-                  </p>
-                </div>
+
+                <h1 className="tku-courses-hub-hero__title">
+                  Trung tâm thông báo học tập
+                </h1>
+
+                <p className="tku-courses-hub-hero__desc">
+                  Cập nhật kịp thời mọi phản hồi thảo luận bài học, bài kiểm tra mới và tin tức quan trọng từ giảng viên.
+                </p>
               </div>
 
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={handleMarkAllAsRead}
-                  disabled={isMarkingAll}
-                  className="tku-notif-mark-all-btn"
-                  title="Đánh dấu tất cả thông báo là đã đọc"
-                >
-                  {isMarkingAll ? (
-                    <Loader2 size={16} className="tku-notif-spinner" />
-                  ) : (
-                    <CheckCheck size={16} />
-                  )}
-                  <span>Đánh dấu tất cả đã đọc</span>
-                </button>
-              )}
+              {/* Cột Phải: 4 Thẻ Thống Kê Học Thuật Glassmorphism */}
+              <div className="tku-courses-hub-stats-grid">
+                <div className="tku-hub-glass-card">
+                  <div className="tku-hub-glass-card__icon tku-hub-glass-card__icon--blue">
+                    <Bell size={20} />
+                  </div>
+                  <div className="tku-hub-glass-card__content">
+                    <span className="tku-hub-glass-card__num">{notifications.length}</span>
+                    <span className="tku-hub-glass-card__lbl">Tổng thông báo</span>
+                  </div>
+                </div>
+
+                <div className="tku-hub-glass-card">
+                  <div className="tku-hub-glass-card__icon tku-hub-glass-card__icon--amber">
+                    <Sparkles size={20} />
+                  </div>
+                  <div className="tku-hub-glass-card__content">
+                    <span className="tku-hub-glass-card__num">{unreadCount}</span>
+                    <span className="tku-hub-glass-card__lbl">Cần xem ngay</span>
+                  </div>
+                </div>
+
+                <div className="tku-hub-glass-card">
+                  <div className="tku-hub-glass-card__icon tku-hub-glass-card__icon--emerald">
+                    <FileCheck size={20} />
+                  </div>
+                  <div className="tku-hub-glass-card__content">
+                    <span className="tku-hub-glass-card__num">{examCount}</span>
+                    <span className="tku-hub-glass-card__lbl">Bài kiểm tra</span>
+                  </div>
+                </div>
+
+                <div className="tku-hub-glass-card">
+                  <div className="tku-hub-glass-card__icon tku-hub-glass-card__icon--purple">
+                    <MessageSquare size={20} />
+                  </div>
+                  <div className="tku-hub-glass-card__content">
+                    <span className="tku-hub-glass-card__num">{qaCount}</span>
+                    <span className="tku-hub-glass-card__lbl">Hỏi đáp & Thảo luận</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* BODY CONTENT */}
-        <div className="tku-notif-content-container">
-          {/* Filter Tabs */}
-          <div className="tku-notif-tabs-bar">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`tku-notif-tab ${activeTab === 'ALL' ? 'is-active' : ''}`}
-            >
-              <Sparkles size={15} />
-              <span>Tất cả</span>
-              <span className="tku-notif-tab__badge">{notifications.length}</span>
-            </button>
+        {/* ================================================================
+            2. BODY CONTENT (ĐỒNG BỘ 100% CONTAINER & BỘ LỌC)
+            ================================================================ */}
+        <div className="tku-container tku-notif-container">
+          {/* Thanh công cụ: Tabs phân loại + Nút Đánh dấu tất cả đã đọc */}
+          <div className="tku-notif-toolbar">
+            <div className="tku-notif-tabs" role="tablist" aria-label="Phân loại thông báo">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'ALL'}
+                onClick={() => setActiveTab('ALL')}
+                className={`tku-notif-tab ${activeTab === 'ALL' ? 'is-active' : ''}`}
+              >
+                <Sparkles size={14} />
+                <span>Tất cả</span>
+                <span className="tku-notif-tab__badge">{notifications.length}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('UNREAD')}
-              className={`tku-notif-tab ${activeTab === 'UNREAD' ? 'is-active' : ''}`}
-            >
-              <Bell size={15} />
-              <span>Chưa đọc</span>
-              {unreadCount > 0 && (
-                <span className="tku-notif-tab__badge tku-notif-tab__badge--unread">
-                  {unreadCount}
-                </span>
-              )}
-            </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'UNREAD'}
+                onClick={() => setActiveTab('UNREAD')}
+                className={`tku-notif-tab ${activeTab === 'UNREAD' ? 'is-active' : ''}`}
+              >
+                <Bell size={14} />
+                <span>Chưa đọc</span>
+                {unreadCount > 0 && (
+                  <span className="tku-notif-tab__badge tku-notif-tab__badge--unread">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('EXAM')}
-              className={`tku-notif-tab ${activeTab === 'EXAM' ? 'is-active' : ''}`}
-            >
-              <FileCheck size={15} />
-              <span>Bài kiểm tra</span>
-              <span className="tku-notif-tab__badge">{examCount}</span>
-            </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'EXAM'}
+                onClick={() => setActiveTab('EXAM')}
+                className={`tku-notif-tab ${activeTab === 'EXAM' ? 'is-active' : ''}`}
+              >
+                <FileCheck size={14} />
+                <span>Bài kiểm tra</span>
+                <span className="tku-notif-tab__badge">{examCount}</span>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => setActiveTab('QA')}
-              className={`tku-notif-tab ${activeTab === 'QA' ? 'is-active' : ''}`}
-            >
-              <MessageSquare size={15} />
-              <span>Hỏi đáp & Thảo luận</span>
-              <span className="tku-notif-tab__badge">{qaCount}</span>
-            </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={activeTab === 'QA'}
+                onClick={() => setActiveTab('QA')}
+                className={`tku-notif-tab ${activeTab === 'QA' ? 'is-active' : ''}`}
+              >
+                <MessageSquare size={14} />
+                <span>Hỏi đáp & Thảo luận</span>
+                <span className="tku-notif-tab__badge">{qaCount}</span>
+              </button>
+            </div>
+
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllAsRead}
+                disabled={isMarkingAll}
+                className="tku-notif-mark-all-btn"
+                title="Đánh dấu tất cả thông báo là đã đọc"
+              >
+                {isMarkingAll ? (
+                  <Loader2 size={15} className="tku-notif-spinner" />
+                ) : (
+                  <CheckCheck size={15} />
+                )}
+                <span>Đánh dấu tất cả đã đọc</span>
+              </button>
+            )}
           </div>
 
-          {/* Notifications List */}
+          {/* Danh sách thông báo */}
           {isLoading ? (
             <div className="tku-notif-loading-box">
               <Loader2 size={32} className="tku-notif-spinner" />
-              <span>Đang tải thông báo...</span>
+              <span>Đang tải thông báo học tập...</span>
             </div>
           ) : filteredNotifications.length === 0 ? (
             <div className="tku-notif-empty-state">
@@ -337,20 +402,16 @@ export const StudentNotificationsPage: React.FC = () => {
               </h3>
               <p className="tku-notif-empty-desc">
                 {activeTab === 'UNREAD'
-                  ? 'Tuyệt vời! Không có tin nhắn hoặc lời nhắc nhở nào chưa được xử lý.'
+                  ? 'Tuyệt vời! Hiện không còn thông báo học tập nào chưa được xử lý.'
                   : 'Mọi thông báo về bài kiểm tra mới và phản hồi câu hỏi sẽ hiển thị tại đây.'}
               </p>
-              <Link to="/courses" className="tku-notif-empty-btn">
-                <span>Khám phá các khóa học</span>
-                <ArrowRight size={16} />
-              </Link>
             </div>
           ) : (
             <div className="tku-notif-list">
               {filteredNotifications.map((item) => {
                 const category = getNotificationCategory(item);
                 return (
-                  <div
+                  <article
                     key={item.id}
                     className={`tku-notif-card ${!item.isRead ? 'is-unread' : ''}`}
                     onClick={() => handleNotificationClick(item)}
@@ -362,35 +423,63 @@ export const StudentNotificationsPage: React.FC = () => {
                         handleNotificationClick(item);
                       }
                     }}
+                    aria-label={`Thông báo: ${item.title}`}
                   >
-                    {renderCategoryIcon(category)}
+                    {/* Icon danh mục */}
+                    <div className="tku-notif-card__icon-col">
+                      {renderCategoryIcon(category)}
+                    </div>
 
+                    {/* Nội dung thông báo */}
                     <div className="tku-notif-card__body">
-                      <div className="tku-notif-card__top-row">
-                        <h4 className="tku-notif-card__title">
-                          {!item.isRead && <span className="tku-notif-unread-dot" />}
-                          <span>{item.title}</span>
-                        </h4>
+                      <div className="tku-notif-card__meta-row">
+                        <div className="tku-notif-card__badges">
+                          <span className={`tku-notif-cat-badge is-${category.toLowerCase()}`}>
+                            {category === 'EXAM'
+                              ? 'Bài kiểm tra'
+                              : category === 'QA'
+                              ? 'Hỏi đáp & Thảo luận'
+                              : 'Tin học vụ'}
+                          </span>
+                          {!item.isRead && (
+                            <span className="tku-notif-status-badge">
+                              <span className="tku-notif-unread-dot" />
+                              Mới
+                            </span>
+                          )}
+                        </div>
+
                         <span className="tku-notif-card__time">
                           <Clock size={12} />
                           <span>{formatRelativeTime(item.createdAt)}</span>
                         </span>
                       </div>
 
-                      <p className="tku-notif-card__content">{item.content}</p>
+                      <h3 className="tku-notif-card__title">
+                        {item.title}
+                      </h3>
+
+                      <p className="tku-notif-card__content">
+                        {item.content}
+                      </p>
 
                       <div className="tku-notif-card__footer">
-                        <span>
+                        <span className="tku-notif-card__action-text">
                           {category === 'EXAM'
                             ? 'Vào làm bài kiểm tra'
                             : category === 'QA'
                             ? 'Xem phản hồi thảo luận'
                             : 'Xem chi tiết'}
                         </span>
-                        <ArrowRight size={14} />
+                        <ArrowRight size={14} className="tku-notif-card__arrow" />
                       </div>
                     </div>
-                  </div>
+
+                    {/* Chevron icon ở góc phải */}
+                    <div className="tku-notif-card__arrow-col" aria-hidden="true">
+                      <ChevronRight size={18} className="tku-notif-card__chevron" />
+                    </div>
+                  </article>
                 );
               })}
             </div>
@@ -404,4 +493,3 @@ export const StudentNotificationsPage: React.FC = () => {
 };
 
 export default StudentNotificationsPage;
-

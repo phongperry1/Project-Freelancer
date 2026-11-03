@@ -14,14 +14,11 @@ import {
   Search,
   X,
   ChevronDown,
-  ThumbsUp,
-  ThumbsDown,
   HelpCircle,
   AlertCircle,
 } from 'lucide-react';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
-import { toast } from '../../context/useToast';
 import '../course/coursesPage.css';
 import '../qa/qaPage.css';
 import './supportPage.css';
@@ -198,7 +195,6 @@ export const SupportPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<SupportCategory>('all');
   const [openFaqId, setOpenFaqId] = useState<string | null>('faq-1');
-  const [feedbackState, setFeedbackState] = useState<Record<string, 'up' | 'down'>>({});
 
   // Filtered FAQ Items
   const filteredFaqs = useMemo(() => {
@@ -238,18 +234,6 @@ export const SupportPage: React.FC = () => {
   // Handlers
   const handleToggleFaq = (id: string) => {
     setOpenFaqId((prev) => (prev === id ? null : id));
-  };
-
-  const handleFeedback = (faqId: string, type: 'up' | 'down') => {
-    setFeedbackState((prev) => ({
-      ...prev,
-      [faqId]: type,
-    }));
-    toast.success(
-      type === 'up'
-        ? 'Cảm ơn bạn đã phản hồi! Thông tin này hữu ích với bạn.'
-        : 'Cảm ơn bạn! TKU sẽ cập nhật thêm chi tiết cho câu hỏi này.'
-    );
   };
 
   const handleCategoryCardClick = (cat: SupportCategory) => {
@@ -498,7 +482,6 @@ export const SupportPage: React.FC = () => {
               <div className="tku-support-faq-list">
                 {filteredFaqs.map((faq) => {
                   const isOpen = openFaqId === faq.id;
-                  const feedback = feedbackState[faq.id];
 
                   return (
                     <div
@@ -559,31 +542,6 @@ export const SupportPage: React.FC = () => {
                               <span>{faq.note}</span>
                             </div>
                           )}
-
-                          {/* Student Feedback Widget */}
-                          <div className="tku-support-faq-feedback">
-                            <span>Thông tin này có giúp ích cho bạn không?</span>
-                            <div className="tku-support-feedback-btns">
-                              <button
-                                type="button"
-                                onClick={() => handleFeedback(faq.id, 'up')}
-                                className={`tku-support-feedback-btn ${feedback === 'up' ? 'is-active' : ''}`}
-                                title="Hữu ích"
-                              >
-                                <ThumbsUp size={13} />
-                                <span>Có</span>
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleFeedback(faq.id, 'down')}
-                                className={`tku-support-feedback-btn ${feedback === 'down' ? 'is-active' : ''}`}
-                                title="Chưa rõ ràng"
-                              >
-                                <ThumbsDown size={13} />
-                                <span>Chưa rõ</span>
-                              </button>
-                            </div>
-                          </div>
                         </div>
                       )}
                     </div>

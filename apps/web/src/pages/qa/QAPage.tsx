@@ -1020,15 +1020,6 @@ export const QAPage: React.FC = () => {
                   ? `Chuyên mục ${GRADE_TABS.find((t) => t.key === activeTab)?.label} hiện chưa có câu hỏi nào. Bạn có thể chuyển sang tab khác hoặc đặt câu hỏi mới ngay tại đây!`
                   : 'Chưa có câu hỏi nào trong hệ thống. Hãy là người đầu tiên đặt câu hỏi để Giảng viên TKU và cộng đồng học sinh cùng trao đổi, giải đáp!'}
               </p>
-              <button
-                type="button"
-                onClick={handleOpenAskModal}
-                className="tku-qa-ask-btn"
-                style={{ margin: '0 auto' }}
-              >
-                <Plus size={16} />
-                <span>Đặt câu hỏi học tập ngay</span>
-              </button>
             </div>
           )}
 
