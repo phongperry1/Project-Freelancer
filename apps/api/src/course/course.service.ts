@@ -102,9 +102,10 @@ export class CourseService {
       search?: string;
     },
     studentId?: string | null,
+    userRole?: string | null,
   ): Promise<{ courses: PublicCourseDto[]; total: number }> {
     let enrolledCourseIds = new Set<string>();
-    if (studentId) {
+    if (studentId && userRole === 'STUDENT') {
       const myEnrollments = await this.prisma.courseEnrollment.findMany({
         where: { studentId },
         select: { courseId: true },
@@ -682,14 +683,43 @@ export class CourseService {
   }
 
   /**
-   * Kiểm tra xem học sinh đã tham gia khóa học hay chưa
+   * Kiểm tra xem người dùng đã tham gia khóa học hay chưa (hoặc có quyền sở hữu/quản lý)
    */
   async checkStudentEnrollment(
     courseId: string,
     studentId?: string | null,
-  ): Promise<{ isEnrolled: boolean; enrolledAt?: Date | null }> {
+    userRole?: string | null,
+  ): Promise<{
+    isEnrolled: boolean;
+    enrolledAt?: Date | null;
+    isOwner?: boolean;
+    role?: string | null;
+  }> {
     if (!studentId || !UUID_REGEX.test(courseId)) {
-      return { isEnrolled: false, enrolledAt: null };
+      return { isEnrolled: false, enrolledAt: null, isOwner: false, role: null };
+    }
+
+    if (userRole === 'ADMIN') {
+      return {
+        isEnrolled: false,
+        enrolledAt: null,
+        isOwner: false,
+        role: 'ADMIN',
+      };
+    }
+
+    if (userRole === 'TEACHER') {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { teacherId: true },
+      });
+      const isOwner = course?.teacherId === studentId;
+      return {
+        isEnrolled: false,
+        enrolledAt: null,
+        isOwner,
+        role: 'TEACHER',
+      };
     }
 
     const enrollment = await this.prisma.courseEnrollment.findUnique({
@@ -704,6 +734,8 @@ export class CourseService {
     return {
       isEnrolled: !!enrollment,
       enrolledAt: enrollment?.enrolledAt ?? null,
+      isOwner: false,
+      role: 'STUDENT',
     };
   }
 
@@ -730,6 +762,17 @@ export class CourseService {
     const cleanKey = rawKey?.trim().toUpperCase();
     if (!cleanKey) {
       throw new BadRequestException('Vui lòng nhập mã Key kích hoạt.');
+    }
+
+    // 0. Xác thực tài khoản người dùng: Chỉ STUDENT mới có quyền sử dụng mã Key học sinh
+    const user = await this.prisma.user.findUnique({
+      where: { id: studentId },
+      select: { id: true, role: true },
+    });
+    if (!user || user.role !== 'STUDENT') {
+      throw new ForbiddenException(
+        'Tài khoản Giảng viên / Quản trị viên không áp dụng kích hoạt bằng mã Key dành cho học sinh.',
+      );
     }
 
     // 1. Kiểm tra khóa học có tồn tại và đang hoạt động không
@@ -831,6 +874,17 @@ export class CourseService {
   }> {
     if (!UUID_REGEX.test(courseId)) {
       throw new BadRequestException('Mã ID khóa học không đúng định dạng UUID.');
+    }
+
+    // 0. Xác thực tài khoản người dùng: Chỉ STUDENT mới có quyền đăng ký khóa học
+    const user = await this.prisma.user.findUnique({
+      where: { id: studentId },
+      select: { id: true, role: true },
+    });
+    if (!user || user.role !== 'STUDENT') {
+      throw new ForbiddenException(
+        'Tài khoản Giảng viên / Quản trị viên không áp dụng đăng ký tham gia khóa học dưới tư cách học sinh.',
+      );
     }
 
     // 1. Kiểm tra khóa học có tồn tại và đang hoạt động không

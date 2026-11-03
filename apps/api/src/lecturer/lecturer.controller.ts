@@ -47,7 +47,7 @@ import {
 @ApiTags('Lecturer')
 @Controller('api/v1/lecturer')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('TEACHER', 'ADMIN')
+@Roles('TEACHER')
 export class LecturerController {
   constructor(
     private readonly lecturerService: LecturerService,
@@ -76,7 +76,11 @@ export class LecturerController {
       throw new UnauthorizedException('Token không hợp lệ.');
     }
 
-    return { userId: payload.sub, role: payload.role ?? 'TEACHER' };
+    if (payload.role !== 'TEACHER') {
+      throw new ForbiddenException('Chỉ tài khoản Giảng viên mới có quyền truy cập vào Không gian Giảng viên.');
+    }
+
+    return { userId: payload.sub, role: 'TEACHER' };
   }
 
   @Get('courses')
