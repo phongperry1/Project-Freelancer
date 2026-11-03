@@ -540,8 +540,8 @@ export const CourseExamRoomPage: React.FC = () => {
       {/* 1. THANH ĐIỀU HƯỚNG CHÍNH CỦA HỆ THỐNG TKU */}
       <Navbar />
 
-      {/* 2. KHU VỰC THI CHÍNH */}
-      <main className="tku-exam-container" style={{ flex: 1, paddingBottom: 60, paddingTop: 20 }}>
+      {/* 2. KHU VỰC THI CHÍNH (ĐỒNG BỘ TOÀN HỆ THỐNG TKU CONTAINER) */}
+      <main className="tku-container tku-exam-container" style={{ flex: 1, paddingBottom: 60, paddingTop: 20 }}>
         {/* BANNER THÔNG TIN PHÒNG THI & ĐIỀU HƯỚNG HỌC THUẬT */}
         <div className="tku-exam-room-header">
           {/* Hàng điều hướng trên: Breadcrumbs */}

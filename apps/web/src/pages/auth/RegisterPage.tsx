@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { AuthBanner } from './components/AuthBanner';
 import { RegisterForm } from './components/RegisterForm';
@@ -15,14 +16,14 @@ export const RegisterPage: React.FC = () => {
       <div className="tku-auth-page__ambient" />
 
       <div className="tku-auth-card tku-auth-card--register">
-        <a
-          href="/"
+        <Link
+          to="/"
           className="tku-auth-close-btn"
           title="Quay về trang chủ"
           aria-label="Đóng"
         >
           <X size={20} />
-        </a>
+        </Link>
 
         <AuthBanner />
         <RegisterForm />

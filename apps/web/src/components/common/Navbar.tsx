@@ -12,6 +12,19 @@ export const Navbar: React.FC = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const currentPath = location.pathname + location.search;
+  const isAuthPage =
+    location.pathname.startsWith('/login') ||
+    location.pathname.startsWith('/register') ||
+    location.pathname.startsWith('/forgot-password') ||
+    location.pathname.startsWith('/session-terminated');
+  const authRedirectQuery =
+    !isAuthPage && currentPath !== '/'
+      ? `?redirect=${encodeURIComponent(currentPath)}`
+      : '';
+  const loginLink = `/login${authRedirectQuery}`;
+  const registerLink = `/register${authRedirectQuery}`;
+
   const isNavActive = useCallback(
     (itemId: string, href: string) => {
       if (itemId === 'nav-courses') {
@@ -182,10 +195,10 @@ export const Navbar: React.FC = () => {
             </div>
           ) : (
             <>
-              <Link to="/login" className="tku-btn tku-btn--outline">
+              <Link to={loginLink} className="tku-btn tku-btn--outline">
                 Đăng nhập
               </Link>
-              <Link to="/register" className="tku-btn tku-btn--primary">
+              <Link to={registerLink} className="tku-btn tku-btn--primary">
                 Đăng ký
               </Link>
             </>
@@ -291,14 +304,14 @@ export const Navbar: React.FC = () => {
               ) : (
                 <>
                   <Link
-                    to="/login"
+                    to={loginLink}
                     onClick={() => setMobileMenuOpen(false)}
                     className="tku-btn tku-btn--outline w-full"
                   >
                     Đăng nhập
                   </Link>
                   <Link
-                    to="/register"
+                    to={registerLink}
                     onClick={() => setMobileMenuOpen(false)}
                     className="tku-btn tku-btn--primary w-full"
                   >

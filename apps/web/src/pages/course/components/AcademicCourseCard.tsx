@@ -70,11 +70,27 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
     course.teacher.avatarUrl?.trim() !== '' &&
     !avatarFailed;
 
+  const isTeacher = user?.role === 'TEACHER';
+  const isAdmin = user?.role === 'ADMIN';
+  const isStaff = isTeacher || isAdmin;
+  const isOwner = Boolean(
+    isAuthenticated &&
+      (isAdmin ||
+        (isTeacher &&
+          (course.teacher.id === user?.id || (course as { teacherId?: string }).teacherId === user?.id)))
+  );
+
   // Khóa học chỉ được hiển thị "Đã tham gia" / "Vào học ngay" khi và chỉ khi:
   // 1. Tài khoản đã đăng nhập (isAuthenticated === true và user hợp lệ)
   // 2. Tài khoản đã thực sự ghi danh trong database (course.isEnrolled) hoặc có cache ghi danh hợp lệ
   const isEnrolled = useMemo(() => {
     if (!isAuthenticated || !user) {
+      return false;
+    }
+    if (isOwner) {
+      return true;
+    }
+    if (isStaff) {
       return false;
     }
     if (course.isEnrolled) {
@@ -93,7 +109,7 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
       }
     }
     return false;
-  }, [isAuthenticated, user, course.isEnrolled, course.id]);
+  }, [isAuthenticated, user, isOwner, isStaff, course.isEnrolled, course.id]);
 
   return (
     <article className="tku-course-card" aria-label={`Khóa học ${course.title}`}>
@@ -123,8 +139,16 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
           <span>{getGradeLabel(course.grade)}</span>
         </span>
 
-        {/* Floating Status Tag - Chỉ hiển thị khi học sinh đã ghi danh khóa học */}
-        {isEnrolled && (
+        {/* Floating Status Tag */}
+        {isOwner ? (
+          <span className="tku-course-card__status-tag tku-course-card__status-tag--enrolled">
+            <span
+              className="tku-course-card__status-dot tku-course-card__status-dot--enrolled"
+              aria-hidden="true"
+            />
+            <span>Khóa của bạn</span>
+          </span>
+        ) : isEnrolled && !isStaff ? (
           <span className="tku-course-card__status-tag tku-course-card__status-tag--enrolled">
             <span
               className="tku-course-card__status-dot tku-course-card__status-dot--enrolled"
@@ -132,7 +156,7 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
             />
             <span>Đã tham gia</span>
           </span>
-        )}
+        ) : null}
       </div>
 
       {/* Body Area */}
@@ -199,16 +223,18 @@ export const AcademicCourseCard: React.FC<AcademicCourseCardProps> = memo(({ cou
           <button
             type="button"
             className={`tku-course-card__action-btn ${
-              isEnrolled ? 'tku-course-card__action-btn--enrolled' : ''
+              isOwner || (isEnrolled && !isStaff) ? 'tku-course-card__action-btn--enrolled' : ''
             }`}
             onClick={() => onSelect(course.id)}
             aria-label={
-              isEnrolled
-                ? `Vào học ngay khóa học ${course.title}`
-                : `Xem chi tiết khóa học ${course.title}`
+              isOwner
+                ? `Vào xem trước khóa học ${course.title}`
+                : isEnrolled && !isStaff
+                  ? `Vào học ngay khóa học ${course.title}`
+                  : `Xem chi tiết khóa học ${course.title}`
             }
           >
-            <span>{isEnrolled ? 'Vào học ngay' : 'Xem chi tiết'}</span>
+            <span>{isOwner ? 'Vào xem trước' : isEnrolled && !isStaff ? 'Vào học ngay' : 'Xem chi tiết'}</span>
             <ArrowRight size={15} aria-hidden="true" />
           </button>
         </div>

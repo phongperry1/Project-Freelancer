@@ -14,21 +14,29 @@ export const LecturerRoute: React.FC<LecturerRouteProps> = ({ children }) => {
   const isActuallyAuthenticated = Boolean(token && user);
 
   useEffect(() => {
-    if (isActuallyAuthenticated && user?.role !== 'TEACHER' && user?.role !== 'ADMIN') {
-      toast.error('Bạn không có quyền truy cập vào Không gian Giảng viên.');
+    if (isActuallyAuthenticated) {
+      if (user?.role === 'ADMIN') {
+        toast.error('Tài khoản Quản trị viên chỉ có quyền truy cập trang Quản trị.');
+      } else if (user?.role !== 'TEACHER') {
+        toast.error('Bạn không có quyền truy cập vào Không gian Giảng viên.');
+      }
     }
   }, [isActuallyAuthenticated, user?.role]);
 
   if (!isActuallyAuthenticated && !isAuthenticated) {
     return (
       <Navigate
-        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}
         replace
       />
     );
   }
 
-  if (user?.role !== 'TEACHER' && user?.role !== 'ADMIN') {
+  if (user?.role === 'ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  if (user?.role !== 'TEACHER') {
     return <Navigate to="/" replace />;
   }
 

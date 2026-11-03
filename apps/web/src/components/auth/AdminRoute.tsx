@@ -22,10 +22,14 @@ export const AdminRoute: React.FC<AdminRouteProps> = ({ children }) => {
   if (!isActuallyAuthenticated && !isAuthenticated) {
     return (
       <Navigate
-        to={`/login?redirect=${encodeURIComponent(location.pathname)}`}
+        to={`/login?redirect=${encodeURIComponent(location.pathname + location.search)}`}
         replace
       />
     );
+  }
+
+  if (user?.role === 'TEACHER') {
+    return <Navigate to="/lecturer/dashboard" replace />;
   }
 
   if (user?.role !== 'ADMIN') {

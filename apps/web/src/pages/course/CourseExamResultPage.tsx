@@ -285,8 +285,8 @@ export const CourseExamResultPage: React.FC = () => {
       {/* 1. THANH ĐIỀU HƯỚNG CHÍNH CỦA HỆ THỐNG TKU */}
       <Navbar />
 
-      {/* 2. BODY CONTENT */}
-      <main className="tku-exam-container" style={{ flex: 1, paddingBottom: 60, paddingTop: 24 }}>
+      {/* 2. BODY CONTENT (ĐỒNG BỘ TOÀN HỆ THỐNG TKU CONTAINER) */}
+      <main className="tku-container tku-exam-container" style={{ flex: 1, paddingBottom: 60, paddingTop: 24 }}>
         {/* THANH ĐIỀU HƯỚNG & TIÊU ĐỀ TRANG (BỐ CỤC CHUẨN HỌC THUẬT) */}
         <div className="tku-result-page-header">
           <div className="tku-result-page-header__title-group">

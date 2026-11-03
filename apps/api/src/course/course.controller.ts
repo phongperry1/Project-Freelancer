@@ -12,6 +12,7 @@ import {
   HttpStatus,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
   ParseUUIDPipe,
 } from '@nestjs/common';
 import {
@@ -129,7 +130,13 @@ export class CourseController {
     authorization?: string,
   ): Promise<string | null> {
     const user = await this.getUserFromHeader(authorization);
-    return user?.id ?? null;
+    if (!user) return null;
+    if (user.role !== 'STUDENT') {
+      throw new ForbiddenException(
+        'Chỉ tài khoản Học sinh mới có quyền truy cập vào chức năng này.',
+      );
+    }
+    return user.id;
   }
 
   /**
@@ -193,8 +200,8 @@ export class CourseController {
     @Query('search') search?: string,
     @Headers('authorization') authorization?: string,
   ) {
-    const studentId = await this.getStudentIdFromHeader(authorization);
-    return this.courseService.getPublicCourses({ grade, search }, studentId);
+    const user = await this.getUserFromHeader(authorization);
+    return this.courseService.getPublicCourses({ grade, search }, user?.id, user?.role);
   }
 
   @Get('student/lessons')
@@ -280,8 +287,8 @@ export class CourseController {
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('authorization') authorization?: string,
   ) {
-    const studentId = await this.getStudentIdFromHeader(authorization);
-    return this.courseService.checkStudentEnrollment(id, studentId);
+    const user = await this.getUserFromHeader(authorization);
+    return this.courseService.checkStudentEnrollment(id, user?.id, user?.role);
   }
 
   @Post(':id/enroll-with-key')
@@ -291,16 +298,23 @@ export class CourseController {
   @ApiResponse({ status: 200, description: 'Kích hoạt thành công và ghi danh khóa học' })
   @ApiResponse({ status: 400, description: 'Key đã dùng, hết hạn hoặc không hợp lệ' })
   @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 403, description: 'Tài khoản Giảng viên / Quản trị viên không áp dụng mã Key học sinh' })
   @ApiResponse({ status: 404, description: 'Mã key hoặc khóa học không tồn tại' })
   async enrollWithKey(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() body: EnrollWithKeyDto,
     @Headers('authorization') authorization?: string,
   ) {
-    const studentId = await this.getStudentIdFromHeader(authorization);
-    if (!studentId) {
+    const user = await this.getUserFromHeader(authorization);
+    if (!user) {
       throw new UnauthorizedException(
         'Vui lòng đăng nhập tài khoản học sinh để kích hoạt mã Key tham gia khóa học.',
+      );
+    }
+
+    if (user.role !== 'STUDENT') {
+      throw new ForbiddenException(
+        'Tài khoản Giảng viên / Quản trị viên không áp dụng kích hoạt bằng mã Key dành cho học sinh.',
       );
     }
 
@@ -308,7 +322,7 @@ export class CourseController {
       throw new BadRequestException('Vui lòng nhập mã Key kích hoạt.');
     }
 
-    return this.courseService.enrollWithKey(id, studentId, body.key);
+    return this.courseService.enrollWithKey(id, user.id, body.key);
   }
 
   @Post(':id/enroll-free')
@@ -318,19 +332,26 @@ export class CourseController {
   @ApiParam({ name: 'id', description: 'Mã UUID của khóa học' })
   @ApiResponse({ status: 200, description: 'Đăng ký thành công và ghi danh khóa học' })
   @ApiResponse({ status: 401, description: 'Chưa đăng nhập' })
+  @ApiResponse({ status: 403, description: 'Tài khoản Giảng viên / Quản trị viên không áp dụng ghi danh học sinh' })
   @ApiResponse({ status: 404, description: 'Khóa học không tồn tại' })
   async enrollFree(
     @Param('id', ParseUUIDPipe) id: string,
     @Headers('authorization') authorization?: string,
   ) {
-    const studentId = await this.getStudentIdFromHeader(authorization);
-    if (!studentId) {
+    const user = await this.getUserFromHeader(authorization);
+    if (!user) {
       throw new UnauthorizedException(
         'Vui lòng đăng nhập tài khoản học sinh để đăng ký tham gia khóa học.',
       );
     }
 
-    return this.courseService.enrollFree(id, studentId);
+    if (user.role !== 'STUDENT') {
+      throw new ForbiddenException(
+        'Tài khoản Giảng viên / Quản trị viên không áp dụng đăng ký tham gia khóa học dưới tư cách học sinh.',
+      );
+    }
+
+    return this.courseService.enrollFree(id, user.id);
   }
 
   @Get(':id/learn')

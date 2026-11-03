@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/useAuth";
 import { toast } from "../context/useToast";
+import { getRoleRedirectTarget } from "../utils/authRedirect";
 
 interface TokenResponse {
   access_token: string;
@@ -113,14 +114,7 @@ export function useGoogleAuth(
           typeof window !== "undefined"
             ? new URLSearchParams(window.location.search).get("redirect")
             : null;
-        let targetUrl =
-          redirectParam && redirectParam.startsWith("/") ? redirectParam : "/";
-
-        if (!redirectParam && res.user?.role === "ADMIN") {
-          targetUrl = "/admin";
-        } else if (!redirectParam && res.user?.role === "TEACHER") {
-          targetUrl = "/lecturer/dashboard";
-        }
+        const targetUrl = getRoleRedirectTarget(res.user?.role, redirectParam);
 
         redirectTimerRef.current = setTimeout(() => {
           window.location.href = targetUrl;

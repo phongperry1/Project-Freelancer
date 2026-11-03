@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { LoadingSpinner } from './components/common/LoadingSpinner';
 
 import { AuthProvider } from './context/AuthContext';
@@ -9,7 +9,9 @@ import { useAuth } from './context/useAuth';
 import { AdminRoute } from './components/auth/AdminRoute';
 import { LecturerRoute } from './components/auth/LecturerRoute';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { StudentPublicRoute } from './components/auth/StudentPublicRoute';
 import { RouteTransitionLoader } from './components/common/RouteTransitionLoader';
+import { getRoleRedirectTarget } from './utils/authRedirect';
 
 import { SessionTerminatedPage } from './pages/auth/SessionTerminatedPage';
 
@@ -59,28 +61,24 @@ const SecurityPage = lazy(() => import('./pages/profile/SecurityPage'));
 const NotFoundPage = lazy(() => import('./pages/error/NotFoundPage'));
 
 const HomeRoute: React.FC = () => {
-  const { user, token } = useAuth();
-  if (token && user?.role === 'ADMIN') {
-    return <Navigate to="/admin" replace />;
-  }
-  if (token && user?.role === 'TEACHER') {
-    return <Navigate to="/lecturer/dashboard" replace />;
-  }
-  return <LandingPage />;
+  return (
+    <StudentPublicRoute>
+      <LandingPage />
+    </StudentPublicRoute>
+  );
 };
 
 const PublicAuthRoute: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, token } = useAuth();
-  if (token && user?.role === 'ADMIN') {
-    return <Navigate to="/admin" replace />;
-  }
-  if (token && user?.role === 'TEACHER') {
-    return <Navigate to="/lecturer/dashboard" replace />;
-  }
+  const location = useLocation();
+
   if (token && user) {
-    return <Navigate to="/" replace />;
+    const searchParams = new URLSearchParams(location.search);
+    const redirectParam = searchParams.get('redirect');
+    const targetUrl = getRoleRedirectTarget(user.role, redirectParam);
+    return <Navigate to={targetUrl} replace />;
   }
   return <>{children}</>;
 };
@@ -93,30 +91,82 @@ export const App: React.FC = () => {
           <RouteTransitionLoader />
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
+              {/* Trang công khai học sinh (Khách và Học sinh truy cập, chặn Admin và Giảng viên) */}
               <Route path="/" element={<HomeRoute />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/lessons" element={<LessonsPage />} />
+              <Route
+                path="/courses"
+                element={
+                  <StudentPublicRoute>
+                    <CoursesPage />
+                  </StudentPublicRoute>
+                }
+              />
+              <Route
+                path="/lessons"
+                element={
+                  <StudentPublicRoute>
+                    <LessonsPage />
+                  </StudentPublicRoute>
+                }
+              />
               <Route path="/lectures" element={<Navigate to="/lessons" replace />} />
-              <Route path="/roadmap" element={<RoadmapPage />} />
+              <Route
+                path="/roadmap"
+                element={
+                  <StudentPublicRoute>
+                    <RoadmapPage />
+                  </StudentPublicRoute>
+                }
+              />
               <Route path="/lo-trinh" element={<Navigate to="/roadmap" replace />} />
-              <Route path="/qa" element={<QAPage />} />
+              <Route
+                path="/qa"
+                element={
+                  <StudentPublicRoute>
+                    <QAPage />
+                  </StudentPublicRoute>
+                }
+              />
               <Route path="/hoi-dap" element={<Navigate to="/qa" replace />} />
-              <Route path="/support" element={<SupportPage />} />
+              <Route
+                path="/support"
+                element={
+                  <StudentPublicRoute>
+                    <SupportPage />
+                  </StudentPublicRoute>
+                }
+              />
               <Route path="/ho-tro" element={<Navigate to="/support" replace />} />
-              <Route path="/courses/category/:categoryKey" element={<CategoryCoursesPage />} />
+              <Route
+                path="/courses/category/:categoryKey"
+                element={
+                  <StudentPublicRoute>
+                    <CategoryCoursesPage />
+                  </StudentPublicRoute>
+                }
+              />
+              <Route
+                path="/courses/:id"
+                element={
+                  <StudentPublicRoute>
+                    <CourseDetailPage />
+                  </StudentPublicRoute>
+                }
+              />
+
+              {/* Trang học tập được bảo vệ (Bắt buộc đăng nhập với vai trò STUDENT, chặn ADMIN và TEACHER) */}
               <Route
                 path="/my-courses"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CategoryCoursesPage defaultCategory="my-courses" />
                   </ProtectedRoute>
                 }
               />
-              <Route path="/courses/:id" element={<CourseDetailPage />} />
               <Route
                 path="/courses/:courseId/learn"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CourseLearningRoomPage />
                   </ProtectedRoute>
                 }
@@ -124,7 +174,7 @@ export const App: React.FC = () => {
               <Route
                 path="/courses/:courseId/learn/:lessonId"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CourseLearningRoomPage />
                   </ProtectedRoute>
                 }
@@ -132,7 +182,7 @@ export const App: React.FC = () => {
               <Route
                 path="/courses/:courseId/lessons/:lessonId"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CourseLearningRoomPage />
                   </ProtectedRoute>
                 }
@@ -140,7 +190,7 @@ export const App: React.FC = () => {
               <Route
                 path="/courses/:courseId/exams/:assessmentId"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CourseExamRoomPage />
                   </ProtectedRoute>
                 }
@@ -148,11 +198,13 @@ export const App: React.FC = () => {
               <Route
                 path="/courses/:courseId/exams/:assessmentId/results/:submissionId"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <CourseExamResultPage />
                   </ProtectedRoute>
                 }
               />
+
+              {/* Trang xác thực */}
               <Route
                 path="/login"
                 element={
@@ -170,10 +222,12 @@ export const App: React.FC = () => {
                 }
               />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+
+              {/* Hồ sơ cá nhân và thông báo (Chỉ dành cho STUDENT) */}
               <Route
                 path="/profile"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <ProfilePage />
                   </ProtectedRoute>
                 }
@@ -181,7 +235,7 @@ export const App: React.FC = () => {
               <Route
                 path="/profile/security"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <SecurityPage />
                   </ProtectedRoute>
                 }
@@ -189,7 +243,7 @@ export const App: React.FC = () => {
               <Route
                 path="/notifications"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute allowedRoles={['STUDENT']}>
                     <StudentNotificationsPage />
                   </ProtectedRoute>
                 }
@@ -197,6 +251,8 @@ export const App: React.FC = () => {
               <Route path="/thong-bao" element={<Navigate to="/notifications" replace />} />
               <Route path="/student/profile" element={<Navigate to="/profile" replace />} />
               <Route path="/session-terminated" element={<SessionTerminatedPage />} />
+
+              {/* Khu vực Quản trị viên (Chỉ dành cho ADMIN) */}
               <Route
                 path="/admin"
                 element={
@@ -216,6 +272,8 @@ export const App: React.FC = () => {
                 <Route path="content" element={<AdminContentPage />} />
                 <Route path="activation-keys" element={<AdminActivationKeysPage />} />
               </Route>
+
+              {/* Khu vực Giảng viên (Chỉ dành cho TEACHER) */}
               <Route
                 path="/lecturer"
                 element={

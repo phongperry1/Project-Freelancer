@@ -434,12 +434,21 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
               onAction={() => setSearchQuery('')}
             />
           ) : currentCategoryKey === 'my-courses' ? (
-            <EmptyState
-              title="Bạn chưa tham gia khóa học nào"
-              description="Hãy kích hoạt mã Key được cấp bởi ban quản trị hoặc khám phá danh mục khóa học để bắt đầu hành trình học tập!"
-              actionText="Khám phá toàn bộ khóa học"
-              onAction={() => navigate('/courses')}
-            />
+            user?.role === 'TEACHER' ? (
+              <EmptyState
+                title="Bạn chưa có khóa học nào phụ trách"
+                description="Hãy truy cập không gian Giảng viên để khởi tạo và quản lý toàn bộ khóa học cùng hệ thống bài giảng của bạn."
+                actionText="Quản lý khóa học của tôi"
+                onAction={() => navigate('/lecturer/courses')}
+              />
+            ) : (
+              <EmptyState
+                title="Bạn chưa tham gia khóa học nào"
+                description="Hãy kích hoạt mã Key được cấp bởi ban quản trị hoặc khám phá danh mục khóa học để bắt đầu hành trình học tập!"
+                actionText="Khám phá toàn bộ khóa học"
+                onAction={() => navigate('/courses')}
+              />
+            )
           ) : (
             <EmptyState
               title={`Chưa có khóa học cho ${categoryConfig.title}`}

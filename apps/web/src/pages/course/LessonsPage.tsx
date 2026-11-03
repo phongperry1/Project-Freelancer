@@ -437,7 +437,7 @@ export const LessonsPage: React.FC = () => {
                 </div>
               </div>
               <div className="tku-lessons-prompt-banner__action">
-                <Link to="/login" className="tku-btn tku-btn--primary">
+                <Link to="/login?redirect=/lessons" className="tku-btn tku-btn--primary">
                   Đăng nhập tài khoản
                 </Link>
               </div>

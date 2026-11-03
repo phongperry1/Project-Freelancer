@@ -30,12 +30,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Bạn không có quyền thực hiện hành động này.');
     }
 
-    // Quyền Quản trị viên tối cao (ADMIN) có thể truy cập toàn bộ tài nguyên
-    if (user.role === 'ADMIN') {
-      return true;
-    }
-
-    // Khắc phục lỗ hổng: Kiểm tra quyền thời gian thực dựa trên role mới nhất của user từ DB
+    // Kiểm tra quyền hạn nghiêm ngặt theo đúng vai trò được định nghĩa
     const hasRole = requiredRoles.includes(user.role);
     if (!hasRole) {
       throw new ForbiddenException('Bạn không có quyền truy cập vào chức năng này.');
@@ -44,4 +39,3 @@ export class RolesGuard implements CanActivate {
     return true;
   }
 }
-

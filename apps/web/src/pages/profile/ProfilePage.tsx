@@ -325,7 +325,7 @@ export const ProfilePage: React.FC = () => {
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                 <button
                   type="button"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/login?redirect=/profile')}
                   className="tku-btn-academic-primary"
                 >
                   Đăng nhập ngay

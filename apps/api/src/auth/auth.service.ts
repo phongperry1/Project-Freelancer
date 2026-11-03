@@ -1297,6 +1297,7 @@ export class AuthService {
       deviceId: string;
       isTrusted: boolean;
       sessionToken: string | null;
+      lastLoginAt: Date;
     }[] = [];
 
     try {
@@ -1309,62 +1310,69 @@ export class AuthService {
       );
     }
 
-    // CASE 1: Chưa có thiết bị nào (Lần đăng nhập đầu tiên sau khi đăng ký)
-    // Tự động tin cậy thiết bị đầu tiên này mà không cần OTP thêm.
-    if (existingDevices.length === 0) {
-      const sessionToken = randomUUID();
-      try {
-        await this.prisma.userDevice.create({
-          data: {
-            userId: user.id,
-            deviceId: resolvedDeviceId,
-            deviceName: resolvedDeviceName,
-            ipAddress: ipAddress || null,
-            isTrusted: true,
-            sessionToken,
-            lastLoginAt: new Date(),
-          },
-        });
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Không thể tạo thiết bị đầu tiên: ${(err as Error)?.message}`,
-        );
-      }
-
-      const tokens = await this.generateTokens(user, sessionToken);
-
-      return {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        user,
-      };
+    // Dọn dẹp session đã hết hạn quá 7 ngày mà chưa bấm đăng xuất
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const staleDeviceIds = existingDevices
+      .filter((d) => d.sessionToken !== null && d.lastLoginAt < sevenDaysAgo)
+      .map((d) => d.id);
+    if (staleDeviceIds.length > 0) {
+      void this.prisma.userDevice
+        .updateMany({
+          where: { id: { in: staleDeviceIds } },
+          data: { sessionToken: null },
+        })
+        .catch(() => {});
     }
 
-    const currentDevice = existingDevices.find(
-      (d) => d.deviceId === resolvedDeviceId,
+    // Kiểm tra xem hiện tại CÓ THIẾT BỊ KHÁC ĐANG THỰC SỰ ĐĂNG NHẬP (active session) hay không
+    const activeOtherDevices = existingDevices.filter(
+      (d) =>
+        d.sessionToken !== null &&
+        d.deviceId !== resolvedDeviceId &&
+        d.lastLoginAt >= sevenDaysAgo,
     );
 
-    if (currentDevice && currentDevice.isTrusted) {
+    // TRƯỜNG HỢP 1: Hiện tại KHÔNG CÓ thiết bị nào khác đang đăng nhập.
+    // (Bao gồm: Lần đầu đăng nhập, hoặc tài khoản đã từng đăng nhập ở thiết bị/trình duyệt khác nhưng hiện tại đã đăng xuất)
+    // -> Cho phép đăng nhập bình thường trực tiếp, không bắt buộc OTP.
+    if (activeOtherDevices.length === 0) {
       const sessionToken = randomUUID();
-      try {
-        await this.enforceConcurrentDeviceLimit(user.id, currentDevice.deviceId);
+      const currentDevice = existingDevices.find(
+        (d) => d.deviceId === resolvedDeviceId,
+      );
 
-        await this.prisma.userDevice.update({
-          where: { id: currentDevice.id },
-          data: {
-            sessionToken,
-            lastLoginAt: new Date(),
-            deviceName: resolvedDeviceName,
-            ipAddress: ipAddress || null,
-          },
-        });
+      try {
+        if (currentDevice) {
+          await this.prisma.userDevice.update({
+            where: { id: currentDevice.id },
+            data: {
+              sessionToken,
+              lastLoginAt: new Date(),
+              deviceName: resolvedDeviceName,
+              ipAddress: ipAddress || null,
+              isTrusted: true,
+            },
+          });
+        } else {
+          await this.prisma.userDevice.create({
+            data: {
+              userId: user.id,
+              deviceId: resolvedDeviceId,
+              deviceName: resolvedDeviceName,
+              ipAddress: ipAddress || null,
+              isTrusted: true,
+              sessionToken,
+              lastLoginAt: new Date(),
+            },
+          });
+        }
       } catch (err: unknown) {
         this.logger.warn(
           `Không thể cập nhật session thiết bị: ${(err as Error)?.message}`,
         );
       }
-      this.revokeDevRefreshTokens(user.id);
 
+      this.revokeDevRefreshTokens(user.id);
       const tokens = await this.generateTokens(user, sessionToken);
 
       return {
@@ -1374,7 +1382,9 @@ export class AuthService {
       };
     }
 
-    // CASE 3: Thiết bị mới chưa được tin cậy -> Bắt buộc xác thực OTP qua Gmail
+    // TRƯỜNG HỢP 2: Hiện ĐANG CÓ THIẾT BỊ KHÁC ĐĂNG NHẬP VÀO TÀI KHOẢN NÀY
+    // (Và có 1 thiết bị hoặc trình duyệt khác đồng thời truy cập vào tài khoản)
+    // -> Chặn lại và yêu cầu xác thực OTP qua Email để bảo vệ tài khoản khỏi truy cập trái phép đồng thời.
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const key = `${user.email.toLowerCase()}_${resolvedDeviceId}`;
 
@@ -1410,7 +1420,7 @@ export class AuthService {
       deviceId: resolvedDeviceId,
       deviceName: resolvedDeviceName,
       message:
-        'Phát hiện đăng nhập trên thiết bị mới. Chúng tôi đã gửi mã xác thực OTP về email của bạn để bảo mật.',
+        'Phát hiện tài khoản đang được đăng nhập trên một thiết bị khác. Để bảo mật tài khoản, mã OTP gồm 6 chữ số đã được gửi tới email của bạn.',
     };
   }
 
@@ -1441,7 +1451,25 @@ export class AuthService {
     const sessionToken = randomUUID();
 
     try {
-      await this.enforceConcurrentDeviceLimit(pending.userId, pending.deviceId);
+      // Khi thiết bị mới xác thực thành công OTP, ngắt kết nối các thiết bị khác đang đăng nhập
+      await this.prisma.userDevice.updateMany({
+        where: {
+          userId: pending.userId,
+          deviceId: { not: pending.deviceId },
+        },
+        data: { sessionToken: null },
+      });
+
+      // Revoke toàn bộ refresh token của các phiên trước đó
+      await this.prisma.authToken.updateMany({
+        where: {
+          userId: pending.userId,
+          type: 'REFRESH_TOKEN',
+          revokedAt: null,
+        },
+        data: { revokedAt: new Date() },
+      });
+      this.revokeDevRefreshTokens(pending.userId);
 
       await this.prisma.userDevice.upsert({
         where: {

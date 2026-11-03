@@ -7,7 +7,6 @@ import {
   Clock,
   CheckCircle2,
   Headphones,
-  BookOpen,
   KeyRound,
   PlayCircle,
   FileText,
@@ -19,7 +18,6 @@ import {
   ThumbsDown,
   HelpCircle,
   AlertCircle,
-  MessageSquare,
 } from 'lucide-react';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
@@ -614,37 +612,6 @@ export const SupportPage: React.FC = () => {
                 </button>
               </div>
             )}
-          </section>
-
-          {/* ================================================================
-              4. BOTTOM CALL TO ACTION (ĐỒNG BỘ VỚI QA VÀ ROADMAP)
-              ================================================================ */}
-          <section className="tku-qa-bottom-cta">
-            <div className="tku-qa-bottom-cta__left">
-              <h4 className="tku-qa-bottom-cta__title">
-                Bạn đã sẵn sàng tiếp tục hành trình bứt phá điểm số Hóa học?
-              </h4>
-              <p className="tku-qa-bottom-cta__desc">
-                Khám phá kho bài giảng chuyên sâu, theo dõi lộ trình học tập chuẩn hóa hoặc trao đổi bài học cùng cộng đồng học sinh TKU.
-              </p>
-            </div>
-
-            <div className="tku-qa-bottom-cta__actions">
-              <Link to="/lessons" className="tku-qa-btn-primary">
-                <BookOpen size={16} />
-                <span>Xem kho bài giảng</span>
-              </Link>
-
-              <Link to="/roadmap" className="tku-qa-btn-secondary">
-                <Sparkles size={16} />
-                <span>Xem lộ trình học tập</span>
-              </Link>
-
-              <Link to="/qa" className="tku-qa-btn-secondary">
-                <MessageSquare size={16} />
-                <span>Cộng đồng Hỏi đáp</span>
-              </Link>
-            </div>
           </section>
         </div>
       </main>
