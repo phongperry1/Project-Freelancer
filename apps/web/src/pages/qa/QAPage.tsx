@@ -289,7 +289,7 @@ export const QAPage: React.FC = () => {
 
     if (!isAuthenticated) {
       toast.info('Vui lòng đăng nhập tài khoản để tham gia thảo luận.');
-      navigate('/login');
+      navigate('/login?redirect=/qa');
       return;
     }
 
@@ -353,7 +353,7 @@ export const QAPage: React.FC = () => {
   const handleOpenAskModal = async () => {
     if (!isAuthenticated) {
       toast.info('Vui lòng đăng nhập để đặt câu hỏi học tập.');
-      navigate('/login');
+      navigate('/login?redirect=/qa');
       return;
     }
 
@@ -1033,23 +1033,24 @@ export const QAPage: React.FC = () => {
           )}
 
           {/* ================================================================
-              4. KHỐI QUY CHUẨN GIẢI ĐÁP HỌC THUẬT TKU (HOÀN TOÀN ĐỦ CSS)
+              4. KHỐI QUY CHUẨN GIẢI ĐÁP HỌC THUẬT TKU
               ================================================================ */}
           <section className="tku-qa-guidelines-card">
             <div className="tku-qa-guidelines-head">
               <div className="tku-qa-guidelines-icon">
                 <GraduationCap size={22} />
               </div>
-              <h3 className="tku-qa-guidelines-title">Quy chuẩn Hỏi đáp & Hỗ trợ Học thuật TKU</h3>
+              <div className="tku-qa-guidelines-head-info">
+                <h3 className="tku-qa-guidelines-title">Quy chuẩn Hỏi đáp & Hỗ trợ Học thuật TKU</h3>
+                <p className="tku-qa-guidelines-subtitle">
+                  Đội ngũ Giảng viên và Trợ lý học tập TKU cam kết đồng hành cùng học sinh với các nguyên tắc chuẩn mực:
+                </p>
+              </div>
             </div>
-
-            <p className="tku-qa-guidelines-subtitle">
-              Đội ngũ Giảng viên và Trợ lý học tập TKU cam kết đồng hành cùng học sinh với các nguyên tắc chuẩn mực:
-            </p>
 
             <div className="tku-qa-advice-grid">
               <div className="tku-qa-advice-box">
-                <div className="tku-qa-advice-box__target">
+                <div className="tku-qa-advice-box__target tku-qa-advice-box__target--blue">
                   <CheckCircle2 size={16} />
                   <span>Giải đáp bản chất hóa học</span>
                 </div>
@@ -1059,7 +1060,7 @@ export const QAPage: React.FC = () => {
               </div>
 
               <div className="tku-qa-advice-box">
-                <div className="tku-qa-advice-box__target">
+                <div className="tku-qa-advice-box__target tku-qa-advice-box__target--amber">
                   <Clock size={16} />
                   <span>Tương tác nhanh chóng</span>
                 </div>
@@ -1069,7 +1070,7 @@ export const QAPage: React.FC = () => {
               </div>
 
               <div className="tku-qa-advice-box">
-                <div className="tku-qa-advice-box__target">
+                <div className="tku-qa-advice-box__target tku-qa-advice-box__target--emerald">
                   <ShieldCheck size={16} />
                   <span>Ghim lời giải chuẩn xác</span>
                 </div>
@@ -1077,32 +1078,6 @@ export const QAPage: React.FC = () => {
                   Mỗi câu hỏi hay đều được ghim lời giải chuẩn mực từ Giảng viên làm tư liệu học tập dùng chung cho toàn bộ học sinh.
                 </p>
               </div>
-            </div>
-          </section>
-
-          {/* ================================================================
-              5. BOTTOM CALL TO ACTION (HOÀN TOÀN ĐỦ CSS)
-              ================================================================ */}
-          <section className="tku-qa-bottom-cta">
-            <div className="tku-qa-bottom-cta__left">
-              <h4 className="tku-qa-bottom-cta__title">
-                Bạn muốn xem lại các bài giảng và làm bài tập tự luyện?
-              </h4>
-              <p className="tku-qa-bottom-cta__desc">
-                Khám phá kho bài giảng chuyên đề hoặc tham gia lộ trình học tập bứt phá điểm số cùng TKU E-Learning.
-              </p>
-            </div>
-
-            <div className="tku-qa-bottom-cta__actions">
-              <Link to="/lessons" className="tku-qa-btn-primary">
-                <BookOpen size={16} />
-                <span>Xem kho bài giảng</span>
-              </Link>
-
-              <Link to="/roadmap" className="tku-qa-btn-secondary">
-                <Sparkles size={16} />
-                <span>Xem lộ trình học tập</span>
-              </Link>
             </div>
           </section>
         </div>

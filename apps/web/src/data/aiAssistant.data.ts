@@ -2,19 +2,19 @@ import type { AiFeatureHighlight, ChatMessage } from '../types/chat.types';
 
 export const AI_FEATURE_HIGHLIGHTS: AiFeatureHighlight[] = [
   {
-    id: 'ai-247',
-    title: 'Giải đáp 24/7',
-    description: 'Phục vụ bất cứ khi nào học sinh cần học, dù là đêm muộn.',
+    id: 'ai-context-lesson',
+    title: 'Hỏi đáp bám sát bài giảng',
+    description: 'Thắc mắc ở mốc thời gian nào trong video, mở panel AI hỏi và nhận lời giải chi tiết cho đúng nội dung đó.',
   },
   {
-    id: 'ai-step-by-step',
-    title: 'Hướng dẫn chi tiết từng bước',
-    description: 'Không chỉ đưa ra đáp án, AI giải thích chi tiết lý thuyết liên quan.',
+    id: 'ai-math-chem-latex',
+    title: 'Công thức Toán & Hóa học chuẩn xác',
+    description: 'Tự động hiển thị công thức phân tử, chuỗi phản ứng và phương trình hóa học rõ ràng, chuẩn xác.',
   },
   {
-    id: 'ai-smart-suggest',
-    title: 'Gợi ý thông minh',
-    description: 'Đề xuất các dạng bài tập tương tự để củng cố lỗ hổng kiến thức.',
+    id: 'ai-history-review',
+    title: 'Lưu lịch sử đoạn chat theo từng bài học',
+    description: 'Tự động lưu giữ các phiên hỏi đáp của từng bài giảng để học sinh ôn tập lại kiến thức bất cứ lúc nào.',
   },
 ];
 
@@ -22,12 +22,12 @@ export const INITIAL_CHAT_MESSAGES: ChatMessage[] = [
   {
     id: 'msg-1',
     sender: 'user',
-    content: 'Cho em hỏi hiện tượng xảy ra khi cho dung dịch NaOH vào dung dịch AlCl3 dư là gì ạ?',
+    content: 'Thầy ơi, ở phút 04:20 video bài giảng, hiện tượng khi cho từ từ NaOH vào AlCl3 dư là gì ạ?',
   },
   {
     id: 'msg-2',
     sender: 'assistant',
     content:
-      'Chào em! Khi nhỏ từ từ NaOH vào dung dịch AlCl3 dư:\n\nHiện tượng: Ban đầu xuất hiện kết tủa keo trắng Al(OH)3. Do AlCl3 dư nên kết tủa không bị hòa tan.\n\nPhương trình:\nAlCl3 + 3NaOH → Al(OH)3↓ + 3NaCl',
+      'Chào em! Tại mốc 04:20 của bài giảng:\n\n• Hiện tượng: Xuất hiện kết tủa keo trắng Al(OH)3. Vì dung dịch AlCl3 còn dư nên kết tủa không tan.\n\n• Phương trình ion rút gọn:\nAl³⁺ + 3OH⁻ → Al(OH)3↓',
   },
 ];

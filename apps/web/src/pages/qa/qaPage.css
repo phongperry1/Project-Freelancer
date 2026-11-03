@@ -737,22 +737,21 @@
    -------------------------------------------------------------------------- */
 .tku-qa-guidelines-card,
 .tku-roadmap-advisor-card {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #ffffff;
+  border: 1px solid var(--tku-hub-border, #e2e8f0);
   border-radius: var(--tku-hub-radius-xl, 18px);
-  padding: 30px;
+  padding: 28px 32px;
   margin-top: 28px;
-  margin-bottom: 32px;
-  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15);
-  color: #ffffff;
+  margin-bottom: 40px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
 .tku-qa-guidelines-head,
 .tku-roadmap-advisor-head {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 10px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
 .tku-qa-guidelines-icon,
@@ -760,36 +759,45 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: rgba(59, 130, 246, 0.2);
-  border: 1px solid rgba(59, 130, 246, 0.4);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #60a5fa;
+  color: #2563eb;
   flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+}
+
+.tku-qa-guidelines-head-info,
+.tku-roadmap-advisor-head-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .tku-qa-guidelines-title,
 .tku-roadmap-advisor-title {
-  font-size: 20px;
+  font-size: 19px;
   font-weight: 800;
-  color: #ffffff;
+  color: var(--tku-hub-text-title, #0f172a);
   margin: 0;
+  line-height: 1.35;
 }
 
 .tku-qa-guidelines-subtitle,
 .tku-roadmap-advisor-subtitle {
-  font-size: 14px;
-  color: #cbd5e1;
-  margin: 0 0 22px;
-  line-height: 1.6;
+  font-size: 13.5px;
+  color: var(--tku-hub-text-muted, #64748b);
+  margin: 0;
+  line-height: 1.5;
 }
 
 .tku-qa-advice-grid,
 .tku-roadmap-advice-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 14px;
 }
 
 @media (max-width: 860px) {
@@ -801,136 +809,52 @@
 
 .tku-qa-advice-box,
 .tku-roadmap-advice-box {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 18px 20px;
-  backdrop-filter: blur(8px);
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tku-qa-advice-box:hover,
 .tku-roadmap-advice-box:hover {
-  background: rgba(255, 255, 255, 0.09);
-  border-color: rgba(96, 165, 250, 0.4);
+  background: #ffffff;
+  border-color: #93c5fd;
   transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.08);
 }
 
 .tku-qa-advice-box__target,
 .tku-roadmap-advice-box__target {
   font-size: 13.5px;
   font-weight: 700;
-  color: #60a5fa;
+  color: #0f172a;
   margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+.tku-qa-advice-box__target--blue svg,
+.tku-roadmap-advice-box__target--blue svg {
+  color: #2563eb;
+}
+
+.tku-qa-advice-box__target--amber svg,
+.tku-roadmap-advice-box__target--amber svg {
+  color: #d97706;
+}
+
+.tku-qa-advice-box__target--emerald svg,
+.tku-roadmap-advice-box__target--emerald svg {
+  color: #059669;
+}
+
 .tku-qa-advice-box__text,
 .tku-roadmap-advice-box__text {
   font-size: 13px;
   line-height: 1.6;
-  color: #e2e8f0;
+  color: #475569;
   margin: 0;
-}
-
-/* --------------------------------------------------------------------------
-   BOTTOM CALL TO ACTION (ĐIỀU HƯỚNG BÀI GIẢNG & LỘ TRÌNH)
-   -------------------------------------------------------------------------- */
-.tku-qa-bottom-cta,
-.tku-roadmap-bottom-cta {
-  background: #ffffff;
-  border: 1px solid var(--tku-hub-border, #e2e8f0);
-  border-radius: var(--tku-hub-radius-xl, 18px);
-  padding: 28px 32px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  box-shadow: var(--tku-hub-shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.05));
-  margin-bottom: 40px;
-  flex-wrap: wrap;
-}
-
-.tku-qa-bottom-cta__left,
-.tku-roadmap-bottom-cta__left {
-  flex: 1;
-  min-width: 280px;
-}
-
-.tku-qa-bottom-cta__title,
-.tku-roadmap-bottom-cta__title {
-  font-size: 18.5px;
-  font-weight: 800;
-  color: var(--tku-hub-text-title, #0f172a);
-  margin: 0 0 6px;
-}
-
-.tku-qa-bottom-cta__desc,
-.tku-roadmap-bottom-cta__desc {
-  font-size: 13.5px;
-  color: var(--tku-hub-text-muted, #64748b);
-  margin: 0;
-  line-height: 1.55;
-}
-
-.tku-qa-bottom-cta__actions,
-.tku-roadmap-bottom-cta__actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.tku-qa-btn-primary,
-.tku-roadmap-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #ffffff;
-  background: var(--tku-hub-primary, #2563eb);
-  border: 1px solid var(--tku-hub-primary, #2563eb);
-  border-radius: var(--tku-hub-radius-pill, 999px);
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--tku-hub-transition, all 0.22s ease);
-  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
-}
-
-.tku-qa-btn-primary:hover,
-.tku-roadmap-btn-primary:hover {
-  background: var(--tku-hub-primary-hover, #1d4ed8);
-  border-color: var(--tku-hub-primary-hover, #1d4ed8);
-  transform: translateY(-1px);
-  color: #ffffff;
-}
-
-.tku-qa-btn-secondary,
-.tku-roadmap-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 20px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--tku-hub-text-body, #334155);
-  background: var(--tku-hub-surface-subtle, #f8fafc);
-  border: 1px solid var(--tku-hub-border, #e2e8f0);
-  border-radius: var(--tku-hub-radius-pill, 999px);
-  text-decoration: none;
-  cursor: pointer;
-  transition: var(--tku-hub-transition, all 0.22s ease);
-}
-
-.tku-qa-btn-secondary:hover,
-.tku-roadmap-btn-secondary:hover {
-  background: var(--tku-hub-primary-soft, #eff6ff);
-  border-color: var(--tku-hub-primary-border, #bfdbfe);
-  color: var(--tku-hub-primary, #2563eb);
-  transform: translateY(-1px);
 }
 

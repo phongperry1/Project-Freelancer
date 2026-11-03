@@ -12,11 +12,13 @@ import {
   Award,
   CheckCircle2,
   Compass,
-  ExternalLink,
   AlertCircle,
   RefreshCw,
-  User,
   TrendingUp,
+  ArrowRight,
+  KeyRound,
+  Video,
+  Users,
 } from 'lucide-react';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
@@ -122,17 +124,44 @@ const getCourseGrade = (course: PublicCourseItem): RoadmapTab => {
   return 'other';
 };
 
-const getInitials = (name?: string | null): string => {
-  if (!name) return 'GV';
-  const parts = name.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+const getGradeBadgeLabel = (grade: string | undefined): string => {
+  const g = String(grade || '').toLowerCase().trim();
+  switch (g) {
+    case '10':
+      return 'Lớp 10';
+    case '11':
+      return 'Lớp 11';
+    case '12':
+      return 'Lớp 12';
+    case 'exam':
+      return 'Luyện thi THPT & ĐGNL';
+    case 'other':
+      return 'Chuyên đề Hóa học';
+    default:
+      return 'Chuyên đề Hóa học';
+  }
+};
+
+const getGradeBadgeClass = (grade: string | undefined): string => {
+  const g = String(grade || '').toLowerCase().trim();
+  switch (g) {
+    case '10':
+      return 'tku-academic-badge--10';
+    case '11':
+      return 'tku-academic-badge--11';
+    case '12':
+      return 'tku-academic-badge--12';
+    case 'exam':
+      return 'tku-academic-badge--exam';
+    default:
+      return 'tku-academic-badge--other';
+  }
 };
 
 export const RoadmapPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Tab đang hoạt động
   const initialTab = (searchParams.get('tab') as RoadmapTab) || 'all';
@@ -337,6 +366,17 @@ export const RoadmapPage: React.FC = () => {
       avgProgress,
     };
   }, [studentProgress, activeCourses]);
+
+  // Bản đồ tra cứu tiến độ O(1) cho từng khóa học
+  const enrolledProgressMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    if (studentProgress?.enrolledCourses) {
+      for (const ec of studentProgress.enrolledCourses) {
+        map[ec.id] = ec.progressPercent ?? 0;
+      }
+    }
+    return map;
+  }, [studentProgress]);
 
   return (
     <div className="tku-app tku-courses-page-wrapper">
@@ -631,45 +671,75 @@ export const RoadmapPage: React.FC = () => {
                 {activeCourses.map((course, index) => {
                   const detail = courseDetails[course.id];
                   const chapters = detail?.chapters || [];
+                  const isStaff = user?.role === 'TEACHER' || user?.role === 'ADMIN';
                   const isEnrolled = Boolean(isAuthenticated && course.isEnrolled);
-
-                  // Tìm tiến độ cụ thể của khóa này nếu có
-                  const progressItem = studentProgress?.enrolledCourses?.find(
-                    (ec) => ec.id === course.id,
-                  );
-                  const progressPct = progressItem?.progressPercent ?? (isEnrolled ? 0 : 0);
+                  const progressPct = enrolledProgressMap[course.id] ?? 0;
 
                   return (
                     <article
                       key={course.id}
                       className={`tku-roadmap-stage-block ${isEnrolled ? 'is-enrolled' : ''}`}
+                      onClick={() => navigate(isEnrolled ? `/courses/${course.id}/learn` : `/courses/${course.id}`)}
+                      role="link"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          navigate(isEnrolled ? `/courses/${course.id}/learn` : `/courses/${course.id}`);
+                        }
+                      }}
+                      aria-label={
+                        isEnrolled
+                          ? `Khóa học ${course.title} - ${isStaff ? 'Khóa học của bạn' : `Đang theo học (${progressPct}%)`}, bấm để vào phòng học`
+                          : `Khóa học ${course.title} - Bấm để xem chi tiết khóa học`
+                      }
                     >
-                      {/* Badge Chặng và Trạng thái */}
+                      {/* Badge Chặng, Trạng thái & Link Hint khi Hover */}
                       <div className="tku-roadmap-stage-badge-wrap">
                         <span className="tku-roadmap-stage-num-badge">
-                          Chặng 0{index + 1}
+                          <Compass size={12} />
+                          <span>Chặng 0{index + 1}</span>
                         </span>
 
-                        <span className="tku-roadmap-stage-grade-badge tku-academic-badge--exam">
-                          Khối {course.grade === 'exam' ? 'Luyện thi 9+' : `Lớp ${course.grade}`}
+                        <span className={`tku-roadmap-stage-grade-badge ${getGradeBadgeClass(course.grade)}`}>
+                          {getGradeBadgeLabel(course.grade)}
                         </span>
 
                         {isEnrolled ? (
                           <span className="tku-roadmap-stage-enrolled-badge">
                             <CheckCircle2 size={13} />
-                            <span>Đang theo học ({progressPct}%)</span>
+                            <span>{isStaff ? 'Khóa học của bạn' : `Đang theo học (${progressPct}%)`}</span>
+                          </span>
+                        ) : isStaff ? (
+                          <span className="tku-roadmap-stage-key-badge">
+                            <BookOpen size={12} />
+                            <span>Xem giáo trình</span>
                           </span>
                         ) : (
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--tku-hub-text-muted)', background: 'var(--tku-hub-surface-subtle)', border: '1px solid var(--tku-hub-border)', padding: '3px 10px', borderRadius: '999px' }}>
-                            Khóa học chuẩn hóa
+                          <span className="tku-roadmap-stage-key-badge">
+                            <KeyRound size={12} />
+                            <span>Yêu cầu mã Key</span>
                           </span>
                         )}
+
+                        <div className="tku-roadmap-stage-link-hint">
+                          <span>
+                            {isEnrolled
+                              ? 'Vào phòng học ngay'
+                              : isStaff
+                                ? 'Xem chi tiết khóa học'
+                                : 'Xem chi tiết & Kích hoạt'}
+                          </span>
+                          <ArrowRight size={15} />
+                        </div>
                       </div>
 
                       {/* Nội dung chính của chặng */}
                       <div className="tku-roadmap-stage-main">
                         <div className="tku-roadmap-stage-info">
-                          <h4 className="tku-roadmap-stage-title">{course.title}</h4>
+                          <h4 className="tku-roadmap-stage-title" title={course.title}>
+                            {course.title}
+                          </h4>
 
                           <p className="tku-roadmap-stage-desc">
                             {course.description ||
@@ -678,35 +748,38 @@ export const RoadmapPage: React.FC = () => {
 
                           <div className="tku-roadmap-stage-meta-row">
                             <span className="tku-roadmap-stage-meta-item">
-                              <Layers size={15} />
+                              <Layers size={14} />
                               <span>{course.chapterCount || chapters.length || 0} Chương chuyên đề</span>
                             </span>
 
                             <span className="tku-roadmap-stage-meta-item">
-                              <BookOpen size={15} />
-                              <span>{course.lessonCount || 0} Bài giảng video & Bài tập</span>
+                              <Video size={14} />
+                              <span>{course.lessonCount || 0} Bài giảng & Video</span>
                             </span>
 
                             <span className="tku-roadmap-stage-meta-item">
-                              <User size={15} />
-                              <span>{course.studentCount || 0} Học sinh đã tham gia</span>
+                              <Users size={14} />
+                              <span>{course.studentCount || 0} Học sinh tham gia</span>
                             </span>
                           </div>
 
                           {/* Cấu trúc Chương học thực tế từ Cơ sở dữ liệu */}
-                          {chapters.length > 0 && (
+                          {chapters.length > 0 ? (
                             <div className="tku-roadmap-chapters-wrap">
                               <div className="tku-roadmap-chapters-label">
                                 <Layers size={13} />
-                                <span>Cấu trúc chương học then chốt ({chapters.length} chương):</span>
+                                <span>Khung chương trình then chốt ({chapters.length} chương):</span>
                               </div>
 
                               <div className="tku-roadmap-chapters-grid">
                                 {chapters.map((ch, chIdx) => (
                                   <div key={ch.id} className="tku-roadmap-chapter-card">
-                                    <span className="tku-roadmap-chapter-name" title={ch.title}>
-                                      Chương {chIdx + 1}: {ch.title}
-                                    </span>
+                                    <div className="tku-roadmap-chapter-left">
+                                      <span className="tku-roadmap-chapter-num">0{chIdx + 1}</span>
+                                      <span className="tku-roadmap-chapter-name" title={ch.title}>
+                                        {ch.title}
+                                      </span>
+                                    </div>
                                     <span className="tku-roadmap-chapter-count">
                                       {ch.lessons?.length || 0} bài
                                     </span>
@@ -714,74 +787,24 @@ export const RoadmapPage: React.FC = () => {
                                 ))}
                               </div>
                             </div>
-                          )}
-                        </div>
-
-                        {/* Cột Phải: Giảng viên phụ trách & Nút điều hướng */}
-                        <div className="tku-roadmap-stage-side">
-                          <div className="tku-roadmap-stage-teacher">
-                            <div className="tku-roadmap-stage-teacher-avatar">
-                              {course.teacher?.avatarUrl ? (
-                                <img src={course.teacher.avatarUrl} alt={course.teacher.fullName} />
-                              ) : (
-                                <span>{getInitials(course.teacher?.fullName)}</span>
-                              )}
-                            </div>
-                            <div>
-                              <div className="tku-roadmap-stage-teacher-name">
-                                {course.teacher?.fullName || 'Giảng viên TKU'}
-                              </div>
-                              <div className="tku-roadmap-stage-teacher-role">
-                                Giảng viên Chuyên môn
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Tiến độ cá nhân nếu đã ghi danh */}
-                          {isEnrolled && (
-                            <div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: 'var(--tku-hub-text-muted)', marginBottom: '4px' }}>
-                                <span>Tiến độ của bạn</span>
-                                <span style={{ color: '#10b981', fontWeight: 700 }}>{progressPct}%</span>
-                              </div>
-                              <div style={{ height: '6px', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden' }}>
-                                <div style={{ height: '100%', width: `${progressPct}%`, background: '#10b981', borderRadius: '999px' }} />
-                              </div>
+                          ) : (
+                            <div className="tku-roadmap-chapters-empty">
+                              <Clock size={13} />
+                              <span>Chương trình học đang được đồng bộ bài giảng video và tài liệu mới</span>
                             </div>
                           )}
-
-                          {/* Action Buttons */}
-                          <div className="tku-roadmap-stage-actions">
-                            {isEnrolled ? (
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/courses/${course.id}/learn`)}
-                                className="tku-roadmap-stage-btn-primary"
-                              >
-                                <span>Vào phòng học ngay</span>
-                                <ExternalLink size={14} />
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => navigate(`/courses/${course.id}`)}
-                                className="tku-roadmap-stage-btn-primary"
-                              >
-                                <span>Xem chi tiết & Kích hoạt</span>
-                                <ExternalLink size={14} />
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              onClick={() => navigate(`/courses/${course.id}`)}
-                              className="tku-roadmap-stage-btn-secondary"
-                            >
-                              <span>Thông tin chi tiết khóa học</span>
-                            </button>
-                          </div>
                         </div>
                       </div>
+
+                      {/* Thanh tiến độ học tập nếu đã ghi danh */}
+                      {isEnrolled && (
+                        <div className="tku-roadmap-stage-progress-bar-wrap" title={`Đã hoàn thành ${progressPct}%`}>
+                          <div
+                            className="tku-roadmap-stage-progress-fill"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      )}
                     </article>
                   );
                 })}
@@ -819,16 +842,17 @@ export const RoadmapPage: React.FC = () => {
               <div className="tku-roadmap-advisor-icon">
                 <GraduationCap size={22} />
               </div>
-              <h3 className="tku-roadmap-advisor-title">Định hướng Học tập Hiệu quả theo Lộ trình TKU</h3>
+              <div className="tku-roadmap-advisor-head-info">
+                <h3 className="tku-roadmap-advisor-title">Định hướng Học tập Hiệu quả theo Lộ trình TKU</h3>
+                <p className="tku-roadmap-advisor-subtitle">
+                  Phương pháp học tập khoa học được đúc kết từ các thủ khoa và đội ngũ Giảng viên TKU E-Learning:
+                </p>
+              </div>
             </div>
-
-            <p className="tku-roadmap-advisor-subtitle">
-              Phương pháp học tập khoa học được đúc kết từ các thủ khoa và đội ngũ Giảng viên TKU E-Learning:
-            </p>
 
             <div className="tku-roadmap-advice-grid">
               <div className="tku-roadmap-advice-box">
-                <div className="tku-roadmap-advice-box__target">
+                <div className="tku-roadmap-advice-box__target tku-roadmap-advice-box__target--blue">
                   <CheckCircle2 size={16} />
                   <span>Học cuốn chiếu từng chuyên đề</span>
                 </div>
@@ -838,7 +862,7 @@ export const RoadmapPage: React.FC = () => {
               </div>
 
               <div className="tku-roadmap-advice-box">
-                <div className="tku-roadmap-advice-box__target">
+                <div className="tku-roadmap-advice-box__target tku-roadmap-advice-box__target--amber">
                   <Clock size={16} />
                   <span>Tự kiểm tra & Đo lường định kỳ</span>
                 </div>
@@ -848,7 +872,7 @@ export const RoadmapPage: React.FC = () => {
               </div>
 
               <div className="tku-roadmap-advice-box">
-                <div className="tku-roadmap-advice-box__target">
+                <div className="tku-roadmap-advice-box__target tku-roadmap-advice-box__target--emerald">
                   <Award size={16} />
                   <span>Hỏi đáp & Trao đổi 24/7</span>
                 </div>
@@ -856,32 +880,6 @@ export const RoadmapPage: React.FC = () => {
                   Chủ động đặt câu hỏi thắc mắc tại mục Hỏi đáp để được Giảng viên và trợ lý học tập giải đáp bản chất và phương pháp giải nhanh.
                 </p>
               </div>
-            </div>
-          </section>
-
-          {/* ================================================================
-              6. BOTTOM CALL TO ACTION
-              ================================================================ */}
-          <section className="tku-roadmap-bottom-cta">
-            <div className="tku-roadmap-bottom-cta__left">
-              <h4 className="tku-roadmap-bottom-cta__title">
-                Bạn đã sẵn sàng bước vào hành trình chinh phục điểm số môn Hóa?
-              </h4>
-              <p className="tku-roadmap-bottom-cta__desc">
-                Khám phá kho bài giảng chuyên đề hoặc tham gia diễn đàn hỏi đáp học tập cùng cộng đồng học sinh TKU.
-              </p>
-            </div>
-
-            <div className="tku-roadmap-bottom-cta__actions">
-              <Link to="/lessons" className="tku-roadmap-btn-primary">
-                <BookOpen size={16} />
-                <span>Xem kho bài giảng</span>
-              </Link>
-
-              <Link to="/qa" className="tku-roadmap-btn-secondary">
-                <Sparkles size={16} />
-                <span>Tham gia Hỏi đáp học tập</span>
-              </Link>
             </div>
           </section>
         </div>

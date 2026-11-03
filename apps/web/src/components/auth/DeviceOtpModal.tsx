@@ -202,7 +202,7 @@ export const DeviceOtpModal: React.FC<DeviceOtpModalProps> = ({
 
         {/* Description */}
         <p className="tku-modal-desc">
-          Phát hiện đăng nhập trên thiết bị chưa được tin cậy. Để bảo mật tài khoản, mã OTP gồm 6 chữ số đã được gửi tới:
+          Phát hiện tài khoản đang được đăng nhập trên một thiết bị khác. Để bảo mật tài khoản, mã OTP gồm 6 chữ số đã được gửi tới:
         </p>
 
         {/* Target Email Badge */}

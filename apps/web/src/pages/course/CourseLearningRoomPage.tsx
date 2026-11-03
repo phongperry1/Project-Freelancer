@@ -1577,8 +1577,8 @@ ${rawText}
       {/* 1. THANH ĐIỀU HƯỚNG CHÍNH CỦA HỆ THỐNG TKU (GIỮ NGUYÊN) */}
       <Navbar />
 
-      {/* 2. KHÔNG GIAN HỌC TẬP (CONTAINER CHUẨN ĐỒNG BỘ 1440PX) */}
-      <div className="tku-learning-container">
+      {/* 2. KHÔNG GIAN HỌC TẬP (CONTAINER CHUẨN ĐỒNG BỘ TOÀN HỆ THỐNG TKU) */}
+      <div className="tku-container tku-learning-container">
         {/* 3. MAIN CONTENT LAYOUT (VIDEO STAGE & CURRICULUM SIDEBAR) */}
         <div className="tku-learning-layout">
         {/* LEFT COLUMN: UNIFIED VIDEO PLAYER CARD & LESSON DETAILS */}

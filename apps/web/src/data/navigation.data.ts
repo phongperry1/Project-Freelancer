@@ -11,27 +11,31 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 
 export const FOOTER_COLUMNS: FooterColumn[] = [
   {
-    title: 'Về chúng tôi',
+    title: 'Khóa học Hóa học',
     links: [
-      { label: 'Giới thiệu', href: '#about' },
-      { label: 'Khóa học', href: '#courses' },
-      { label: 'Giảng viên', href: '#teachers' },
-      { label: 'Tin tức học tập', href: '#news' },
+      { label: 'Tất cả khóa học', href: '/courses' },
+      { label: 'Chương trình Lớp 10', href: '/courses/category/10' },
+      { label: 'Chương trình Lớp 11', href: '/courses/category/11' },
+      { label: 'Chương trình Lớp 12', href: '/courses/category/12' },
+      { label: 'Luyện thi THPT & ĐGNL', href: '/courses/category/exam' },
     ],
   },
   {
-    title: 'Hỗ trợ',
+    title: 'Không gian học tập',
     links: [
-      { label: 'Hướng dẫn học', href: '#guide' },
-      { label: 'Chính sách bảo mật', href: '#privacy' },
-      { label: 'Hướng dẫn thanh toán', href: '#payment-guide' },
-      { label: 'Câu hỏi thường gặp', href: '#faq' },
+      { label: 'Kho bài giảng video', href: '/lessons' },
+      { label: 'Lộ trình học tập chuẩn', href: '/roadmap' },
+      { label: 'Cộng đồng Hỏi đáp', href: '/qa' },
+      { label: 'Khóa học của tôi', href: '/my-courses' },
+    ],
+  },
+  {
+    title: 'Hỗ trợ & Trợ giúp',
+    links: [
+      { label: 'Trung tâm Hỗ trợ & FAQ', href: '/support' },
+      { label: 'Hướng dẫn kích hoạt mã Key', href: '/support' },
+      { label: 'Đăng nhập tài khoản', href: '/login' },
+      { label: 'Đăng ký học viên mới', href: '/register' },
     ],
   },
 ];
-
-export const CONTACT_INFO = {
-  email: 'contact@tku.edu.vn',
-  phone: '090 123 4567',
-  location: 'Việt Nam',
-};

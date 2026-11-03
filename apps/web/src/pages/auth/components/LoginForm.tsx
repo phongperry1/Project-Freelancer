@@ -1,10 +1,12 @@
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { DeviceOtpModal } from '../../../components/auth/DeviceOtpModal';
 import { GoogleDevModal } from '../../../components/auth/GoogleDevModal';
 import { useAuth } from '../../../context/useAuth';
 import { toast } from '../../../context/useToast';
 import { useGoogleAuth } from '../../../hooks/useGoogleAuth';
+import { getRoleRedirectTarget } from '../../../utils/authRedirect';
 import type { AuthResponse } from '../../../types/auth.types';
 
 const getRedirectTargetUrl = (userRole?: string): string => {
@@ -13,12 +15,7 @@ const getRedirectTargetUrl = (userRole?: string): string => {
       ? new URLSearchParams(window.location.search).get('redirect')
       : null;
 
-  if (redirectParam && redirectParam.startsWith('/')) {
-    return redirectParam;
-  }
-  if (userRole === 'ADMIN') return '/admin';
-  if (userRole === 'TEACHER') return '/lecturer/dashboard';
-  return '/';
+  return getRoleRedirectTarget(userRole, redirectParam);
 };
 
 export const LoginForm: React.FC = () => {
@@ -280,9 +277,19 @@ export const LoginForm: React.FC = () => {
       <div className="tku-auth-footer">
         <p className="tku-auth-switch">
           Chưa có tài khoản?{' '}
-          <a href="/register" className="tku-auth-switch-link">
+          <Link
+            to={
+              typeof window !== 'undefined' &&
+              new URLSearchParams(window.location.search).get('redirect')
+                ? `/register?redirect=${encodeURIComponent(
+                    new URLSearchParams(window.location.search).get('redirect')!,
+                  )}`
+                : '/register'
+            }
+            className="tku-auth-switch-link"
+          >
             Đăng ký ngay
-          </a>
+          </Link>
         </p>
         <p className="tku-auth-legal">
           Bằng việc đăng nhập, bạn đồng ý với{' '}

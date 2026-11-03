@@ -318,7 +318,7 @@ export const SecurityPage: React.FC = () => {
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
                 <button
                   type="button"
-                  onClick={() => navigate('/login')}
+                  onClick={() => navigate('/login?redirect=/security')}
                   className="tku-btn-academic-primary"
                 >
                   Đăng nhập ngay

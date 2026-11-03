@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { authService } from '../../../services/auth.service';
 import { toast } from '../../../context/useToast';
@@ -191,10 +192,19 @@ export const RegisterForm: React.FC = () => {
 
       toast.success('Xác thực email thành công! Đang chuyển hướng sang đăng nhập...');
 
+      const redirectParam =
+        typeof window !== 'undefined'
+          ? new URLSearchParams(window.location.search).get('redirect')
+          : null;
+      const redirectQuery =
+        redirectParam && redirectParam.startsWith('/')
+          ? `&redirect=${encodeURIComponent(redirectParam)}`
+          : '';
+
       timerRef.current = setTimeout(() => {
         window.location.href = `/login?registered=1&email=${encodeURIComponent(
           pendingEmail,
-        )}`;
+        )}${redirectQuery}`;
       }, 700);
     } catch (err: unknown) {
       setOtpDigits(['', '', '', '', '', '']);
@@ -329,9 +339,19 @@ export const RegisterForm: React.FC = () => {
         <div className="tku-auth-footer">
           <p className="tku-auth-switch">
             Đã có tài khoản?{' '}
-            <a href="/login" className="tku-auth-switch-link">
+            <Link
+              to={
+                typeof window !== 'undefined' &&
+                new URLSearchParams(window.location.search).get('redirect')
+                  ? `/login?redirect=${encodeURIComponent(
+                      new URLSearchParams(window.location.search).get('redirect')!,
+                    )}`
+                  : '/login'
+              }
+              className="tku-auth-switch-link"
+            >
               Đăng nhập ngay
-            </a>
+            </Link>
           </p>
         </div>
       </div>
@@ -492,9 +512,19 @@ export const RegisterForm: React.FC = () => {
       <div className="tku-auth-footer">
         <p className="tku-auth-switch">
           Đã có tài khoản?{' '}
-          <a href="/login" className="tku-auth-switch-link">
-            Đăng nhập ngay
-          </a>
+          <Link
+              to={
+                typeof window !== 'undefined' &&
+                new URLSearchParams(window.location.search).get('redirect')
+                  ? `/login?redirect=${encodeURIComponent(
+                      new URLSearchParams(window.location.search).get('redirect')!,
+                    )}`
+                  : '/login'
+              }
+              className="tku-auth-switch-link"
+            >
+              Đăng nhập ngay
+            </Link>
         </p>
 
         <p className="tku-auth-legal">
