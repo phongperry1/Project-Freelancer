@@ -17,10 +17,14 @@ import {
   LogIn,
   AlertCircle,
   RefreshCw,
+  GraduationCap,
+  Video,
+  RotateCcw,
 } from 'lucide-react';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
 import { EmptyState } from '../../components/common/EmptyState';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import { useAuth } from '../../context/useAuth';
 import {
   courseService,
@@ -34,6 +38,21 @@ import './lessonsPage.css';
 type StatusTab = 'all' | 'in_progress' | 'completed' | 'not_started';
 
 const PAGE_SIZE = 24;
+
+const GRADE_OPTIONS: CustomSelectOption[] = [
+  { value: 'all', label: 'Tất cả khối lớp' },
+  { value: '10', label: 'Hóa học Lớp 10' },
+  { value: '11', label: 'Hóa học Lớp 11' },
+  { value: '12', label: 'Hóa học Lớp 12' },
+  { value: 'exam', label: 'Luyện thi THPT' },
+  { value: 'other', label: 'Chuyên đề khác' },
+];
+
+const FORMAT_OPTIONS: CustomSelectOption[] = [
+  { value: 'all', label: 'Tất cả hình thức' },
+  { value: 'video', label: 'Video bài giảng' },
+  { value: 'doc', label: 'Lý thuyết chuyên đề' },
+];
 
 export const LessonsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -205,6 +224,29 @@ export const LessonsPage: React.FC = () => {
     }
     return Array.from(map.values());
   }, [enrolledCourses, lessons]);
+
+  const courseOptions = useMemo<CustomSelectOption[]>(
+    () => [
+      { value: 'all', label: 'Tất cả khóa học' },
+      ...availableCourses.map((c) => ({
+        value: c.id,
+        label: c.title,
+      })),
+    ],
+    [availableCourses]
+  );
+
+  const handleCourseChange = useCallback((val: string) => {
+    setSelectedCourseId(val);
+  }, []);
+
+  const handleGradeChange = useCallback((val: string) => {
+    setSelectedGrade(val);
+  }, []);
+
+  const handleFormatChange = useCallback((val: string) => {
+    setSelectedFormat(val as 'all' | 'video' | 'doc');
+  }, []);
 
   // Đếm số lượng theo tab trạng thái
   const tabCounts = useMemo(() => {
@@ -546,56 +588,45 @@ export const LessonsPage: React.FC = () => {
               <div className="tku-lessons-filters-group">
                 {/* Lọc theo Khóa học */}
                 {availableCourses.length > 0 && (
-                  <div className="tku-filter-select-wrap">
-                    <select
-                      value={selectedCourseId}
-                      onChange={(e) => setSelectedCourseId(e.target.value)}
-                      className="tku-filter-select"
-                      aria-label="Lọc theo khóa học"
-                    >
-                      <option value="all">Tất cả khóa học</option>
-                      {availableCourses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.title}
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown size={14} className="tku-filter-select-arrow" />
-                  </div>
+                  <CustomSelect
+                    value={selectedCourseId}
+                    onChange={handleCourseChange}
+                    options={courseOptions}
+                    icon={<BookOpen size={14} />}
+                    ariaLabel="Lọc theo khóa học"
+                  />
                 )}
 
                 {/* Lọc theo Khối lớp */}
-                <div className="tku-filter-select-wrap">
-                  <select
-                    value={selectedGrade}
-                    onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="tku-filter-select"
-                    aria-label="Lọc theo khối lớp"
-                  >
-                    <option value="all">Tất cả khối lớp</option>
-                    <option value="10">Hóa học Lớp 10</option>
-                    <option value="11">Hóa học Lớp 11</option>
-                    <option value="12">Hóa học Lớp 12</option>
-                    <option value="exam">Luyện thi THPT</option>
-                    <option value="other">Chuyên đề khác</option>
-                  </select>
-                  <ChevronDown size={14} className="tku-filter-select-arrow" />
-                </div>
+                <CustomSelect
+                  value={selectedGrade}
+                  onChange={handleGradeChange}
+                  options={GRADE_OPTIONS}
+                  icon={<GraduationCap size={14} />}
+                  ariaLabel="Lọc theo khối lớp"
+                />
 
                 {/* Lọc theo Định dạng bài giảng */}
-                <div className="tku-filter-select-wrap">
-                  <select
-                    value={selectedFormat}
-                    onChange={(e) => setSelectedFormat(e.target.value as 'all' | 'video' | 'doc')}
-                    className="tku-filter-select"
-                    aria-label="Lọc theo định dạng bài giảng"
+                <CustomSelect
+                  value={selectedFormat}
+                  onChange={handleFormatChange}
+                  options={FORMAT_OPTIONS}
+                  icon={<Video size={14} />}
+                  ariaLabel="Lọc theo định dạng bài giảng"
+                />
+
+                {/* Nút đặt lại bộ lọc nhanh khi có filter đang áp dụng */}
+                {(selectedCourseId !== 'all' || selectedGrade !== 'all' || selectedFormat !== 'all') && (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="tku-filter-reset-btn"
+                    title="Đặt lại toàn bộ bộ lọc"
                   >
-                    <option value="all">Tất cả hình thức</option>
-                    <option value="video">Video bài giảng</option>
-                    <option value="doc">Lý thuyết chuyên đề</option>
-                  </select>
-                  <ChevronDown size={14} className="tku-filter-select-arrow" />
-                </div>
+                    <RotateCcw size={13} />
+                    <span>Đặt lại</span>
+                  </button>
+                )}
               </div>
 
               {/* Nút chuyển đổi View: Grid vs List */}
@@ -694,8 +725,6 @@ export const LessonsPage: React.FC = () => {
                       ? 'Không có bài giảng nào khớp với các tiêu chí tìm kiếm hoặc bộ lọc hiện tại của bạn.'
                       : 'Hiện chưa có bài giảng nào sẵn sàng trong hệ thống.'
                   }
-                  actionText="Xóa tất cả bộ lọc"
-                  onAction={handleClearFilters}
                 />
               )}
             </>

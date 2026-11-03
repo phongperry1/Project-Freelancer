@@ -1,0 +1,228 @@
+/* ==========================================================================
+   CUSTOM SELECT DROPDOWN (MODERN, CLEAN & ELEGANT)
+   ========================================================================== */
+
+.tku-custom-select-wrap {
+  position: relative;
+  display: inline-block;
+  user-select: none;
+}
+
+/* Nút bấm kích hoạt dropdown */
+.tku-custom-select-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  height: 40px;
+  padding: 0 14px;
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1e293b;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+}
+
+.tku-custom-select-trigger:hover {
+  border-color: #94a3b8;
+  background-color: #ffffff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.tku-custom-select-trigger.is-open {
+  border-color: #2563eb;
+  background-color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Trạng thái khi có filter đang được chọn (khác 'all') */
+.tku-custom-select-trigger.is-filtered {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.tku-custom-select-trigger.is-filtered .tku-custom-select__icon {
+  color: #2563eb;
+}
+
+.tku-custom-select-trigger.is-filtered .tku-custom-select__arrow {
+  color: #2563eb;
+}
+
+.tku-custom-select-trigger__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-custom-select__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  flex-shrink: 0;
+  transition: color 0.15s ease;
+}
+
+.tku-custom-select__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.tku-custom-select__arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+}
+
+.tku-custom-select__arrow.is-rotated {
+  transform: rotate(180deg);
+  color: #2563eb;
+}
+
+/* Hộp danh sách thả xuống (Popover Menu) */
+.tku-custom-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  min-width: 100%;
+  width: max-content;
+  max-width: min(340px, calc(100vw - 32px));
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+  z-index: 100;
+  animation: tkuDropdownPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tku-custom-select-dropdown.is-align-left {
+  left: 0;
+  right: auto;
+}
+
+.tku-custom-select-dropdown.is-align-right {
+  right: 0;
+  left: auto;
+}
+
+@keyframes tkuDropdownPop {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tku-custom-select-options {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.tku-custom-select-options::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tku-custom-select-options::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+/* Từng dòng tùy chọn (Option Item) */
+.tku-custom-select-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8.5px 12px;
+  border-radius: 8px;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.tku-custom-select-option:hover,
+.tku-custom-select-option:focus {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.tku-custom-select-option.is-selected {
+  background-color: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.tku-custom-select-option__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tku-custom-select-option__icon {
+  display: flex;
+  align-items: center;
+  color: inherit;
+  opacity: 0.85;
+}
+
+.tku-custom-select-option__text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tku-custom-select-option__check {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
+/* Nút đặt lại bộ lọc nhanh */
+.tku-filter-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px dashed #cbd5e1;
+  background-color: #ffffff;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tku-filter-reset-btn:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+

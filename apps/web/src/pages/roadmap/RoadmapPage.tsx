@@ -14,7 +14,6 @@ import {
   Compass,
   AlertCircle,
   RefreshCw,
-  TrendingUp,
   ArrowRight,
   KeyRound,
   Video,
@@ -345,28 +344,6 @@ export const RoadmapPage: React.FC = () => {
     };
   }, [activeCourses]);
 
-  // Tính tiến độ thực tế của học sinh trong tab đang chọn (nếu có)
-  const userEnrolledInActiveTab = useMemo(() => {
-    if (!studentProgress || !studentProgress.enrolledCourses) return null;
-    const activeIds = new Set(activeCourses.map((c) => c.id));
-    const matching = studentProgress.enrolledCourses.filter((ec) => activeIds.has(ec.id));
-    if (matching.length === 0) return null;
-
-    const totalEnrollLessons = matching.reduce((sum, c) => sum + c.totalLessons, 0);
-    const completedEnrollLessons = matching.reduce((sum, c) => sum + c.completedLessons, 0);
-    const avgProgress =
-      totalEnrollLessons > 0
-        ? Math.round((completedEnrollLessons / totalEnrollLessons) * 100)
-        : 0;
-
-    return {
-      enrolledCount: matching.length,
-      totalEnrollLessons,
-      completedEnrollLessons,
-      avgProgress,
-    };
-  }, [studentProgress, activeCourses]);
-
   // Bản đồ tra cứu tiến độ O(1) cho từng khóa học
   const enrolledProgressMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -603,39 +580,6 @@ export const RoadmapPage: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Banner Tiến độ Học tập Thực tế (Nếu học sinh đã đăng ký các khóa trong lộ trình này) */}
-            {userEnrolledInActiveTab && (
-              <div className="tku-roadmap-progress-banner">
-                <div className="tku-roadmap-progress-left">
-                  <div className="tku-roadmap-progress-icon">
-                    <TrendingUp size={20} />
-                  </div>
-                  <div>
-                    <div className="tku-roadmap-progress-title">
-                      Tiến độ học tập của bạn trong lộ trình này
-                    </div>
-                    <div className="tku-roadmap-progress-desc">
-                      Đã hoàn thành {userEnrolledInActiveTab.completedEnrollLessons}/
-                      {userEnrolledInActiveTab.totalEnrollLessons} bài học (
-                      {userEnrolledInActiveTab.enrolledCount} khóa đang theo học)
-                    </div>
-                  </div>
-                </div>
-
-                <div className="tku-roadmap-progress-bar-wrap">
-                  <div className="tku-roadmap-progress-bar-bg">
-                    <div
-                      className="tku-roadmap-progress-bar-fill"
-                      style={{ width: `${userEnrolledInActiveTab.avgProgress}%` }}
-                    />
-                  </div>
-                  <span className="tku-roadmap-progress-bar-pct">
-                    {userEnrolledInActiveTab.avgProgress}%
-                  </span>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* ================================================================
@@ -696,31 +640,33 @@ export const RoadmapPage: React.FC = () => {
                     >
                       {/* Badge Chặng, Trạng thái & Link Hint khi Hover */}
                       <div className="tku-roadmap-stage-badge-wrap">
-                        <span className="tku-roadmap-stage-num-badge">
-                          <Compass size={12} />
-                          <span>Chặng 0{index + 1}</span>
-                        </span>
+                        <div className="tku-roadmap-stage-badges-left">
+                          <span className="tku-roadmap-stage-num-badge">
+                            <Compass size={12} />
+                            <span>Chặng 0{index + 1}</span>
+                          </span>
 
-                        <span className={`tku-roadmap-stage-grade-badge ${getGradeBadgeClass(course.grade)}`}>
-                          {getGradeBadgeLabel(course.grade)}
-                        </span>
+                          <span className={`tku-roadmap-stage-grade-badge ${getGradeBadgeClass(course.grade)}`}>
+                            {getGradeBadgeLabel(course.grade)}
+                          </span>
 
-                        {isEnrolled ? (
-                          <span className="tku-roadmap-stage-enrolled-badge">
-                            <CheckCircle2 size={13} />
-                            <span>{isStaff ? 'Khóa học của bạn' : `Đang theo học (${progressPct}%)`}</span>
-                          </span>
-                        ) : isStaff ? (
-                          <span className="tku-roadmap-stage-key-badge">
-                            <BookOpen size={12} />
-                            <span>Xem giáo trình</span>
-                          </span>
-                        ) : (
-                          <span className="tku-roadmap-stage-key-badge">
-                            <KeyRound size={12} />
-                            <span>Yêu cầu mã Key</span>
-                          </span>
-                        )}
+                          {isEnrolled ? (
+                            <span className="tku-roadmap-stage-enrolled-badge">
+                              <CheckCircle2 size={13} />
+                              <span>{isStaff ? 'Khóa học của bạn' : `Đang theo học (${progressPct}%)`}</span>
+                            </span>
+                          ) : isStaff ? (
+                            <span className="tku-roadmap-stage-key-badge">
+                              <BookOpen size={12} />
+                              <span>Xem giáo trình</span>
+                            </span>
+                          ) : (
+                            <span className="tku-roadmap-stage-key-badge">
+                              <KeyRound size={12} />
+                              <span>Yêu cầu mã Key</span>
+                            </span>
+                          )}
+                        </div>
 
                         <div className="tku-roadmap-stage-link-hint">
                           <span>
@@ -730,7 +676,7 @@ export const RoadmapPage: React.FC = () => {
                                 ? 'Xem chi tiết khóa học'
                                 : 'Xem chi tiết & Kích hoạt'}
                           </span>
-                          <ArrowRight size={15} />
+                          <ArrowRight size={14} />
                         </div>
                       </div>
 
@@ -747,18 +693,18 @@ export const RoadmapPage: React.FC = () => {
                           </p>
 
                           <div className="tku-roadmap-stage-meta-row">
-                            <span className="tku-roadmap-stage-meta-item">
-                              <Layers size={14} />
+                            <span className="tku-roadmap-stage-meta-item tku-roadmap-stage-meta-item--chapters">
+                              <Layers size={13} />
                               <span>{course.chapterCount || chapters.length || 0} Chương chuyên đề</span>
                             </span>
 
-                            <span className="tku-roadmap-stage-meta-item">
-                              <Video size={14} />
+                            <span className="tku-roadmap-stage-meta-item tku-roadmap-stage-meta-item--lessons">
+                              <Video size={13} />
                               <span>{course.lessonCount || 0} Bài giảng & Video</span>
                             </span>
 
-                            <span className="tku-roadmap-stage-meta-item">
-                              <Users size={14} />
+                            <span className="tku-roadmap-stage-meta-item tku-roadmap-stage-meta-item--students">
+                              <Users size={13} />
                               <span>{course.studentCount || 0} Học sinh tham gia</span>
                             </span>
                           </div>
@@ -775,12 +721,18 @@ export const RoadmapPage: React.FC = () => {
                                 {chapters.map((ch, chIdx) => (
                                   <div key={ch.id} className="tku-roadmap-chapter-card">
                                     <div className="tku-roadmap-chapter-left">
-                                      <span className="tku-roadmap-chapter-num">0{chIdx + 1}</span>
+                                      <span className="tku-roadmap-chapter-num">
+                                        {chIdx + 1 < 10 ? `0${chIdx + 1}` : chIdx + 1}
+                                      </span>
                                       <span className="tku-roadmap-chapter-name" title={ch.title}>
                                         {ch.title}
                                       </span>
                                     </div>
-                                    <span className="tku-roadmap-chapter-count">
+                                    <span
+                                      className={`tku-roadmap-chapter-count ${
+                                        (ch.lessons?.length || 0) > 0 ? 'has-lessons' : ''
+                                      }`}
+                                    >
                                       {ch.lessons?.length || 0} bài
                                     </span>
                                   </div>
@@ -799,10 +751,23 @@ export const RoadmapPage: React.FC = () => {
                       {/* Thanh tiến độ học tập nếu đã ghi danh */}
                       {isEnrolled && (
                         <div className="tku-roadmap-stage-progress-bar-wrap" title={`Đã hoàn thành ${progressPct}%`}>
-                          <div
-                            className="tku-roadmap-stage-progress-fill"
-                            style={{ width: `${progressPct}%` }}
-                          />
+                          <div className="tku-roadmap-stage-progress-meta">
+                            <span className="tku-roadmap-stage-progress-label">
+                              <CheckCircle2 size={13} />
+                              <span>Tiến độ hoàn thành chặng học</span>
+                            </span>
+                            <span className="tku-roadmap-stage-progress-val">
+                              {progressPct >= 100 ? '100% Hoàn thành' : `${progressPct}%`}
+                            </span>
+                          </div>
+                          <div className="tku-roadmap-stage-progress-track">
+                            <div
+                              className={`tku-roadmap-stage-progress-fill ${
+                                progressPct >= 100 ? 'is-complete' : 'is-active'
+                              }`}
+                              style={{ width: `${Math.min(100, Math.max(0, progressPct))}%` }}
+                            />
+                          </div>
                         </div>
                       )}
                     </article>
@@ -821,15 +786,6 @@ export const RoadmapPage: React.FC = () => {
                 <p className="tku-roadmap-empty-desc">
                   Hiện tại ban chuyên môn TKU đang hoàn thiện và cập nhật các khóa học mới cho lộ trình này. Bạn có thể xem các khóa học ở những khối lớp khác để bắt đầu học tập ngay!
                 </p>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('all')}
-                  className="tku-roadmap-btn-primary"
-                  style={{ margin: '0 auto' }}
-                >
-                  <BookOpen size={16} />
-                  <span>Xem tất cả khóa học khả dụng</span>
-                </button>
               </div>
             )}
           </div>

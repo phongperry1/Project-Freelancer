@@ -6,7 +6,6 @@ import {
   RefreshCw,
   X,
   ChevronRight,
-  ChevronDown,
   Home,
   CheckCircle2,
   BookOpen,
@@ -14,7 +13,9 @@ import {
   GraduationCap,
   Sparkles,
   Layers,
+  ArrowUpDown,
 } from 'lucide-react';
+import { CustomSelect } from '../../components/common/CustomSelect';
 import { Navbar } from '../../components/common/Navbar';
 import { Footer } from '../../components/common/Footer';
 import { EmptyState } from '../../components/common/EmptyState';
@@ -91,6 +92,13 @@ const CATEGORY_MAP: Record<string, CategoryConfig> = {
   },
 };
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Mới nhất' },
+  { value: 'students', label: 'Nhiều học viên nhất' },
+  { value: 'lessons', label: 'Nhiều bài học nhất' },
+  { value: 'title', label: 'Tên khóa học (A - Z)' },
+];
+
 interface CategoryCoursesPageProps {
   defaultCategory?: string;
 }
@@ -109,6 +117,10 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'newest' | 'students' | 'lessons' | 'title'>('newest');
+
+  const handleSortChange = useCallback((val: string) => {
+    setSortBy(val as 'newest' | 'students' | 'lessons' | 'title');
+  }, []);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(0);
 
   useEffect(() => {
@@ -350,21 +362,15 @@ export const CategoryCoursesPage: React.FC<CategoryCoursesPageProps> = ({ defaul
 
             {/* Bộ điều khiển bên phải: Dropdown Sắp xếp và Đếm số lượng */}
             <div className="tku-category-filter-toolbar__right">
-              <div className="tku-courses-select-wrap">
-                <select
-                  id="tku-cat-sort-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                  className="tku-courses-select"
-                  aria-label="Sắp xếp danh sách khóa học"
-                >
-                  <option value="newest">Mới nhất</option>
-                  <option value="students">Nhiều học viên nhất</option>
-                  <option value="lessons">Nhiều bài học nhất</option>
-                  <option value="title">Tên khóa học (A - Z)</option>
-                </select>
-                <ChevronDown size={14} className="tku-courses-select-icon" />
-              </div>
+              <CustomSelect
+                value={sortBy}
+                onChange={handleSortChange}
+                options={SORT_OPTIONS}
+                icon={<ArrowUpDown size={14} />}
+                ariaLabel="Sắp xếp danh sách khóa học"
+                defaultValue="newest"
+                align="right"
+              />
 
               <div className="tku-category-filter-toolbar__count">
                 <span>

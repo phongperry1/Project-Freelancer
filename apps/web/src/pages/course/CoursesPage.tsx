@@ -495,8 +495,6 @@ export const CoursesPage: React.FC = () => {
                   description={`Hiện tại hệ thống đang hoàn thiện các chuyên đề bài giảng cho ${
                     currentCategoryInfo?.title || 'khối lớp này'
                   }. Bạn có thể khám phá các khối lớp khác.`}
-                  actionText="Xem tất cả khóa học"
-                  onAction={() => setActiveTab('all')}
                 />
               )}
             </div>

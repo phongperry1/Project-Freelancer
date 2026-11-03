@@ -68,9 +68,213 @@ export const StudentLessonCard: React.FC<StudentLessonCardProps> = memo(
     const isCompleted = lesson.isCompleted;
     const inProgress = !isCompleted && lesson.progressPercent > 0;
 
+    // Tránh trùng lặp nếu tiêu đề đã có sẵn tiền tố "Bài 1: ..."
+    const hasExistingPrefix =
+      lesson.sortOrder > 0 &&
+      new RegExp(`^bài\\s*${lesson.sortOrder}\\s*[:.-]?\\s*`, 'i').test(lesson.title.trim());
+
+    const renderActionBtn = () => {
+      if (isEnrolled) {
+        if (isCompleted) {
+          return (
+            <button
+              type="button"
+              className="tku-lesson-btn tku-lesson-btn--review"
+              onClick={handleActionClick}
+              title="Ôn tập lại bài giảng này"
+            >
+              <RotateCcw size={14} />
+              <span>Ôn lại</span>
+            </button>
+          );
+        }
+        if (inProgress) {
+          return (
+            <button
+              type="button"
+              className="tku-lesson-btn tku-lesson-btn--continue"
+              onClick={handleActionClick}
+              title="Tiếp tục học bài giảng"
+            >
+              <Play size={14} fill="currentColor" />
+              <span>Tiếp tục học</span>
+            </button>
+          );
+        }
+        return (
+          <button
+            type="button"
+            className="tku-lesson-btn tku-lesson-btn--start"
+            onClick={handleActionClick}
+            title="Bắt đầu học bài giảng này"
+          >
+            <span>Vào học</span>
+            <ArrowRight size={14} />
+          </button>
+        );
+      }
+      return (
+        <button
+          type="button"
+          className="tku-lesson-btn tku-lesson-btn--locked"
+          onClick={handleActionClick}
+          title="Khám phá khóa học để tham gia bài giảng"
+        >
+          <span>Xem khóa học</span>
+          <ArrowRight size={14} />
+        </button>
+      );
+    };
+
+    // ----------------------------------------------------
+    // GIAO DIỆN DẠNG DANH SÁCH (LIST VIEW - NGANG, ĐỒNG BỘ, ĐẸP MẮT)
+    // ----------------------------------------------------
+    if (viewMode === 'list') {
+      return (
+        <article
+          className={`tku-student-lesson-card tku-student-lesson-card--list ${
+            isCompleted ? 'is-completed' : inProgress ? 'is-in-progress' : ''
+          }`}
+          onClick={handleCardClick}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleCardClick();
+            }
+          }}
+          aria-label={`Bài giảng: ${lesson.title}`}
+        >
+          {/* 1. Icon format bài giảng nổi bật */}
+          <div className="tku-lesson-list__icon-wrap">
+            <span
+              className={`tku-lesson-type-icon ${
+                lesson.hasVideo ? 'is-video' : 'is-doc'
+              }`}
+              title={lesson.hasVideo ? 'Video bài giảng trực quan' : 'Tài liệu lý thuyết chuyên sâu'}
+            >
+              {lesson.hasVideo ? <Play size={20} fill="currentColor" /> : <FileText size={20} />}
+            </span>
+          </div>
+
+          {/* 2. Cột thông tin bài giảng chính */}
+          <div className="tku-lesson-list__main">
+            <div className="tku-lesson-meta-row">
+              <span className="tku-lesson-meta-course" title={lesson.courseTitle}>
+                <BookOpen size={12} className="tku-meta-inline-icon" />
+                <span>{lesson.courseTitle}</span>
+              </span>
+              <span className="tku-lesson-meta-sep">•</span>
+              <span className="tku-lesson-meta-chapter" title={lesson.chapterTitle}>
+                Chương {lesson.chapterOrder}: {lesson.chapterTitle}
+              </span>
+            </div>
+
+            <h3 className="tku-lesson-list__title" title={lesson.title}>
+              {lesson.sortOrder > 0 && !hasExistingPrefix && (
+                <span className="tku-lesson-order-prefix">Bài {lesson.sortOrder}: </span>
+              )}
+              {lesson.title}
+            </h3>
+
+            <div className="tku-lesson-list__meta-bottom">
+              <span className={`tku-lesson-grade-pill ${gradeInfo.className}`}>
+                {gradeInfo.label}
+              </span>
+
+              <span className="tku-lesson-type-text">
+                {lesson.hasVideo ? 'Video bài giảng' : 'Lý thuyết chuyên đề'}
+              </span>
+
+              {/* Trạng thái tiến độ học tập */}
+              {isEnrolled ? (
+                isCompleted ? (
+                  <span className="tku-lesson-status-pill is-completed">
+                    <CheckCircle2 size={12} />
+                    <span>Đã học xong</span>
+                  </span>
+                ) : inProgress ? (
+                  <span className="tku-lesson-status-pill is-in-progress">
+                    <Clock size={12} />
+                    <span>{lesson.progressPercent}%</span>
+                  </span>
+                ) : (
+                  <span className="tku-lesson-status-pill is-not-started">
+                    Chưa học
+                  </span>
+                )
+              ) : (
+                <span className="tku-lesson-status-pill is-locked">
+                  <Lock size={11} />
+                  <span>Chưa ghi danh</span>
+                </span>
+              )}
+
+              <span className="tku-lesson-meta-sep">•</span>
+
+              {/* Thông tin giảng viên */}
+              <div className="tku-lesson-teacher-info">
+                {lesson.teacher.avatarUrl ? (
+                  <img
+                    src={lesson.teacher.avatarUrl}
+                    alt={lesson.teacher.fullName}
+                    className="tku-lesson-teacher-avatar"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling;
+                      if (fallback) fallback.removeAttribute('style');
+                    }}
+                  />
+                ) : null}
+                <div
+                  className="tku-lesson-teacher-avatar-fallback"
+                  style={{ display: lesson.teacher.avatarUrl ? 'none' : 'flex' }}
+                >
+                  {teacherInitials}
+                </div>
+                <span className="tku-lesson-teacher-name" title={lesson.teacher.fullName}>
+                  {lesson.teacher.fullName || 'Giảng viên TKU'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Cột bên phải: Thanh tiến độ học tập & Nút hành động CTA */}
+          <div className="tku-lesson-list__right">
+            {isEnrolled && (
+              <div className="tku-lesson-list__progress-wrap">
+                <div className="tku-lesson-progress-meta">
+                  <span className="tku-lesson-progress-label">Tiến độ bài học</span>
+                  <span className="tku-lesson-progress-value">
+                    {isCompleted ? '100% Hoàn thành' : `${lesson.progressPercent}%`}
+                  </span>
+                </div>
+                <div className="tku-lesson-progress-bar">
+                  <div
+                    className={`tku-lesson-progress-fill ${
+                      isCompleted ? 'is-complete' : 'is-active'
+                    }`}
+                    style={{ width: `${Math.min(100, Math.max(0, lesson.progressPercent))}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="tku-lesson-action-wrap">
+              {renderActionBtn()}
+            </div>
+          </div>
+        </article>
+      );
+    }
+
+    // ----------------------------------------------------
+    // GIAO DIỆN DẠNG LƯỚI (GRID VIEW)
+    // ----------------------------------------------------
     return (
       <article
-        className={`tku-student-lesson-card tku-student-lesson-card--${viewMode} ${
+        className={`tku-student-lesson-card tku-student-lesson-card--grid ${
           isCompleted ? 'is-completed' : inProgress ? 'is-in-progress' : ''
         }`}
         onClick={handleCardClick}
@@ -145,7 +349,7 @@ export const StudentLessonCard: React.FC<StudentLessonCardProps> = memo(
           </div>
 
           <h3 className="tku-student-lesson-card__title" title={lesson.title}>
-            {lesson.sortOrder > 0 && (
+            {lesson.sortOrder > 0 && !hasExistingPrefix && (
               <span className="tku-lesson-order-prefix">Bài {lesson.sortOrder}: </span>
             )}
             {lesson.title}
@@ -200,49 +404,7 @@ export const StudentLessonCard: React.FC<StudentLessonCardProps> = memo(
 
           {/* Nút hành động CTA */}
           <div className="tku-lesson-action-wrap">
-            {isEnrolled ? (
-              isCompleted ? (
-                <button
-                  type="button"
-                  className="tku-lesson-btn tku-lesson-btn--review"
-                  onClick={handleActionClick}
-                  title="Ôn tập lại bài giảng này"
-                >
-                  <RotateCcw size={14} />
-                  <span>Ôn lại</span>
-                </button>
-              ) : inProgress ? (
-                <button
-                  type="button"
-                  className="tku-lesson-btn tku-lesson-btn--continue"
-                  onClick={handleActionClick}
-                  title="Tiếp tục học bài giảng"
-                >
-                  <Play size={14} fill="currentColor" />
-                  <span>Tiếp tục học</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="tku-lesson-btn tku-lesson-btn--start"
-                  onClick={handleActionClick}
-                  title="Bắt đầu học bài giảng này"
-                >
-                  <span>Vào học</span>
-                  <ArrowRight size={14} />
-                </button>
-              )
-            ) : (
-              <button
-                type="button"
-                className="tku-lesson-btn tku-lesson-btn--locked"
-                onClick={handleActionClick}
-                title="Khám phá khóa học để tham gia bài giảng"
-              >
-                <span>Xem khóa học</span>
-                <ArrowRight size={14} />
-              </button>
-            )}
+            {renderActionBtn()}
           </div>
         </div>
       </article>
