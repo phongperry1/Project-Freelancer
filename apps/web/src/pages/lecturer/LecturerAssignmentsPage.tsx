@@ -5,7 +5,6 @@ import {
   Plus,
   Search,
   X,
-  RotateCcw,
   BookOpen,
   Users,
   Clock,
@@ -14,7 +13,9 @@ import {
   FileQuestion,
   Send,
   Sparkles,
-  ChevronDown,
+  Filter,
+  AlertTriangle,
+  AlertCircle,
   Pencil,
   Loader2,
   Layers,
@@ -28,7 +29,22 @@ import {
   type AssignmentItem,
 } from '../../services/lecturer.service';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './lecturerAssignments.css';
+
+const TYPE_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả loại bài' },
+  { value: 'QUIZ', label: 'Bài tập ngắn (Quiz)' },
+  { value: 'TEST', label: 'Kiểm tra định kỳ (1 tiết)' },
+  { value: 'EXAM', label: 'Đề thi học kỳ' },
+];
+
+const STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'ASSIGNED', label: 'Đang mở / Đã giao' },
+  { value: 'DRAFT', label: 'Bản nháp' },
+  { value: 'CLOSED', label: 'Đã đóng' },
+];
 
 export const LecturerAssignmentsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -44,8 +60,36 @@ export const LecturerAssignmentsPage: React.FC = () => {
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('ALL');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState('ALL');
 
+  const courseOptions = useMemo<CustomSelectOption[]>(
+    () => [
+      { value: 'ALL', label: 'Tất cả khóa học' },
+      ...courses.map((c) => ({
+        value: c.id,
+        label: c.title,
+      })),
+    ],
+    [courses]
+  );
+
+  const handleCourseFilterChange = useCallback((val: string) => {
+    setSelectedCourseFilter(val);
+  }, []);
+
+  const handleTypeFilterChange = useCallback((val: string) => {
+    setSelectedTypeFilter(val);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((val: string) => {
+    setSelectedStatusFilter(val);
+  }, []);
+
   // Delete Confirmation Modal State
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+
+  const targetAssignment = useMemo(
+    () => assignments.find((a) => a.id === deleteTargetId),
+    [assignments, deleteTargetId]
+  );
 
   // Notify Students Loading State
   const [isNotifyingId, setIsNotifyingId] = useState<string | null>(null);
@@ -170,13 +214,6 @@ export const LecturerAssignmentsPage: React.FC = () => {
     }
   }, [deleteTargetId, loadData]);
 
-  const resetFilters = useCallback(() => {
-    setSearchTerm('');
-    setSelectedCourseFilter('ALL');
-    setSelectedTypeFilter('ALL');
-    setSelectedStatusFilter('ALL');
-  }, []);
-
   return (
     <div className="tku-assignments-page">
       {/* 1. Academic Header Banner */}
@@ -272,49 +309,35 @@ export const LecturerAssignmentsPage: React.FC = () => {
           )}
         </div>
 
-        <div className="tku-assignments-select-wrap">
-          <select
-            className="tku-assignments-select"
-            value={selectedCourseFilter}
-            onChange={(e) => setSelectedCourseFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả khóa học</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={14} className="tku-assignments-select-icon" />
-        </div>
+        <CustomSelect
+          value={selectedCourseFilter}
+          onChange={handleCourseFilterChange}
+          options={courseOptions}
+          icon={<BookOpen size={14} />}
+          ariaLabel="Lọc theo khóa học"
+          defaultValue="ALL"
+          className="tku-assignments-custom-select"
+        />
 
-        <div className="tku-assignments-select-wrap">
-          <select
-            className="tku-assignments-select"
-            value={selectedTypeFilter}
-            onChange={(e) => setSelectedTypeFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả loại bài</option>
-            <option value="QUIZ">Bài tập ngắn (Quiz)</option>
-            <option value="TEST">Kiểm tra định kỳ (1 tiết)</option>
-            <option value="EXAM">Đề thi học kỳ</option>
-          </select>
-          <ChevronDown size={14} className="tku-assignments-select-icon" />
-        </div>
+        <CustomSelect
+          value={selectedTypeFilter}
+          onChange={handleTypeFilterChange}
+          options={TYPE_OPTIONS}
+          icon={<FilePenLine size={14} />}
+          ariaLabel="Lọc theo loại bài tập"
+          defaultValue="ALL"
+          className="tku-assignments-custom-select"
+        />
 
-        <div className="tku-assignments-select-wrap">
-          <select
-            className="tku-assignments-select"
-            value={selectedStatusFilter}
-            onChange={(e) => setSelectedStatusFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ASSIGNED">Đang mở / Đã giao</option>
-            <option value="DRAFT">Bản nháp</option>
-            <option value="CLOSED">Đã đóng</option>
-          </select>
-          <ChevronDown size={14} className="tku-assignments-select-icon" />
-        </div>
+        <CustomSelect
+          value={selectedStatusFilter}
+          onChange={handleStatusFilterChange}
+          options={STATUS_OPTIONS}
+          icon={<Filter size={14} />}
+          ariaLabel="Lọc theo trạng thái"
+          defaultValue="ALL"
+          className="tku-assignments-custom-select"
+        />
       </section>
 
       {/* 4. Assignments Content: Loading State OR Empty State OR Rich Table */}
@@ -344,16 +367,8 @@ export const LecturerAssignmentsPage: React.FC = () => {
             Không tìm thấy bài tập phù hợp
           </h2>
           <p className="tku-assignments-empty-desc">
-            Không có kết quả nào khớp với bộ lọc tìm kiếm hiện tại. Hãy thử tìm từ khóa khác hoặc bấm đặt lại bộ lọc.
+            Không có kết quả nào khớp với bộ lọc tìm kiếm hiện tại. Hãy thử thay đổi từ khóa hoặc bộ lọc của bạn.
           </p>
-          <button
-            type="button"
-            className="tku-assignments-reset-btn"
-            onClick={resetFilters}
-          >
-            <RotateCcw size={14} />
-            <span>Đặt lại bộ lọc</span>
-          </button>
         </section>
       ) : (
         <section className="tku-assignments-table-card">
@@ -414,46 +429,30 @@ export const LecturerAssignmentsPage: React.FC = () => {
                           </span>
                         </div>
 
-                        {/* Tiến độ học sinh nộp bài */}
-                        {asg.assignedStudentsCount > 0 ? (
+                        {/* Số lần nộp bài của học sinh */}
+                        {asg.assignedStudentsCount > 0 || (asg.submittedCount || 0) > 0 ? (
                           <div
-                            className="tku-asg-submit-meter"
+                            className="tku-asg-submission-tag"
                             onClick={() =>
                               navigate(`/lecturer/results?assessmentId=${asg.id}`)
                             }
-                            title="Bấm để xem chi tiết thống kê kết quả & danh sách bài làm"
-                            style={{ cursor: 'pointer' }}
+                            title={
+                              asg.assignedStudentsCount > 0
+                                ? `Số lần nộp: ${asg.submittedCount || 0} (${asg.assignedStudentsCount} học sinh). Bấm để xem kết quả chi tiết`
+                                : `Số lần nộp: ${asg.submittedCount || 0}. Bấm để xem kết quả chi tiết`
+                            }
+                            role="button"
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                navigate(`/lecturer/results?assessmentId=${asg.id}`);
+                              }
+                            }}
                           >
-                            <div className="tku-asg-submit-meter-info">
-                              <span className="tku-asg-submit-meter-text">
-                                <Users size={12} className="tku-asg-submit-meter-icon" />
-                                <span>
-                                  <strong>{asg.submittedCount}</strong>/{asg.assignedStudentsCount} đã nộp
-                                </span>
-                              </span>
-                              <span className="tku-asg-submit-meter-percent">
-                                {Math.round(
-                                  (asg.submittedCount / asg.assignedStudentsCount) * 100
-                                )}%
-                              </span>
-                            </div>
-                            <div className="tku-asg-meter-bar">
-                              <div
-                                className={`tku-asg-meter-bar-fill ${
-                                  asg.submittedCount === asg.assignedStudentsCount
-                                    ? 'tku-asg-meter-bar-fill--full'
-                                    : ''
-                                }`}
-                                style={{
-                                  width: `${Math.min(
-                                    100,
-                                    Math.round(
-                                      (asg.submittedCount / asg.assignedStudentsCount) * 100
-                                    )
-                                  )}%`,
-                                }}
-                              />
-                            </div>
+                            <Users size={12} className="tku-asg-submission-tag-icon" />
+                            <span>
+                              Lần nộp: <strong>{asg.submittedCount || 0}</strong>
+                            </span>
                           </div>
                         ) : (
                           <div className="tku-asg-unassigned-tag">
@@ -588,39 +587,88 @@ export const LecturerAssignmentsPage: React.FC = () => {
       )}
 
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal (Enhanced Academic UI) */}
       {deleteTargetId && (
-        <div className="tku-modal-backdrop" onClick={() => setDeleteTargetId(null)}>
-          <div className="tku-modal-card tku-modal-card--danger" onClick={(e) => e.stopPropagation()}>
-            <div className="tku-modal-header">
-              <h3 className="tku-modal-title">Xác nhận xóa bài tập</h3>
+        <div
+          className="tku-modal-backdrop"
+          onClick={() => setDeleteTargetId(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tku-delete-modal-title"
+        >
+          <div
+            className="tku-modal-card tku-modal-card--danger"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="tku-delete-modal-header">
+              <div className="tku-delete-modal-icon-wrap">
+                <AlertTriangle size={22} />
+              </div>
+              <div className="tku-delete-modal-heading">
+                <h3 id="tku-delete-modal-title" className="tku-delete-modal-title">
+                  Xác nhận xóa bài tập
+                </h3>
+                <p className="tku-delete-modal-subtitle">
+                  Thao tác này sẽ gỡ bỏ dữ liệu vĩnh viễn khỏi khóa học.
+                </p>
+              </div>
               <button
                 type="button"
                 className="tku-modal-close"
                 onClick={() => setDeleteTargetId(null)}
+                aria-label="Đóng hộp thoại"
               >
                 <X size={18} />
               </button>
             </div>
-            <div className="tku-modal-body">
-              <p>
-                Bạn có chắc chắn muốn xóa bài tập này không? Hành động này không thể hoàn tác.
-              </p>
+
+            <div className="tku-modal-body tku-delete-modal-body">
+              {targetAssignment && (
+                <div className="tku-delete-item-preview">
+                  <div className="tku-delete-item-preview__badge">
+                    <BookOpen size={12} />
+                    <span>{targetAssignment.courseTitle || 'Khóa học'}</span>
+                  </div>
+                  <h4 className="tku-delete-item-preview__title" title={targetAssignment.title}>
+                    {targetAssignment.title}
+                  </h4>
+                  <div className="tku-delete-item-preview__meta">
+                    <span>{targetAssignment.questionCount || 0} câu hỏi</span>
+                    <span className="tku-delete-item-sep">•</span>
+                    <span>Lần nộp: <strong>{targetAssignment.submittedCount || 0}</strong></span>
+                    {targetAssignment.statusText && (
+                      <>
+                        <span className="tku-delete-item-sep">•</span>
+                        <span className="tku-delete-item-status">{targetAssignment.statusText}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="tku-delete-warning-callout">
+                <AlertCircle size={16} className="tku-delete-warning-icon" />
+                <p className="tku-delete-warning-text">
+                  <strong>Cảnh báo học vụ:</strong> Sau khi xóa, học sinh sẽ không còn thấy bài tập này và toàn bộ kết quả bài nộp, điểm số, lịch sử làm bài sẽ không thể khôi phục.
+                </p>
+              </div>
             </div>
+
             <div className="tku-modal-footer">
               <button
                 type="button"
                 className="tku-btn-cancel-modal"
                 onClick={() => setDeleteTargetId(null)}
               >
-                Hủy
+                Hủy bỏ
               </button>
               <button
                 type="button"
                 className="tku-btn-danger-modal"
                 onClick={handleConfirmDelete}
               >
-                Xóa vĩnh viễn
+                <Trash2 size={14} />
+                <span>Xóa vĩnh viễn</span>
               </button>
             </div>
           </div>

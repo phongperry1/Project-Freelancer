@@ -1,0 +1,281 @@
+/* ==========================================================================
+   LECTURER SETTINGS & PROFILE PAGE STYLES
+   Đồng bộ 100% với Hệ sinh thái học tập TKU E-Learning & Lecturer Layout
+   ========================================================================== */
+
+@import '../profile/profile.css';
+
+/* 1. Page Main Container */
+.tku-lecturer-settings-page {
+  padding: 28px 36px 48px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  max-width: 1600px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  animation: tkuFadeIn 0.2s ease-out;
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', Roboto, sans-serif;
+}
+
+@keyframes tkuFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. Academic Banner (Đồng bộ sắc thái xanh hoàng gia với các trang Giảng viên khác) */
+.tku-lecturer-settings-banner {
+  background: linear-gradient(135deg, #1d68f2 0%, #1558d6 100%);
+  border-radius: 16px;
+  padding: 28px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #ffffff;
+  box-shadow: 0 8px 24px rgba(29, 104, 242, 0.16);
+  position: relative;
+  overflow: hidden;
+  gap: 24px;
+}
+
+.tku-lecturer-settings-banner::after {
+  content: '';
+  position: absolute;
+  top: -60px;
+  right: -40px;
+  width: 240px;
+  height: 240px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.18) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.tku-lecturer-settings-banner__content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 820px;
+  position: relative;
+  z-index: 1;
+}
+
+.tku-lecturer-settings-banner__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  width: fit-content;
+  backdrop-filter: blur(4px);
+}
+
+.tku-lecturer-settings-banner__title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.tku-lecturer-settings-banner__desc {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* 3. Main 2-Column Grid inside Lecturer Content */
+.tku-lecturer-settings-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 28px;
+  align-items: flex-start;
+}
+
+@media (max-width: 1024px) {
+  .tku-lecturer-settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 4. Sidebar Nav Items refinement */
+.tku-profile-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tku-profile-nav-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 10px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tku-profile-nav-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: #475569;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+  position: relative;
+  font-family: inherit;
+}
+
+.tku-profile-nav-item:hover {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.tku-profile-nav-item.is-active {
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.tku-profile-nav-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f1f5f9;
+  color: #64748b;
+  transition: all 0.18s ease;
+  flex-shrink: 0;
+}
+
+.tku-profile-nav-item.is-active .tku-profile-nav-icon-wrap {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
+}
+
+.tku-profile-nav-chevron {
+  margin-left: auto;
+  color: #94a3b8;
+  transition: transform 0.15s ease;
+}
+
+.tku-profile-nav-item.is-active .tku-profile-nav-chevron {
+  color: #2563eb;
+  transform: translateX(2px);
+}
+
+/* Actions footer hint */
+.tku-profile-actions-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-right: auto;
+}
+
+/* ==========================================================================
+   5. Identity Card Refinement (Họ tên, Huy hiệu xác thực, Email)
+   ========================================================================== */
+.tku-profile-identity-body {
+  padding: 0 24px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.tku-profile-user-name-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+  width: 100%;
+}
+
+.tku-profile-user-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+  margin: 0;
+  text-align: center;
+  display: inline;
+  word-break: break-word;
+  text-wrap: balance;
+}
+
+.tku-verified-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 6px;
+}
+
+.tku-verified-badge {
+  color: #2563eb;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -2px;
+}
+
+.tku-profile-user-email {
+  font-size: 12.5px;
+  color: #64748b;
+  margin: 0 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: #f8fafc;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  max-width: 100%;
+  box-sizing: border-box;
+  font-weight: 500;
+  word-break: break-all;
+  transition: all 0.15s ease;
+}
+
+.tku-profile-user-email:hover {
+  background: #f1f5f9;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.tku-profile-user-email-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.tku-profile-badges-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}

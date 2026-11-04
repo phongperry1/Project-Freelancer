@@ -93,6 +93,7 @@ const CustomSelectComponent: React.FC<CustomSelectProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={ariaLabel || selectedOption?.label || placeholder}
+        title={selectedOption ? selectedOption.label : placeholder}
         className={`tku-custom-select-trigger ${isOpen ? 'is-open' : ''} ${
           isFiltered ? 'is-filtered' : ''
         }`}

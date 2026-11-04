@@ -62,8 +62,9 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+  text-align: left;
 }
 
 .tku-custom-select__icon {
@@ -76,9 +77,12 @@
 }
 
 .tku-custom-select__label {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 220px;
 }
 
 .tku-custom-select__arrow {
@@ -98,7 +102,7 @@
   top: calc(100% + 6px);
   min-width: 100%;
   width: max-content;
-  max-width: min(340px, calc(100vw - 32px));
+  max-width: min(720px, calc(100vw - 32px));
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -181,9 +185,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .tku-custom-select-option__icon {
@@ -194,8 +197,11 @@
 }
 
 .tku-custom-select-option__text {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .tku-custom-select-option__check {

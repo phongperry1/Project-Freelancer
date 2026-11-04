@@ -11,7 +11,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  ChevronDown,
+  Filter,
+  ArrowUpDown,
   Loader2,
   GraduationCap,
   MessageSquare,
@@ -28,6 +29,7 @@ import {
   type MonitoredStudentsResponse,
 } from '../../services/lecturer.service';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './lecturerStudents.css';
 
 interface StudentAvatarProps {
@@ -76,6 +78,23 @@ const StudentAvatar: React.FC<StudentAvatarProps> = React.memo(
 );
 StudentAvatar.displayName = 'StudentAvatar';
 
+const STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả tình trạng học tập' },
+  { value: 'ON_TRACK', label: 'Đang học' },
+  { value: 'NEEDS_ATTENTION', label: 'Cần nhắc nhở' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+  { value: 'NOT_STARTED', label: 'Chưa bắt đầu' },
+];
+
+const SORT_OPTIONS: CustomSelectOption[] = [
+  { value: 'ENROLLED_DESC', label: 'Mới tham gia nhất' },
+  { value: 'NAME_ASC', label: 'Tên học sinh (A → Z)' },
+  { value: 'PROGRESS_DESC', label: 'Tiến độ cao nhất' },
+  { value: 'PROGRESS_ASC', label: 'Tiến độ thấp nhất' },
+  { value: 'SCORE_DESC', label: 'Điểm trung bình cao nhất' },
+];
+
+
 export const LecturerStudentsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -85,6 +104,20 @@ export const LecturerStudentsPage: React.FC = () => {
 
   // Data states
   const [courses, setCourses] = useState<LecturerCourseItem[]>([]);
+  // Options for course selection dropdown
+  const courseOptions = useMemo<CustomSelectOption[]>(() => {
+    const list: CustomSelectOption[] = [
+      { value: 'ALL', label: 'Tất cả các khóa học' },
+    ];
+    courses.forEach((c) => {
+      list.push({
+        value: c.id,
+        label: `${c.title} (${c.studentCount} học sinh)`,
+      });
+    });
+    return list;
+  }, [courses]);
+
   const [students, setStudents] = useState<MonitoredStudentItem[]>([]);
   const [summary, setSummary] = useState<MonitoredStudentsSummary>({
     totalStudents: 0,
@@ -418,21 +451,15 @@ export const LecturerStudentsPage: React.FC = () => {
               <BookOpen size={13} />
               <span>Khóa học phụ trách</span>
             </label>
-            <div className="tku-students-select-control">
-              <select
-                className="tku-students-select"
-                value={selectedCourseId}
-                onChange={(e) => handleCourseChange(e.target.value)}
-              >
-                <option value="ALL">Tất cả các khóa học</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title} ({c.studentCount} học sinh)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="tku-students-select-icon" />
-            </div>
+            <CustomSelect
+              value={selectedCourseId}
+              onChange={handleCourseChange}
+              options={courseOptions}
+              icon={<BookOpen size={14} />}
+              ariaLabel="Chọn khóa học phụ trách"
+              defaultValue="ALL"
+              className="tku-students-custom-select tku-students-custom-select--course"
+            />
           </div>
         </div>
 
@@ -459,35 +486,25 @@ export const LecturerStudentsPage: React.FC = () => {
             )}
           </div>
 
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              className="tku-students-filter-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả tình trạng học tập</option>
-              <option value="ON_TRACK">Đang học</option>
-              <option value="NEEDS_ATTENTION">Cần nhắc nhở</option>
-              <option value="COMPLETED">Đã hoàn thành</option>
-              <option value="NOT_STARTED">Chưa bắt đầu</option>
-            </select>
-            <ChevronDown size={14} className="tku-students-select-icon" />
-          </div>
+          <CustomSelect
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={STATUS_OPTIONS}
+            icon={<Filter size={14} />}
+            ariaLabel="Lọc theo tình trạng học tập"
+            defaultValue="ALL"
+            className="tku-students-custom-select"
+          />
 
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <select
-              className="tku-students-filter-select"
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="ENROLLED_DESC">Mới tham gia nhất</option>
-              <option value="NAME_ASC">Tên học sinh (A → Z)</option>
-              <option value="PROGRESS_DESC">Tiến độ cao nhất</option>
-              <option value="PROGRESS_ASC">Tiến độ thấp nhất</option>
-              <option value="SCORE_DESC">Điểm trung bình cao nhất</option>
-            </select>
-            <ChevronDown size={14} className="tku-students-select-icon" />
-          </div>
+          <CustomSelect
+            value={sortBy}
+            onChange={setSortBy}
+            options={SORT_OPTIONS}
+            icon={<ArrowUpDown size={14} />}
+            ariaLabel="Sắp xếp danh sách học sinh"
+            defaultValue="ENROLLED_DESC"
+            className="tku-students-custom-select"
+          />
         </div>
       </section>
 

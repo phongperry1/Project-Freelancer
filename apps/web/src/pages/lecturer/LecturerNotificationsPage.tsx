@@ -469,16 +469,7 @@ export const LecturerNotificationsPage: React.FC = () => {
                 ? 'Bạn có thể chọn xem tất cả để kiểm tra các thông báo khác.'
                 : 'Khi học sinh nộp bài kiểm tra hoặc đặt câu hỏi thảo luận, thông báo sẽ được lưu và hiển thị tại đây.'}
             </p>
-            {filterType !== 'ALL' && (
-              <button
-                type="button"
-                className="tku-btn-primary"
-                style={{ marginTop: '12px' }}
-                onClick={() => setFilterType('ALL')}
-              >
-                Xem tất cả thông báo
-              </button>
-            )}
+            
           </div>
         ) : (
           <div className="tku-notif-feed">

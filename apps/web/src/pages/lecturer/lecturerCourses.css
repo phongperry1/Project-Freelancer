@@ -203,6 +203,17 @@
   background-color: #f1f5f9;
 }
 
+
+.tku-lecturer-courses-custom-select {
+  position: relative;
+}
+
+.tku-lecturer-courses-custom-select .tku-custom-select-trigger {
+  height: 42px;
+  min-width: 175px;
+  border-radius: 10px;
+}
+
 .tku-lecturer-courses-select-wrap {
   position: relative;
   min-width: 180px;
@@ -240,27 +251,6 @@
   pointer-events: none;
 }
 
-.tku-lecturer-courses-reset-btn {
-  height: 42px;
-  padding: 0 16px;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.tku-lecturer-courses-reset-btn:hover {
-  background-color: #f8fafc;
-  color: #0f172a;
-  border-color: #cbd5e1;
-}
 
 /* 4. Table View */
 .tku-lecturer-courses-table-card {
@@ -408,7 +398,12 @@
     align-items: stretch;
   }
   .tku-lecturer-courses-search-wrap,
-  .tku-lecturer-courses-select-wrap {
+  .tku-lecturer-courses-select-wrap,
+  .tku-lecturer-courses-custom-select {
     min-width: 100%;
+    width: 100%;
+  }
+  .tku-lecturer-courses-custom-select .tku-custom-select-trigger {
+    width: 100%;
   }
 }

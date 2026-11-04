@@ -299,50 +299,57 @@
   background-color: #f1f5f9;
 }
 
-.tku-discussions-select-wrap {
+/* Custom Selects Integration for Discussions Page */
+.tku-discussions-custom-select {
   position: relative;
-  min-width: 180px;
+  min-width: 210px;
 }
 
-.tku-discussions-select {
+.tku-discussions-custom-select .tku-custom-select-trigger {
   width: 100%;
   height: 42px;
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
-  padding: 0 34px 0 14px;
   font-size: 13.5px;
   font-weight: 500;
   color: #334155;
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont,
-    'Segoe UI', Roboto, sans-serif;
-  outline: none;
-  cursor: pointer;
-  appearance: none;
   transition: all 0.2s ease;
-  box-sizing: border-box;
+  box-shadow: none;
 }
 
-.tku-discussions-select:focus {
+.tku-discussions-custom-select .tku-custom-select-trigger:hover {
+  background-color: #ffffff;
+  border-color: #94a3b8;
+}
+
+.tku-discussions-custom-select .tku-custom-select-trigger.is-open {
   border-color: #1d68f2;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
 }
 
-.tku-discussions-select option {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-  font-size: 13.5px;
-  color: #0f172a;
-  background-color: #ffffff;
+.tku-discussions-custom-select .tku-custom-select-trigger.is-filtered {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 600;
 }
 
-.tku-discussions-select-icon {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-  pointer-events: none;
+.tku-discussions-custom-select .tku-custom-select__label {
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
 }
+
+.tku-discussions-custom-select .tku-custom-select-dropdown {
+  min-width: 100%;
+  max-width: min(520px, calc(100vw - 32px));
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
+}
+
 
 .tku-discussions-reset-btn {
   height: 42px;
@@ -1140,7 +1147,7 @@
   }
 
   .tku-discussions-search-wrap,
-  .tku-discussions-select-wrap {
+  .tku-discussions-custom-select {
     min-width: 100%;
   }
 

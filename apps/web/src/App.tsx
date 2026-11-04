@@ -55,6 +55,7 @@ const LecturerStudentsPage = lazy(() => import('./pages/lecturer/LecturerStudent
 const LecturerStudentProgressPage = lazy(() => import('./pages/lecturer/LecturerStudentProgressPage'));
 const LecturerDiscussionsPage = lazy(() => import('./pages/lecturer/LecturerDiscussionsPage'));
 const LecturerNotificationsPage = lazy(() => import('./pages/lecturer/LecturerNotificationsPage'));
+const LecturerSettingsPage = lazy(() => import('./pages/lecturer/LecturerSettingsPage'));
 const StudentNotificationsPage = lazy(() => import('./pages/notification/StudentNotificationsPage'));
 const ProfilePage = lazy(() => import('./pages/profile/ProfilePage'));
 const SecurityPage = lazy(() => import('./pages/profile/SecurityPage'));
@@ -301,6 +302,8 @@ export const App: React.FC = () => {
                 <Route path="students/:id" element={<LecturerStudentsPage />} />
                 <Route path="discussions" element={<LecturerDiscussionsPage />} />
                 <Route path="notifications" element={<LecturerNotificationsPage />} />
+                <Route path="settings" element={<LecturerSettingsPage />} />
+                <Route path="profile" element={<Navigate to="/lecturer/settings" replace />} />
               </Route>
               <Route
                 path="/teacher/*"
