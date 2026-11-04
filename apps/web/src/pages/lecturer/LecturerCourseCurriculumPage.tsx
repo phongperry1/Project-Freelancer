@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
+  AlertTriangle,
   BookOpen,
   Plus,
   Pencil,
@@ -238,6 +239,8 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
   // Delete Confirm Modal
   const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+
   // 1. Fetch Course Detail
   const fetchCurriculum = useCallback(
     async (showLoading = false) => {
@@ -620,6 +623,23 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
     };
   }, [course]);
 
+  // Target Chapter and Lesson Lookups for Delete Confirmation Modal
+  const targetChapter =
+    deleteTarget?.type === 'chapter'
+      ? course?.chapters?.find((c) => c.id === deleteTarget.id) || null
+      : null;
+
+  const targetLessonInfo =
+    deleteTarget?.type === 'lesson'
+      ? (() => {
+          for (const ch of course?.chapters || []) {
+            const found = ch.lessons?.find((l) => l.id === deleteTarget.id);
+            if (found) return { lesson: found, chapter: ch };
+          }
+          return null;
+        })()
+      : null;
+
   return (
     <div className="tku-curriculum-page">
       {/* 1. Academic Header Card (Tối giản, chuẩn học thuật TKU) */}
@@ -645,34 +665,23 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
             <p className="tku-curriculum-course-desc">{course.description}</p>
           )}
 
-          {/* Dòng chỉ số học thuật tinh gọn */}
+          {/* Dòng chỉ số học thuật đồng bộ thiết kế TKU */}
           <div className="tku-curriculum-metrics-bar">
-            <div className="tku-curriculum-metric-item">
-              <Layers size={15} className="tku-curriculum-metric-icon" />
-              <span>
-                <strong>{stats.totalChapters}</strong> chương học
-              </span>
+            <div className="tku-curriculum-stat-tag tku-curriculum-stat-tag--chapters">
+              <Layers size={14} className="tku-curriculum-stat-tag__icon" />
+              <span><strong>{stats.totalChapters}</strong> chương học</span>
             </div>
-            <span className="tku-curriculum-metric-sep">•</span>
-            <div className="tku-curriculum-metric-item">
-              <FileText size={15} className="tku-curriculum-metric-icon" />
-              <span>
-                <strong>{stats.totalLessons}</strong> bài giảng
-              </span>
+            <div className="tku-curriculum-stat-tag tku-curriculum-stat-tag--lessons">
+              <FileText size={14} className="tku-curriculum-stat-tag__icon" />
+              <span><strong>{stats.totalLessons}</strong> bài giảng</span>
             </div>
-            <span className="tku-curriculum-metric-sep">•</span>
-            <div className="tku-curriculum-metric-item">
-              <Video size={15} className="tku-curriculum-metric-icon" />
-              <span>
-                <strong>{stats.videoLessons}</strong> bài có video
-              </span>
+            <div className="tku-curriculum-stat-tag tku-curriculum-stat-tag--videos">
+              <Video size={14} className="tku-curriculum-stat-tag__icon" />
+              <span><strong>{stats.videoLessons}</strong> bài có video</span>
             </div>
-            <span className="tku-curriculum-metric-sep">•</span>
-            <div className="tku-curriculum-metric-item">
-              <Users size={15} className="tku-curriculum-metric-icon" />
-              <span>
-                <strong>{stats.studentsCount}</strong> học viên
-              </span>
+            <div className="tku-curriculum-stat-tag tku-curriculum-stat-tag--students">
+              <Users size={14} className="tku-curriculum-stat-tag__icon" />
+              <span><strong>{stats.studentsCount}</strong> học viên</span>
             </div>
           </div>
         </div>
@@ -1483,27 +1492,91 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
         </div>
       )}
 
-      {/* 7. Delete Confirmation Modal */}
+      {/* 7. Delete Confirmation Modal (Enhanced Academic UI) */}
       {deleteTarget && (
         <div
           className="tku-confirm-modal-overlay"
           onClick={() => {
             if (!isDeleting) setDeleteTarget(null);
           }}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tku-delete-modal-title"
         >
           <div className="tku-confirm-modal-card" onClick={(e) => e.stopPropagation()}>
-            <div className="tku-confirm-icon-box">
-              <Trash2 size={24} />
+            <div className="tku-delete-modal-header">
+              <div className="tku-delete-modal-icon-wrap">
+                <AlertTriangle size={22} />
+              </div>
+              <div className="tku-delete-modal-heading">
+                <h3 id="tku-delete-modal-title" className="tku-delete-modal-title">
+                  {deleteTarget.type === 'chapter' ? 'Xác nhận xóa chương học' : 'Xác nhận xóa bài giảng'}
+                </h3>
+                <p className="tku-delete-modal-subtitle">
+                  {deleteTarget.type === 'chapter'
+                    ? 'Thao tác sẽ xóa chương và toàn bộ bài giảng trực thuộc.'
+                    : 'Thao tác sẽ gỡ bỏ bài giảng này khỏi giáo trình.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="tku-modal-close"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                aria-label="Đóng hộp thoại"
+              >
+                <X size={18} />
+              </button>
             </div>
-            <h3 className="tku-confirm-title">
-              Xác nhận xóa {deleteTarget.type === 'chapter' ? 'chương học' : 'bài giảng'}?
-            </h3>
-            <p className="tku-confirm-desc">
-              Bạn có chắc chắn muốn xóa{' '}
-              <strong>"{deleteTarget.title}"</strong>?
-              {deleteTarget.type === 'chapter' &&
-                ' Toàn bộ các bài giảng trực thuộc chương này cũng sẽ bị xóa. Thao tác này không thể hoàn tác.'}
-            </p>
+
+            <div className="tku-modal-body tku-delete-modal-body">
+              {deleteTarget.type === 'chapter' && targetChapter && (
+                <div className="tku-delete-item-preview">
+                  <div className="tku-delete-item-preview__badge">
+                    <BookOpen size={12} />
+                    <span>{course?.title || 'Khóa học'}</span>
+                  </div>
+                  <h4 className="tku-delete-item-preview__title" title={deleteTarget.title}>
+                    {deleteTarget.title}
+                  </h4>
+                  <div className="tku-delete-item-preview__meta">
+                    <span>{targetChapter.lessons?.length || 0} bài giảng trực thuộc</span>
+                  </div>
+                </div>
+              )}
+
+              {deleteTarget.type === 'lesson' && targetLessonInfo && (
+                <div className="tku-delete-item-preview">
+                  <div className="tku-delete-item-preview__badge">
+                    <Layers size={12} />
+                    <span>{targetLessonInfo.chapter.title || 'Chương học'}</span>
+                  </div>
+                  <h4 className="tku-delete-item-preview__title" title={deleteTarget.title}>
+                    {deleteTarget.title}
+                  </h4>
+                  <div className="tku-delete-item-preview__meta">
+                    <span>{targetLessonInfo.lesson.videoUrl ? 'Bài giảng Video' : 'Lý thuyết / Tài liệu'}</span>
+                    {targetLessonInfo.lesson.content && (
+                      <>
+                        <span className="tku-delete-item-sep">•</span>
+                        <span className="tku-delete-item-sub">{targetLessonInfo.lesson.content}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="tku-delete-warning-callout">
+                <AlertCircle size={16} className="tku-delete-warning-icon" />
+                <p className="tku-delete-warning-text">
+                  <strong>Cảnh báo học vụ:</strong>{' '}
+                  {deleteTarget.type === 'chapter'
+                    ? 'Toàn bộ bài giảng, tài liệu đính kèm và dữ liệu tiến độ học tập của học viên trong chương này sẽ bị xóa vĩnh viễn và không thể khôi phục.'
+                    : 'Nội dung bài học, tài liệu đính kèm và lịch sử học tập của học viên đối với bài này sẽ bị xóa vĩnh viễn và không thể khôi phục.'}
+                </p>
+              </div>
+            </div>
+
             <div className="tku-confirm-actions">
               <button
                 type="button"
@@ -1519,7 +1592,14 @@ export const LecturerCourseCurriculumPage: React.FC = () => {
                 onClick={handleConfirmDelete}
                 disabled={isDeleting}
               >
-                {isDeleting ? <Loader2 size={14} className="animate-spin" /> : 'Xóa vĩnh viễn'}
+                {isDeleting ? (
+                  <Loader2 size={14} className="animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 size={14} />
+                    <span>Xóa vĩnh viễn</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

@@ -5,6 +5,8 @@ import {
   TrendingUp,
   BookOpen,
   CheckCircle2,
+  Calendar,
+  Award,
   Clock,
   AlertCircle,
   ChevronDown,
@@ -28,6 +30,7 @@ import {
   type StudentProgressDetailResponse,
 } from '../../services/lecturer.service';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './lecturerStudentProgress.css';
 
 export const LecturerStudentProgressPage: React.FC = () => {
@@ -41,6 +44,25 @@ export const LecturerStudentProgressPage: React.FC = () => {
   const [courses, setCourses] = useState<LecturerCourseItem[]>([]);
   const [students, setStudents] = useState<MonitoredStudentItem[]>([]);
   const [isLoadingCourses, setIsLoadingCourses] = useState<boolean>(true);
+
+
+  // Options for custom selects
+  const courseOptions = useMemo<CustomSelectOption[]>(() => {
+    return courses.map((c) => ({
+      value: c.id,
+      label: `${c.title} (${c.studentCount} học sinh)`,
+    }));
+  }, [courses]);
+
+  const studentOptions = useMemo<CustomSelectOption[]>(() => {
+    if (students.length === 0) {
+      return [{ value: '', label: '(Không có học sinh trong khóa này)' }];
+    }
+    return students.map((s) => ({
+      value: s.id,
+      label: `${s.fullName} — ${s.email} (${s.progressPercent}% hoàn thành)`,
+    }));
+  }, [students]);
 
   // Fast in-memory cache to allow instantaneous switching between students and prevent reload delays
   const [progressCache, setProgressCache] = useState<
@@ -360,21 +382,15 @@ export const LecturerStudentProgressPage: React.FC = () => {
               <BookOpen size={13} />
               <span>Khóa học</span>
             </label>
-            <div className="tku-progress-select-wrapper">
-              <select
-                className="tku-progress-select"
-                value={activeCourseId}
-                onChange={(e) => handleSelectCourse(e.target.value)}
-                disabled={isLoadingCourses}
-              >
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title} ({c.studentCount} học sinh)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="tku-progress-select-icon" />
-            </div>
+            <CustomSelect
+              value={activeCourseId}
+              onChange={handleSelectCourse}
+              options={courseOptions}
+              icon={<BookOpen size={14} />}
+              disabled={isLoadingCourses}
+              ariaLabel="Chọn khóa học"
+              className="tku-progress-custom-select"
+            />
           </div>
 
           {/* Select Student */}
@@ -383,24 +399,15 @@ export const LecturerStudentProgressPage: React.FC = () => {
               <Users size={13} />
               <span>Học sinh trong khóa</span>
             </label>
-            <div className="tku-progress-select-wrapper">
-              <select
-                className="tku-progress-select"
-                value={paramStudentId || ''}
-                onChange={(e) => handleSelectStudent(e.target.value)}
-                disabled={isLoadingStudents || students.length === 0}
-              >
-                {students.length === 0 && (
-                  <option value="">(Không có học sinh trong khóa này)</option>
-                )}
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.fullName} — {s.email} ({s.progressPercent}% hoàn thành)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="tku-progress-select-icon" />
-            </div>
+            <CustomSelect
+              value={paramStudentId || ''}
+              onChange={handleSelectStudent}
+              options={studentOptions}
+              icon={<Users size={14} />}
+              disabled={isLoadingStudents || students.length === 0}
+              ariaLabel="Chọn học sinh trong khóa"
+              className="tku-progress-custom-select"
+            />
           </div>
         </div>
       </section>
@@ -440,7 +447,7 @@ export const LecturerStudentProgressPage: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Student Profile Hero Card */}
+          {/* Student Profile & Academic Progress Hero Card (Thiết kế học thuật chuẩn mực TKU) */}
           <section className="tku-student-hero-card">
             <div className="tku-student-hero-left">
               <div className="tku-hero-avatar">
@@ -485,34 +492,106 @@ export const LecturerStudentProgressPage: React.FC = () => {
                       'NOT_STARTED' && <Clock size={13} />}
                     <span>{progressData.enrollment.learningStatusText}</span>
                   </span>
+
+                  {progressData.course?.title && (
+                    <span className="tku-hero-course-tag" title={progressData.course.title}>
+                      <BookOpen size={12} />
+                      <span>{progressData.course.title}</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="tku-hero-contacts">
                   <span className="tku-hero-contact-item">
-                    <Mail size={12} />
+                    <Mail size={13} />
                     <span>{progressData.student.email}</span>
                   </span>
                   {progressData.student.phoneNumber && (
                     <span className="tku-hero-contact-item">
-                      <Phone size={12} />
+                      <Phone size={13} />
                       <span>{progressData.student.phoneNumber}</span>
                     </span>
                   )}
                   <span className="tku-hero-contact-item">
-                    <GraduationCap size={12} />
+                    <Calendar size={13} />
                     <span>
                       Tham gia: {progressData.enrollment.enrolledAtText}
                     </span>
                   </span>
+                  {progressData.enrollment.completedAt && (
+                    <span className="tku-hero-contact-item tku-hero-contact-item--completed">
+                      <CheckCircle2 size={13} />
+                      <span>
+                        Hoàn thành: {new Date(progressData.enrollment.completedAt).toLocaleDateString('vi-VN')}
+                      </span>
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            <div className="tku-hero-right">
+            <div className="tku-student-hero-right">
+              {/* Academic KPI Stat Pills */}
+              <div className="tku-hero-stats-row">
+                <div className="tku-hero-stat-pill" title="Tổng số bài giảng đã học xong">
+                  <div className="tku-hero-stat-pill__icon tku-hero-stat-pill__icon--lessons">
+                    <FileText size={15} />
+                  </div>
+                  <div className="tku-hero-stat-pill__info">
+                    <span className="tku-hero-stat-pill__val">
+                      <strong>{progressData.metrics?.completedLessons ?? 0}</strong>
+                      <span className="tku-hero-stat-pill__sep">/</span>
+                      {progressData.metrics?.totalLessons ?? progressData.chapters.reduce((acc, ch) => acc + (ch.lessons?.length || 0), 0)}
+                    </span>
+                    <span className="tku-hero-stat-pill__lbl">Bài giảng</span>
+                  </div>
+                </div>
+
+                <div className="tku-hero-stat-pill" title="Tổng số bài tập / đề thi đã nộp">
+                  <div className="tku-hero-stat-pill__icon tku-hero-stat-pill__icon--assessments">
+                    <FileCheck2 size={15} />
+                  </div>
+                  <div className="tku-hero-stat-pill__info">
+                    <span className="tku-hero-stat-pill__val">
+                      <strong>{progressData.metrics?.submittedAssessments ?? 0}</strong>
+                      <span className="tku-hero-stat-pill__sep">/</span>
+                      {progressData.metrics?.totalAssessments ?? progressData.assessments.length}
+                    </span>
+                    <span className="tku-hero-stat-pill__lbl">Đã nộp bài</span>
+                  </div>
+                </div>
+
+                <div className="tku-hero-stat-pill" title="Điểm trung bình các bài kiểm tra">
+                  <div className="tku-hero-stat-pill__icon tku-hero-stat-pill__icon--score">
+                    <Award size={15} />
+                  </div>
+                  <div className="tku-hero-stat-pill__info">
+                    <span className="tku-hero-stat-pill__val">
+                      <strong>
+                        {progressData.metrics?.averageScore !== null && progressData.metrics?.averageScore !== undefined
+                          ? progressData.metrics.averageScore.toFixed(1)
+                          : '—'}
+                      </strong>
+                      {progressData.metrics?.averageScore !== null && progressData.metrics?.averageScore !== undefined && (
+                        <span className="tku-hero-stat-pill__sep">/10</span>
+                      )}
+                    </span>
+                    <span className="tku-hero-stat-pill__lbl">Điểm TB</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Overall Progress Box */}
               <div className="tku-hero-progress-box">
                 <div className="tku-hero-progress-header">
                   <span>Tiến độ chương trình</span>
-                  <span className="tku-hero-progress-pct">
+                  <span
+                    className={`tku-hero-progress-pct ${
+                      progressData.enrollment.progressPercent >= 100
+                        ? 'tku-hero-progress-pct--completed'
+                        : ''
+                    }`}
+                  >
                     {progressData.enrollment.progressPercent}%
                   </span>
                 </div>
@@ -528,6 +607,11 @@ export const LecturerStudentProgressPage: React.FC = () => {
                     }}
                   />
                 </div>
+                <span className="tku-hero-progress-sub">
+                  {progressData.enrollment.progressPercent >= 100
+                    ? '✓ Đã hoàn thành khóa'
+                    : `Đạt ${progressData.enrollment.progressPercent}% lộ trình`}
+                </span>
               </div>
             </div>
           </section>
@@ -593,6 +677,7 @@ export const LecturerStudentProgressPage: React.FC = () => {
               ) : (
                 progressData.chapters.map((chapter) => {
                   const isExpanded = Boolean(expandedChapters[chapter.id]);
+                  const orderDisplay = chapter.sortOrder < 10 ? `0${chapter.sortOrder}` : chapter.sortOrder;
                   return (
                     <div key={chapter.id} className="tku-chapter-card">
                       <div
@@ -600,134 +685,136 @@ export const LecturerStudentProgressPage: React.FC = () => {
                         onClick={() => toggleChapter(chapter.id)}
                       >
                         <div className="tku-chapter-header-left">
-                          <span className="tku-chapter-order-badge">
-                            {chapter.sortOrder}
+                          <span className="tku-chapter-pill">
+                            Chương {orderDisplay}
                           </span>
-                          <span className="tku-chapter-title">
+                          <h3 className="tku-chapter-title">
                             {chapter.title}
+                          </h3>
+                          <span className="tku-chapter-lessons-count">
+                            {chapter.totalLessons} bài học
                           </span>
                         </div>
 
                         <div className="tku-chapter-header-right">
-                          <div className="tku-chapter-mini-progress">
-                            <div className="tku-chapter-mini-bar">
-                              <div
-                                className={`tku-chapter-mini-fill ${
-                                  chapter.progressPercent >= 100
-                                    ? 'tku-chapter-mini-fill--completed'
-                                    : ''
-                                }`}
-                                style={{ width: `${chapter.progressPercent}%` }}
-                              />
-                            </div>
-                            <span className="tku-chapter-stats-text">
-                              {chapter.completedLessons}/{chapter.totalLessons}{' '}
-                              bài ({chapter.progressPercent}%)
+                          {chapter.totalLessons === 0 ? (
+                            <span className="tku-chapter-status-pill tku-chapter-status-pill--empty">
+                              Trống
                             </span>
-                          </div>
+                          ) : chapter.progressPercent >= 100 ? (
+                            <span className="tku-chapter-status-pill tku-chapter-status-pill--completed">
+                              <CheckCircle2 size={13} />
+                              <span>Hoàn thành 100%</span>
+                            </span>
+                          ) : chapter.progressPercent > 0 ? (
+                            <span className="tku-chapter-status-pill tku-chapter-status-pill--progress">
+                              <Clock size={13} />
+                              <span>Đang học ({chapter.completedLessons}/{chapter.totalLessons})</span>
+                            </span>
+                          ) : (
+                            <span className="tku-chapter-status-pill tku-chapter-status-pill--pending">
+                              <span>Chưa học</span>
+                            </span>
+                          )}
 
-                          <ChevronDown
-                            size={16}
-                            className={`tku-chapter-chevron ${
-                              isExpanded ? 'tku-chapter-chevron--open' : ''
-                            }`}
-                          />
+                          {chapter.totalLessons > 0 && (
+                            <div className="tku-chapter-mini-progress" title={`Tiến độ chương: ${chapter.progressPercent}%`}>
+                              <div className="tku-chapter-mini-bar">
+                                <div
+                                  className={`tku-chapter-mini-fill ${
+                                    chapter.progressPercent >= 100
+                                      ? 'tku-chapter-mini-fill--completed'
+                                      : ''
+                                  }`}
+                                  style={{ width: `${chapter.progressPercent}%` }}
+                                />
+                              </div>
+                              <span className="tku-chapter-stats-text">
+                                {chapter.completedLessons}/{chapter.totalLessons} bài ({chapter.progressPercent}%)
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="tku-chapter-chevron-wrap">
+                            <ChevronDown
+                              size={15}
+                              className={`tku-chapter-chevron ${
+                                isExpanded ? 'tku-chapter-chevron--open' : ''
+                              }`}
+                            />
+                          </div>
                         </div>
                       </div>
 
                       {isExpanded && (
                         <div className="tku-lesson-list">
                           {chapter.lessons.length === 0 ? (
-                            <div
-                              style={{
-                                padding: '16px 20px',
-                                color: '#94a3b8',
-                                fontSize: '13px',
-                                fontStyle: 'italic',
-                              }}
-                            >
-                              Chưa có bài học trong chương này.
+                            <div className="tku-chapter-lessons-empty">
+                              <div className="tku-chapter-lessons-empty__icon">
+                                <BookOpen size={18} />
+                              </div>
+                              <div className="tku-chapter-lessons-empty__text">
+                                <span className="tku-chapter-lessons-empty__title">
+                                  Chưa có bài học nào trong chương này
+                                </span>
+                                <span className="tku-chapter-lessons-empty__sub">
+                                  Chương này hiện chưa được cấu hình bài giảng video hoặc tài liệu lý thuyết.
+                                </span>
+                              </div>
                             </div>
                           ) : (
-                            chapter.lessons.map((lesson) => (
+                            chapter.lessons.map((lesson, lIdx) => (
                               <div key={lesson.id} className="tku-lesson-item">
                                 <div className="tku-lesson-item-left">
+                                  <span className="tku-lesson-order-num">
+                                    {lIdx + 1 < 10 ? `0${lIdx + 1}` : lIdx + 1}
+                                  </span>
+
                                   <div
-                                    className={`tku-lesson-status-icon ${
-                                      lesson.isCompleted
-                                        ? 'tku-lesson-status-icon--completed'
-                                        : lesson.progressPercent > 0
-                                          ? 'tku-lesson-status-icon--in-progress'
-                                          : 'tku-lesson-status-icon--pending'
+                                    className={`tku-lesson-type-icon-box ${
+                                      lesson.videoUrl
+                                        ? 'tku-lesson-type-icon-box--video'
+                                        : 'tku-lesson-type-icon-box--doc'
                                     }`}
+                                    title={lesson.videoUrl ? 'Bài giảng Video' : 'Lý thuyết / Tài liệu'}
                                   >
-                                    {lesson.isCompleted ? (
-                                      <CheckCircle2 size={18} />
-                                    ) : lesson.progressPercent > 0 ? (
-                                      <Clock size={18} />
-                                    ) : (
-                                      <div
-                                        style={{
-                                          width: '12px',
-                                          height: '12px',
-                                          borderRadius: '50%',
-                                          border: '2px solid #cbd5e1',
-                                        }}
-                                      />
-                                    )}
+                                    {lesson.videoUrl ? <PlayCircle size={15} /> : <FileText size={15} />}
                                   </div>
 
-                                  <span className="tku-lesson-title">
-                                    {lesson.title}
-                                  </span>
+                                  <div className="tku-lesson-info-wrap">
+                                    <span className="tku-lesson-title" title={lesson.title}>
+                                      {lesson.title}
+                                    </span>
+                                    <div className="tku-lesson-meta-chips">
+                                      <span className="tku-lesson-meta-chip">
+                                        {lesson.videoUrl ? 'Video bài giảng' : 'Lý thuyết / Tài liệu'}
+                                      </span>
+                                      {lesson.durationMinutes && (
+                                        <span className="tku-lesson-meta-chip">
+                                          <Clock size={11} />
+                                          <span>{lesson.durationMinutes} phút</span>
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
 
                                 <div className="tku-lesson-item-right">
-                                  {lesson.videoUrl && (
-                                    <span
-                                      className="tku-lesson-meta"
-                                      title="Bài học có video giảng dạy"
-                                    >
-                                      <PlayCircle
-                                        size={14}
-                                        style={{ color: '#1d68f2' }}
-                                      />
-                                      <span>Video</span>
-                                    </span>
-                                  )}
-
-                                  {lesson.durationMinutes && (
-                                    <span className="tku-lesson-meta">
-                                      <Clock size={13} />
-                                      <span>{lesson.durationMinutes} phút</span>
-                                    </span>
-                                  )}
-
-                                  {lesson.isCompleted && lesson.completedAt ? (
-                                    <span className="tku-lesson-completed-date">
-                                      Hoàn thành:{' '}
-                                      {new Date(
-                                        lesson.completedAt,
-                                      ).toLocaleDateString('vi-VN')}
+                                  {lesson.isCompleted ? (
+                                    <span className="tku-lesson-status-pill tku-lesson-status-pill--completed">
+                                      <CheckCircle2 size={13} />
+                                      <span>
+                                        Đã hoàn thành{lesson.completedAt ? ` • ${new Date(lesson.completedAt).toLocaleDateString('vi-VN')}` : ''}
+                                      </span>
                                     </span>
                                   ) : lesson.progressPercent > 0 ? (
-                                    <span
-                                      style={{
-                                        fontSize: '12px',
-                                        fontWeight: 600,
-                                        color: '#d97706',
-                                      }}
-                                    >
-                                      Đang học ({lesson.progressPercent}%)
+                                    <span className="tku-lesson-status-pill tku-lesson-status-pill--progress">
+                                      <Clock size={13} />
+                                      <span>Đang học ({lesson.progressPercent}%)</span>
                                     </span>
                                   ) : (
-                                    <span
-                                      style={{
-                                        fontSize: '12px',
-                                        color: '#94a3b8',
-                                      }}
-                                    >
-                                      Chưa học
+                                    <span className="tku-lesson-status-pill tku-lesson-status-pill--pending">
+                                      <span>Chưa học</span>
                                     </span>
                                   )}
                                 </div>

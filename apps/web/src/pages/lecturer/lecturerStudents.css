@@ -275,44 +275,69 @@
   gap: 6px;
 }
 
-.tku-students-select-control {
+/* Custom Selects Integration for Students Page */
+.tku-students-custom-select {
   position: relative;
-  display: flex;
-  align-items: center;
+  flex: 1;
+  min-width: 210px;
 }
 
-.tku-students-select {
+.tku-students-custom-select .tku-custom-select-trigger {
   width: 100%;
-  appearance: none;
-  background: #f8fafc;
+  height: 42px;
+  background-color: #f8fafc;
   border: 1px solid #cbd5e1;
   border-radius: 10px;
-  padding: 10px 36px 10px 14px;
   font-size: 13.5px;
   font-weight: 600;
   color: #1e293b;
-  outline: none;
-  cursor: pointer;
   transition: all 0.18s ease;
-  font-family: inherit;
+  box-shadow: none;
 }
 
-.tku-students-select:hover {
-  background: #ffffff;
+.tku-students-custom-select .tku-custom-select-trigger:hover {
+  background-color: #ffffff;
   border-color: #94a3b8;
 }
 
-.tku-students-select:focus {
+.tku-students-custom-select .tku-custom-select-trigger.is-open {
   border-color: #1d68f2;
-  background: #ffffff;
+  background-color: #ffffff;
   box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
 }
 
-.tku-students-select-icon {
-  position: absolute;
-  right: 12px;
-  color: #64748b;
-  pointer-events: none;
+.tku-students-custom-select .tku-custom-select-trigger.is-filtered {
+  border-color: #93c5fd;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tku-students-custom-select--course {
+  width: 100%;
+  flex: none;
+}
+
+.tku-students-custom-select--course .tku-custom-select-trigger {
+  width: 100%;
+  height: 44px;
+  font-size: 14px;
+}
+
+.tku-students-custom-select--course .tku-custom-select__label {
+  max-width: none;
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+
+.tku-students-custom-select--course .tku-custom-select-dropdown {
+  min-width: 100%;
+  max-width: 650px;
+}
+
+.tku-students-custom-select .tku-custom-select-dropdown {
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.06);
 }
 
 /* Secondary Filter Row */
@@ -376,33 +401,7 @@
   color: #0f172a;
 }
 
-.tku-students-filter-select {
-  flex: 1;
-  min-width: 180px;
-  appearance: none;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 9px 32px 9px 12px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #334155;
-  outline: none;
-  cursor: pointer;
-  transition: all 0.18s ease;
-  font-family: inherit;
-}
 
-.tku-students-filter-select:hover {
-  background: #ffffff;
-  border-color: #94a3b8;
-}
-
-.tku-students-filter-select:focus {
-  border-color: #1d68f2;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(29, 104, 242, 0.12);
-}
 
 /* 4. Action Bar (Toolbar) */
 .tku-students-toolbar {
@@ -561,7 +560,7 @@
   font-size: 12px;
   font-weight: 600;
   border: 1px solid #bfdbfe;
-  max-width: 220px;
+  max-width: 320px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1049,6 +1048,18 @@
   }
   .tku-students-filter-card {
     padding: 16px;
+  }
+  .tku-students-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tku-students-search,
+  .tku-students-custom-select {
+    width: 100%;
+    min-width: 100%;
+  }
+  .tku-students-custom-select .tku-custom-select-trigger {
+    width: 100%;
   }
   .tku-modal-stats-grid {
     grid-template-columns: 1fr;

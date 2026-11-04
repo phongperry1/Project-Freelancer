@@ -2,8 +2,7 @@ import {
   AlertCircle,
   BookOpen,
   CheckCircle2,
-  ChevronDown,
-  Clock,
+    Clock,
   CornerDownRight,
   GraduationCap,
   Inbox,
@@ -18,9 +17,10 @@ import {
   Sparkles,
   X,
 } from 'lucide-react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from '../../context/useToast';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import {
   lecturerService,
   type LecturerDiscussionQuestion,
@@ -103,6 +103,33 @@ export const LecturerDiscussionsPage: React.FC = () => {
 
   const [selectedStatus, setSelectedStatus] = useState<'ALL' | 'UNANSWERED' | 'ANSWERED'>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
+
+  const courseOptions = useMemo<CustomSelectOption[]>(() => {
+    return [
+      { value: 'all', label: 'Tất cả khóa học' },
+      ...courses.map((c) => ({
+        value: c.id,
+        label: c.title,
+      })),
+    ];
+  }, [courses]);
+
+  const statusOptions = useMemo<CustomSelectOption[]>(() => {
+    return [
+      { value: 'ALL', label: 'Tất cả trạng thái' },
+      { value: 'UNANSWERED', label: `Chờ giải đáp (${stats.unansweredCount})` },
+      { value: 'ANSWERED', label: `Đã phản hồi (${stats.answeredCount})` },
+    ];
+  }, [stats.unansweredCount, stats.answeredCount]);
+
+  const handleCourseSelectChange = useCallback((val: string) => {
+    setSelectedCourseId(val);
+  }, []);
+
+  const handleStatusSelectChange = useCallback((val: string) => {
+    setSelectedStatus(val as 'ALL' | 'UNANSWERED' | 'ANSWERED');
+  }, []);
+
 
   // Highlight state: quản lý ID câu hỏi hoặc câu trả lời được click từ thông báo
   const [highlightedCommentId, setHighlightedCommentId] = useState<string | null>(() => queryCommentId);
@@ -366,36 +393,25 @@ export const LecturerDiscussionsPage: React.FC = () => {
           )}
         </div>
 
-        <div className="tku-discussions-select-wrap">
-          <select
-            className="tku-discussions-select"
-            value={selectedCourseId}
-            onChange={(e) => setSelectedCourseId(e.target.value)}
-          >
-            <option value="all">Tất cả khóa học</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-          <ChevronDown size={16} className="tku-discussions-select-icon" />
-        </div>
+        <CustomSelect
+          value={selectedCourseId}
+          onChange={handleCourseSelectChange}
+          options={courseOptions}
+          icon={<BookOpen size={14} />}
+          ariaLabel="Lọc theo khóa học"
+          defaultValue="all"
+          className="tku-discussions-custom-select"
+        />
 
-        <div className="tku-discussions-select-wrap">
-          <select
-            className="tku-discussions-select"
-            value={selectedStatus}
-            onChange={(e) =>
-              setSelectedStatus(e.target.value as 'ALL' | 'UNANSWERED' | 'ANSWERED')
-            }
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="UNANSWERED">Chờ giải đáp ({stats.unansweredCount})</option>
-            <option value="ANSWERED">Đã phản hồi ({stats.answeredCount})</option>
-          </select>
-          <ChevronDown size={16} className="tku-discussions-select-icon" />
-        </div>
+        <CustomSelect
+          value={selectedStatus}
+          onChange={handleStatusSelectChange}
+          options={statusOptions}
+          icon={<MessageSquare size={14} />}
+          ariaLabel="Lọc theo trạng thái câu hỏi"
+          defaultValue="ALL"
+          className="tku-discussions-custom-select"
+        />
 
         {isFiltered && (
           <button

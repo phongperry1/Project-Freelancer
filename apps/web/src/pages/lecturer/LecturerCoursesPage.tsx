@@ -7,8 +7,8 @@ import {
   Layers,
   Search,
   X,
-  RotateCcw,
-  ChevronDown,
+  Filter,
+  ArrowUpDown,
   AlertCircle,
   RotateCw,
   Pencil,
@@ -17,7 +17,20 @@ import {
   lecturerService,
   type LecturerCoursesResponse,
 } from '../../services/lecturer.service';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './lecturerCourses.css';
+
+const STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'ACTIVE', label: 'Đang hoạt động' },
+  { value: 'HIDDEN', label: 'Đã ẩn' },
+];
+
+const SORT_OPTIONS: CustomSelectOption[] = [
+  { value: 'newest', label: 'Mới nhất' },
+  { value: 'students', label: 'Nhiều học viên nhất' },
+  { value: 'lessons', label: 'Nhiều bài học nhất' },
+];
 
 export const LecturerCoursesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -109,11 +122,14 @@ export const LecturerCoursesPage: React.FC = () => {
     return result;
   }, [coursesList, searchKeyword, statusFilter, sortBy]);
 
-  const handleResetFilters = useCallback(() => {
-    setSearchKeyword('');
-    setStatusFilter('ALL');
-    setSortBy('newest');
+  const handleStatusChange = useCallback((val: string) => {
+    setStatusFilter(val);
   }, []);
+
+  const handleSortChange = useCallback((val: string) => {
+    setSortBy(val as 'newest' | 'students' | 'lessons');
+  }, []);
+
 
   const stats = data?.stats || {
     totalCourses: 0,
@@ -215,47 +231,26 @@ export const LecturerCoursesPage: React.FC = () => {
           )}
         </div>
 
-        <div className="tku-lecturer-courses-select-wrap">
-          <select
-            className="tku-lecturer-courses-select"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            aria-label="Lọc theo trạng thái"
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">Đang hoạt động</option>
-            <option value="HIDDEN">Đã ẩn</option>
-          </select>
-          <ChevronDown size={14} className="tku-lecturer-courses-select-icon" />
-        </div>
+        <CustomSelect
+          value={statusFilter}
+          onChange={handleStatusChange}
+          options={STATUS_OPTIONS}
+          icon={<Filter size={14} />}
+          ariaLabel="Lọc theo trạng thái"
+          defaultValue="ALL"
+          className="tku-lecturer-courses-custom-select"
+        />
 
-        <div className="tku-lecturer-courses-select-wrap">
-          <select
-            className="tku-lecturer-courses-select"
-            value={sortBy}
-            onChange={(e) =>
-              setSortBy(e.target.value as 'newest' | 'students' | 'lessons')
-            }
-            aria-label="Sắp xếp theo"
-          >
-            <option value="newest">Mới nhất</option>
-            <option value="students">Nhiều học viên nhất</option>
-            <option value="lessons">Nhiều bài học nhất</option>
-          </select>
-          <ChevronDown size={14} className="tku-lecturer-courses-select-icon" />
-        </div>
+        <CustomSelect
+          value={sortBy}
+          onChange={handleSortChange}
+          options={SORT_OPTIONS}
+          icon={<ArrowUpDown size={14} />}
+          ariaLabel="Sắp xếp theo"
+          defaultValue="newest"
+          className="tku-lecturer-courses-custom-select"
+        />
 
-        {(searchKeyword || statusFilter !== 'ALL' || sortBy !== 'newest') && (
-          <button
-            type="button"
-            className="tku-lecturer-courses-reset-btn"
-            onClick={handleResetFilters}
-            title="Đặt lại bộ lọc"
-          >
-            <RotateCcw size={13} />
-            <span>Đặt lại</span>
-          </button>
-        )}
       </section>
 
       {/* 4. Main Content Area */}
@@ -316,13 +311,6 @@ export const LecturerCoursesPage: React.FC = () => {
             Không có khóa học nào khớp với từ khóa tìm kiếm hoặc các điều kiện lọc
             hiện tại.
           </p>
-          <button
-            type="button"
-            className="tku-lecturer-courses-reset-btn"
-            onClick={handleResetFilters}
-          >
-            Đặt lại bộ lọc
-          </button>
         </div>
       ) : (
         /* Table / List View */

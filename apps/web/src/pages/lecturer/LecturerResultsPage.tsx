@@ -6,7 +6,6 @@ import {
   Calendar,
   Check,
   CheckCircle2,
-  ChevronDown,
   Clock,
   Eye,
   FileCheck2,
@@ -27,6 +26,7 @@ import {
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import {
   lecturerService,
   type AssessmentResultsSummary,
@@ -81,6 +81,23 @@ const StudentAvatar: React.FC<StudentAvatarProps> = React.memo(
   },
 );
 StudentAvatar.displayName = 'StudentAvatar';
+
+const GRADE_TIER_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả xếp loại học lực' },
+  { value: 'EXCELLENT', label: 'Xuất sắc (≥ 9.0 đ)' },
+  { value: 'GOOD', label: 'Giỏi (8.0 - 8.9 đ)' },
+  { value: 'AVERAGE', label: 'Khá / TB (5.0 - 7.9 đ)' },
+  { value: 'WEAK', label: 'Yếu (4.0 - 4.9 đ)' },
+  { value: 'POOR', label: 'Kém (< 4.0 đ)' },
+];
+
+const SUBMISSION_STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái nộp' },
+  { value: 'GRADED', label: 'Nộp đúng hạn' },
+  { value: 'LATE', label: 'Nộp muộn' },
+  { value: 'NOT_SUBMITTED', label: 'Chưa nộp bài' },
+];
+
 
 export const LecturerResultsPage: React.FC = () => {
   const { id: routeAssessmentId } = useParams<{ id: string }>();
@@ -257,6 +274,29 @@ export const LecturerResultsPage: React.FC = () => {
     }
     return list;
   }, [assessments, selectedCourseId, typeFilter]);
+  // Options for custom selects
+  const courseOptions = useMemo<CustomSelectOption[]>(() => {
+    const list: CustomSelectOption[] = [
+      { value: 'ALL', label: 'Tất cả các khóa học' },
+    ];
+    courses.forEach((c) => {
+      list.push({
+        value: c.id,
+        label: `${c.title} (${c.studentCount} học sinh)`,
+      });
+    });
+    return list;
+  }, [courses]);
+
+  const assessmentOptions = useMemo<CustomSelectOption[]>(() => {
+    if (availableAssessments.length === 0) {
+      return [{ value: '', label: 'Hiện tại không có bài kiểm tra hay câu hỏi nào' }];
+    }
+    return availableAssessments.map((a) => ({
+      value: a.id,
+      label: `${a.title} (${a.type === 'EXAM' ? 'Đề thi' : a.type === 'TEST' ? 'Kiểm tra' : 'Quiz'} - ${a.questionCount} câu - Thang ${a.totalScore}đ)`,
+    }));
+  }, [availableAssessments]);
 
   const handleAssessmentChange = useCallback(
     (assessmentId: string) => {
@@ -480,61 +520,37 @@ export const LecturerResultsPage: React.FC = () => {
         {/* Dual Selectors: Course & Assessment */}
         <div className="tku-results-selectors">
           {/* Course Selector */}
-          <div className="tku-select-group">
+          <div className="tku-select-group tku-results-course-select-group">
             <label className="tku-select-label">
               <BookOpen size={13} />
               <span>Khóa học phụ trách</span>
             </label>
-            <div className="tku-select-control">
-              <select
-                className="tku-results-select"
-                value={selectedCourseId}
-                onChange={(e) => handleCourseChange(e.target.value)}
-              >
-                <option value="ALL">Tất cả các khóa học</option>
-                {courses.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.title} ({c.studentCount} học sinh)
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={14} className="tku-results-select-icon" />
-            </div>
+            <CustomSelect
+              value={selectedCourseId}
+              onChange={handleCourseChange}
+              options={courseOptions}
+              icon={<BookOpen size={14} />}
+              ariaLabel="Chọn khóa học phụ trách"
+              defaultValue="ALL"
+              className="tku-results-custom-select"
+            />
           </div>
 
           {/* Assessment / Exam Selector */}
-          <div className="tku-select-group" style={{ flex: 1.5 }}>
+          <div className="tku-select-group tku-results-assessment-select-group">
             <label className="tku-select-label">
               <Layers size={13} />
               <span>Bài tập / Bài kiểm tra</span>
             </label>
-            <div className="tku-select-control">
-              <select
-                className="tku-results-select"
-                value={selectedAssessmentId}
-                onChange={(e) => handleAssessmentChange(e.target.value)}
-                disabled={availableAssessments.length === 0}
-              >
-                {availableAssessments.length === 0 ? (
-                  <option value="">
-                    Hiện tại không có bài kiểm tra hay câu hỏi nào
-                  </option>
-                ) : (
-                  availableAssessments.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.title} (
-                      {a.type === 'EXAM'
-                        ? 'Đề thi'
-                        : a.type === 'TEST'
-                          ? 'Kiểm tra'
-                          : 'Quiz'}{' '}
-                      - {a.questionCount} câu - Thang {a.totalScore}đ)
-                    </option>
-                  ))
-                )}
-              </select>
-              <ChevronDown size={14} className="tku-results-select-icon" />
-            </div>
+            <CustomSelect
+              value={selectedAssessmentId}
+              onChange={handleAssessmentChange}
+              options={assessmentOptions}
+              icon={<Layers size={14} />}
+              disabled={availableAssessments.length === 0}
+              ariaLabel="Chọn bài tập / bài kiểm tra"
+              className="tku-results-custom-select"
+            />
           </div>
         </div>
 
@@ -784,35 +800,25 @@ export const LecturerResultsPage: React.FC = () => {
                   )}
                 </div>
 
-                <div className="tku-select-control" style={{ flex: 1, minWidth: '170px' }}>
-                  <select
-                    className="tku-results-filter-select"
-                    value={gradeTierFilter}
-                    onChange={(e) => setGradeTierFilter(e.target.value)}
-                  >
-                    <option value="ALL">Tất cả xếp loại học lực</option>
-                    <option value="EXCELLENT">Xuất sắc (≥ 9.0 đ)</option>
-                    <option value="GOOD">Giỏi (8.0 - 8.9 đ)</option>
-                    <option value="AVERAGE">Khá / TB (5.0 - 7.9 đ)</option>
-                    <option value="WEAK">Yếu (4.0 - 4.9 đ)</option>
-                    <option value="POOR">Kém (&lt; 4.0 đ)</option>
-                  </select>
-                  <ChevronDown size={14} className="tku-results-select-icon" />
-                </div>
+                                <CustomSelect
+                  value={gradeTierFilter}
+                  onChange={setGradeTierFilter}
+                  options={GRADE_TIER_OPTIONS}
+                  icon={<Award size={14} />}
+                  ariaLabel="Lọc theo xếp loại học lực"
+                  defaultValue="ALL"
+                  className="tku-results-filter-custom-select"
+                />
 
-                <div className="tku-select-control" style={{ flex: 1, minWidth: '170px' }}>
-                  <select
-                    className="tku-results-filter-select"
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                  >
-                    <option value="ALL">Tất cả trạng thái nộp</option>
-                    <option value="GRADED">Nộp đúng hạn</option>
-                    <option value="LATE">Nộp muộn</option>
-                    <option value="NOT_SUBMITTED">Chưa nộp bài</option>
-                  </select>
-                  <ChevronDown size={14} className="tku-results-select-icon" />
-                </div>
+                <CustomSelect
+                  value={statusFilter}
+                  onChange={setStatusFilter}
+                  options={SUBMISSION_STATUS_OPTIONS}
+                  icon={<Clock size={14} />}
+                  ariaLabel="Lọc theo trạng thái nộp"
+                  defaultValue="ALL"
+                  className="tku-results-filter-custom-select"
+                />
               </div>
 
               {filteredSubmissions.length === 0 ? (
@@ -1150,84 +1156,172 @@ export const LecturerResultsPage: React.FC = () => {
 
             {/* Modal Scrollable Questions List */}
             <div className="tku-modal-scroll-body">
-              {reviewSubmission.answers.map((ans) => (
-                <div
-                  key={ans.questionId}
-                  className={`tku-review-card ${
-                    ans.isCorrect ? 'tku-review-card--correct' : 'tku-review-card--incorrect'
-                  }`}
-                >
-                  <div className="tku-review-header">
-                    <span className="tku-review-q-title">
-                      Câu {ans.questionNumber} ({ans.questionScore} điểm)
-                    </span>
+              {reviewSubmission.answers.map((ans) => {
+                const isSkipped =
+                  !ans.isCorrect &&
+                  (!ans.selectedOptionContent ||
+                    ans.selectedOptionContent === 'Không trả lời');
 
-                    <span
-                      className={`tku-review-q-result-badge ${
-                        ans.isCorrect
-                          ? 'tku-review-q-result-badge--correct'
-                          : 'tku-review-q-result-badge--incorrect'
-                      }`}
-                    >
-                      {ans.isCorrect ? (
-                        <>
-                          <CheckCircle2 size={13} />
-                          <span>Đúng (+{ans.scoreAwarded}đ)</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle size={13} />
-                          <span>Sai (0đ)</span>
-                        </>
-                      )}
-                    </span>
-                  </div>
+                return (
+                  <div
+                    key={ans.questionId}
+                    className={`tku-review-card ${
+                      ans.isCorrect
+                        ? 'tku-review-card--correct'
+                        : isSkipped
+                          ? 'tku-review-card--skipped'
+                          : 'tku-review-card--incorrect'
+                    }`}
+                  >
+                    {/* Header: Question Meta & Verdict */}
+                    <div className="tku-review-header">
+                      <div className="tku-review-q-meta">
+                        <span className="tku-review-q-pill">
+                          Câu {ans.questionNumber}
+                        </span>
+                        <span className="tku-review-points-pill">
+                          {ans.questionScore} điểm
+                        </span>
+                      </div>
 
-                  <div className="tku-review-q-content">
-                    {ans.questionContent}
-                  </div>
-
-                  {/* Student Choice vs Correct Answer */}
-                  <div className="tku-review-options-list">
-                    <div
-                      className={`tku-review-option ${
-                        ans.isCorrect
-                          ? 'tku-review-option--selected-correct'
-                          : 'tku-review-option--selected-wrong'
-                      }`}
-                    >
-                      {ans.isCorrect ? (
-                        <CheckCircle2 size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                      ) : (
-                        <XCircle size={16} style={{ color: '#ef4444', flexShrink: 0 }} />
-                      )}
-                      <span>
-                        <strong>Sinh viên chọn:</strong> {ans.selectedOptionContent || 'Không trả lời'}
+                      <span
+                        className={`tku-review-q-result-badge ${
+                          ans.isCorrect
+                            ? 'tku-review-q-result-badge--correct'
+                            : isSkipped
+                              ? 'tku-review-q-result-badge--skipped'
+                              : 'tku-review-q-result-badge--incorrect'
+                        }`}
+                      >
+                        {ans.isCorrect ? (
+                          <>
+                            <CheckCircle2 size={13} />
+                            <span>Đúng (+{ans.scoreAwarded}đ)</span>
+                          </>
+                        ) : isSkipped ? (
+                          <>
+                            <AlertCircle size={13} />
+                            <span>Chưa trả lời (0đ)</span>
+                          </>
+                        ) : (
+                          <>
+                            <XCircle size={13} />
+                            <span>Sai (0đ)</span>
+                          </>
+                        )}
                       </span>
                     </div>
 
-                    {!ans.isCorrect && ans.correctOptionContent && (
-                      <div className="tku-review-option tku-review-option--correct-answer">
-                        <Check size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                        <span>
-                          <strong>Đáp án đúng của hệ thống:</strong> {ans.correctOptionContent}
-                        </span>
+                    {/* Question Statement Box */}
+                    <div className="tku-review-q-box">
+                      <div className="tku-review-q-box-label">
+                        <HelpCircle size={13} />
+                        <span>Nội dung câu hỏi:</span>
+                      </div>
+                      <div className="tku-review-q-content">
+                        {ans.questionContent}
+                      </div>
+                    </div>
+
+                    {/* Answers Comparison Section */}
+                    <div className="tku-review-answers-grid">
+                      {ans.isCorrect ? (
+                        <div className="tku-review-ans-card tku-review-ans-card--correct tku-review-ans-card--full">
+                          <div className="tku-review-ans-header">
+                            <div className="tku-review-ans-tag tku-review-ans-tag--correct">
+                              <CheckCircle2 size={13} />
+                              <span>Sinh viên đã chọn đúng</span>
+                            </div>
+                            <span className="tku-review-ans-verdict tku-review-ans-verdict--correct">
+                              Chính xác (+{ans.scoreAwarded}đ)
+                            </span>
+                          </div>
+                          <div className="tku-review-ans-body">
+                            {ans.selectedOptionContent || ans.correctOptionContent}
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          {/* Student Answer */}
+                          <div
+                            className={`tku-review-ans-card ${
+                              isSkipped
+                                ? 'tku-review-ans-card--skipped'
+                                : 'tku-review-ans-card--wrong'
+                            }`}
+                          >
+                            <div className="tku-review-ans-header">
+                              <div
+                                className={`tku-review-ans-tag ${
+                                  isSkipped
+                                    ? 'tku-review-ans-tag--skipped'
+                                    : 'tku-review-ans-tag--wrong'
+                                }`}
+                              >
+                                {isSkipped ? (
+                                  <AlertCircle size={13} />
+                                ) : (
+                                  <XCircle size={13} />
+                                )}
+                                <span>Sinh viên chọn</span>
+                              </div>
+                              <span
+                                className={`tku-review-ans-verdict ${
+                                  isSkipped
+                                    ? 'tku-review-ans-verdict--skipped'
+                                    : 'tku-review-ans-verdict--wrong'
+                                }`}
+                              >
+                                {isSkipped ? 'Chưa trả lời' : 'Chưa đúng (0đ)'}
+                              </span>
+                            </div>
+                            <div
+                              className={`tku-review-ans-body ${
+                                isSkipped ? 'tku-review-ans-body--empty' : ''
+                              }`}
+                            >
+                              {isSkipped
+                                ? 'Sinh viên đã bỏ trống, không trả lời câu hỏi này'
+                                : ans.selectedOptionContent}
+                            </div>
+                          </div>
+
+                          {/* System Correct Answer */}
+                          {ans.correctOptionContent && (
+                            <div className="tku-review-ans-card tku-review-ans-card--correct">
+                              <div className="tku-review-ans-header">
+                                <div className="tku-review-ans-tag tku-review-ans-tag--correct">
+                                  <Check size={13} />
+                                  <span>Đáp án đúng của hệ thống</span>
+                                </div>
+                                <span className="tku-review-ans-verdict tku-review-ans-verdict--correct">
+                                  Đáp án chuẩn
+                                </span>
+                              </div>
+                              <div className="tku-review-ans-body">
+                                {ans.correctOptionContent}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Solution Explanation if available */}
+                    {ans.solutionText && (
+                      <div className="tku-review-solution-box">
+                        <div className="tku-review-solution-header">
+                          <Lightbulb size={15} />
+                          <span>Lời giải chi tiết & Hướng dẫn</span>
+                        </div>
+                        <div className="tku-review-solution-body">
+                          {ans.solutionText}
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {/* Solution Explanation if available */}
-                  {ans.solutionText && (
-                    <div className="tku-review-solution-box">
-                      <Lightbulb size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                      <div>
-                        <strong>Lời giải chi tiết: </strong>
-                        <span>{ans.solutionText}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
+                );
+              })}
 
               {/* Teacher Feedback / Remarks Section */}
               <div className="tku-modal-feedback-section">
@@ -1246,14 +1340,6 @@ export const LecturerResultsPage: React.FC = () => {
 
             {/* Modal Actions Footer */}
             <div className="tku-modal-actions-footer">
-              <button
-                type="button"
-                className="tku-modal-btn-secondary"
-                onClick={handleCloseReview}
-                disabled={isSavingFeedback}
-              >
-                Đóng
-              </button>
               <button
                 type="button"
                 className="tku-modal-btn-primary"

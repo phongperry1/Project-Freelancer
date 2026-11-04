@@ -284,12 +284,6 @@ export const LecturerDashboardPage: React.FC = () => {
                 Theo dõi nhanh nội dung và số lượng học sinh
               </p>
             </div>
-            {courses.length > 0 && (
-              <Link to="/lecturer/courses" className="tku-lecturer-card__link">
-                <span>Xem tất cả</span>
-                <ArrowRight size={14} />
-              </Link>
-            )}
           </div>
 
           {isWaitingData ? (
