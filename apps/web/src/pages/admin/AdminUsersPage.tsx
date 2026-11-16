@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
-  ChevronDown,
   X,
   RotateCw,
   AlertCircle,
@@ -25,7 +24,28 @@ import {
   type AdminUsersResponse,
 } from '../../services/admin.service';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './adminUsers.css';
+
+const ROLE_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả vai trò' },
+  { value: 'STUDENT', label: 'Học sinh', icon: <GraduationCap size={14} /> },
+  { value: 'TEACHER', label: 'Giảng viên', icon: <BookOpen size={14} /> },
+];
+
+const STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  {
+    value: 'ACTIVE',
+    label: 'Đang hoạt động',
+    icon: <CheckCircle2 size={14} style={{ color: '#10b981' }} />,
+  },
+  {
+    value: 'SUSPENDED',
+    label: 'Tạm khóa',
+    icon: <Lock size={14} style={{ color: '#ef4444' }} />,
+  },
+];
 
 const UserAvatar: React.FC<{
   fullName: string;
@@ -82,6 +102,16 @@ export const AdminUsersPage: React.FC = () => {
   const pageSize = 5;
 
   const navigate = useNavigate();
+
+  const handleRoleFilterChange = useCallback((val: string) => {
+    setRoleFilter(val);
+    setCurrentPage(1);
+  }, []);
+
+  const handleStatusFilterChange = useCallback((val: string) => {
+    setStatusFilter(val);
+    setCurrentPage(1);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -339,37 +369,25 @@ export const AdminUsersPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="tku-users-select-wrap">
-                <select
-                  className="tku-users-select"
-                  value={roleFilter}
-                  onChange={(e) => {
-                    setRoleFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="ALL">Tất cả vai trò</option>
-                  <option value="STUDENT">Học sinh</option>
-                  <option value="TEACHER">Giảng viên</option>
-                </select>
-                <ChevronDown size={14} className="tku-users-select-icon" />
-              </div>
+              <CustomSelect
+                value={roleFilter}
+                onChange={handleRoleFilterChange}
+                options={ROLE_OPTIONS}
+                icon={<Users size={14} />}
+                ariaLabel="Lọc theo vai trò người dùng"
+                defaultValue="ALL"
+                className="tku-users-custom-select"
+              />
 
-              <div className="tku-users-select-wrap">
-                <select
-                  className="tku-users-select"
-                  value={statusFilter}
-                  onChange={(e) => {
-                    setStatusFilter(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  <option value="ALL">Tất cả trạng thái</option>
-                  <option value="ACTIVE">Đang hoạt động</option>
-                  <option value="SUSPENDED">Tạm khóa</option>
-                </select>
-                <ChevronDown size={14} className="tku-users-select-icon" />
-              </div>
+              <CustomSelect
+                value={statusFilter}
+                onChange={handleStatusFilterChange}
+                options={STATUS_OPTIONS}
+                icon={<CheckCircle2 size={14} />}
+                ariaLabel="Lọc theo trạng thái tài khoản"
+                defaultValue="ALL"
+                className="tku-users-custom-select"
+              />
 
               <button
                 type="button"
@@ -555,11 +573,18 @@ export const AdminUsersPage: React.FC = () => {
 
                   {filteredUsers.length > 0 && (
                     <div className="tku-users-pagination">
-                      <span className="tku-users-pagination__info">
-                        Hiển thị <strong>{(activePage - 1) * pageSize + 1}</strong> -{' '}
-                        <strong>{Math.min(filteredUsers.length, activePage * pageSize)}</strong> trong{' '}
-                        <strong>{filteredUsers.length}</strong> người dùng
-                      </span>
+                      <div className="tku-users-pagination__info">
+                        <Users size={14} className="tku-users-pagination__info-icon" />
+                        <span>Hiển thị</span>
+                        <span className="tku-users-pagination__info-badge">
+                          {(activePage - 1) * pageSize + 1} – {Math.min(filteredUsers.length, activePage * pageSize)}
+                        </span>
+                        <span>trong</span>
+                        <span className="tku-users-pagination__info-total">
+                          {filteredUsers.length}
+                        </span>
+                        <span>người dùng</span>
+                      </div>
                       {totalPages > 1 && (
                         <div className="tku-users-pagination__buttons">
                           <button

@@ -21,7 +21,27 @@ import {
   type AdminActivationKeyItem,
   type AdminAllActivationKeysResponse,
 } from '../../services/admin.service';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './adminActivationKeys.css';
+
+const KEY_STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  {
+    value: 'ACTIVE',
+    label: 'Chưa dùng (Còn hạn)',
+    icon: <CheckCircle2 size={14} style={{ color: '#10b981' }} />,
+  },
+  {
+    value: 'USED',
+    label: 'Đã kích hoạt',
+    icon: <KeyRound size={14} style={{ color: '#3b82f6' }} />,
+  },
+  {
+    value: 'EXPIRED',
+    label: 'Đã hết hạn',
+    icon: <Clock size={14} style={{ color: '#f59e0b' }} />,
+  },
+];
 
 const formatDateTime = (dateString?: string | null): string => {
   if (!dateString) return '—';
@@ -110,7 +130,7 @@ export const AdminActivationKeysPage: React.FC = () => {
         }
       });
 
-    return () => {
+  return () => {
       isMounted = false;
     };
   }, []);
@@ -131,6 +151,23 @@ export const AdminActivationKeysPage: React.FC = () => {
       toast.error(msg);
     }
   }, []);
+
+  const coursesList = data?.courses;
+  const courseOptions = useMemo<CustomSelectOption[]>(() => {
+    const defaultOption: CustomSelectOption = {
+      value: 'ALL',
+      label: 'Tất cả khóa học',
+      icon: <BookOpen size={14} />,
+    };
+    if (!coursesList) return [defaultOption];
+    return [
+      defaultOption,
+      ...coursesList.map((c) => ({
+        value: c.id,
+        label: c.title,
+      })),
+    ];
+  }, [coursesList]);
 
   const allKeys = data?.keys;
 
@@ -341,30 +378,26 @@ export const AdminActivationKeysPage: React.FC = () => {
           </div>
 
           {/* Lọc theo khóa học */}
-          <select
-            className="tku-keys-select"
+          <CustomSelect
             value={selectedCourseFilter}
-            onChange={(e) => setSelectedCourseFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả khóa học</option>
-            {data?.courses?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
+            onChange={setSelectedCourseFilter}
+            options={courseOptions}
+            icon={<BookOpen size={14} />}
+            ariaLabel="Lọc theo khóa học"
+            defaultValue="ALL"
+            className="tku-keys-custom-select"
+          />
 
           {/* Lọc theo trạng thái */}
-          <select
-            className="tku-keys-select"
+          <CustomSelect
             value={selectedStatusFilter}
-            onChange={(e) => setSelectedStatusFilter(e.target.value)}
-          >
-            <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">Chưa dùng (Còn hạn)</option>
-            <option value="USED">Đã kích hoạt</option>
-            <option value="EXPIRED">Đã hết hạn</option>
-          </select>
+            onChange={setSelectedStatusFilter}
+            options={KEY_STATUS_OPTIONS}
+            icon={<CheckCircle2 size={14} />}
+            ariaLabel="Lọc theo trạng thái"
+            defaultValue="ALL"
+            className="tku-keys-custom-select"
+          />
 
         </div>
 

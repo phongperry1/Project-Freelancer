@@ -14,6 +14,8 @@ import {
   X,
   ExternalLink,
   User as UserIcon,
+  UserCheck,
+  Users,
   Layers,
 } from 'lucide-react';
 import {
@@ -26,7 +28,14 @@ import {
 } from '../../services/admin.service';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './adminContent.css';
+
+const CONTENT_STATUS_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'ACTIVE', label: 'Đang hiển thị', icon: <Eye size={14} style={{ color: '#10b981' }} /> },
+  { value: 'HIDDEN', label: 'Đã ẩn', icon: <EyeOff size={14} style={{ color: '#ef4444' }} /> },
+];
 
 const getYouTubeEmbedUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
@@ -214,6 +223,23 @@ export const AdminContentPage: React.FC = () => {
   }, [selectedCourseId]);
 
   // Filtered courses - tối ưu hóa với React Compiler memoization
+  const teachers = useMemo(() => data?.teachers ?? [], [data?.teachers]);
+
+  const teacherOptions = useMemo<CustomSelectOption[]>(() => {
+    const defaultOption: CustomSelectOption = {
+      value: 'ALL',
+      label: 'Tất cả giảng viên',
+    };
+    return [
+      defaultOption,
+      ...teachers.map((t) => ({
+        value: t.id,
+        label: t.fullName,
+        icon: <UserIcon size={14} />,
+      })),
+    ];
+  }, [teachers]);
+
   const rawCourses = data?.courses;
   const filteredCourses = useMemo(() => {
     if (!rawCourses) return [];
@@ -468,34 +494,25 @@ export const AdminContentPage: React.FC = () => {
                 )}
               </div>
 
-              <div className="tku-content-select-wrap">
-                <select
-                  className="tku-content-select"
-                  value={teacherFilter}
-                  onChange={(e) => setTeacherFilter(e.target.value)}
-                >
-                  <option value="ALL">Tất cả giảng viên</option>
-                  {data?.teachers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.fullName}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="tku-content-select-icon" />
-              </div>
+              <CustomSelect
+                value={teacherFilter}
+                onChange={setTeacherFilter}
+                options={teacherOptions}
+                icon={<UserIcon size={14} />}
+                ariaLabel="Lọc theo giảng viên"
+                defaultValue="ALL"
+                className="tku-content-custom-select"
+              />
 
-              <div className="tku-content-select-wrap">
-                <select
-                  className="tku-content-select"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="ALL">Tất cả trạng thái</option>
-                  <option value="ACTIVE">Đang hiển thị</option>
-                  <option value="HIDDEN">Đã ẩn</option>
-                </select>
-                <ChevronDown size={14} className="tku-content-select-icon" />
-              </div>
+              <CustomSelect
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={CONTENT_STATUS_OPTIONS}
+                icon={<CheckCircle2 size={14} />}
+                ariaLabel="Lọc theo trạng thái"
+                defaultValue="ALL"
+                className="tku-content-custom-select"
+              />
 
               {(searchKeyword || teacherFilter !== 'ALL' || statusFilter !== 'ALL') && (
                 <button
@@ -514,7 +531,10 @@ export const AdminContentPage: React.FC = () => {
               {/* Cột Trái: Danh Mục Khóa Học */}
               <aside className="tku-content-courses-panel">
                 <div className="tku-content-panel-header">
-                  <span className="tku-content-panel-title">Danh mục khóa học</span>
+                  <div className="tku-content-panel-header-title-wrap">
+                    <BookOpen size={16} className="tku-content-panel-header-icon" />
+                    <span className="tku-content-panel-title">Danh mục khóa học</span>
+                  </div>
                   <span className="tku-content-panel-count">
                     {filteredCourses.length} khóa
                   </span>
@@ -625,7 +645,8 @@ export const AdminContentPage: React.FC = () => {
                           <div className="tku-content-hero-info">
                             <div className="tku-content-hero-tags">
                               <span className="tku-content-academic-pill">
-                                Giáo trình học thuật
+                                <GraduationCap size={13} />
+                                <span>Giáo trình học thuật</span>
                               </span>
                               <span
                                 className={`tku-dot-badge ${
@@ -648,12 +669,13 @@ export const AdminContentPage: React.FC = () => {
                             </h2>
 
                             <span className="tku-content-hero-teacher-line">
-                              <GraduationCap size={14} color="#1d68f2" />
-                              <span>Giảng viên phụ trách:</span>
+                              <UserCheck size={14} color="#1d68f2" />
+                              <span>Giảng viên:</span>
                               <strong>
                                 {courseDetail.teacher?.fullName || 'Chưa phân công'}
                               </strong>
-                              <span>•</span>
+                              <span className="tku-content-meta-bullet">•</span>
+                              <Users size={13} color="#64748b" />
                               <span>{courseDetail._count?.enrollments || 0} học viên</span>
                             </span>
                           </div>
@@ -684,7 +706,10 @@ export const AdminContentPage: React.FC = () => {
                           </button>
                         </div>
                       </div>
+                    </div>
 
+                    {/* Cấu trúc giáo trình */}
+                    <div className="tku-content-card">
                       {/* Header Giáo Trình */}
                       <div className="tku-content-curriculum-header">
                         <div className="tku-content-curriculum-title-group">
