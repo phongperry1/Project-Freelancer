@@ -243,6 +243,17 @@
   color: #475569;
 }
 
+.tku-keys-custom-select {
+  min-width: 175px;
+  max-width: 250px;
+}
+
+.tku-keys-custom-select .tku-custom-select-trigger {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+}
+
 .tku-keys-select {
   height: 42px;
   padding: 0 34px 0 14px;

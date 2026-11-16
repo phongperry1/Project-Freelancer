@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search,
-  ChevronDown,
+  Users,
+  GraduationCap,
+  Award,
   ArrowUpRight,
   Edit3,
   BookOpen,
@@ -20,7 +22,17 @@ import {
   type AdminCoursesResponse,
 } from '../../services/admin.service';
 import { toast } from '../../context/toastService';
+import { CustomSelect, type CustomSelectOption } from '../../components/common/CustomSelect';
 import './adminCourses.css';
+
+const GRADE_OPTIONS: CustomSelectOption[] = [
+  { value: 'ALL', label: 'Tất cả khối lớp' },
+  { value: '10', label: 'Hóa học Lớp 10', icon: <GraduationCap size={14} /> },
+  { value: '11', label: 'Hóa học Lớp 11', icon: <GraduationCap size={14} /> },
+  { value: '12', label: 'Hóa học Lớp 12', icon: <GraduationCap size={14} /> },
+  { value: 'exam', label: 'Luyện thi THPT & ĐGNL', icon: <Award size={14} /> },
+  { value: 'other', label: 'Chuyên đề khác', icon: <BookOpen size={14} /> },
+];
 
 export const AdminCoursesPage: React.FC = () => {
   const [data, setData] = useState<AdminCoursesResponse | null>(null);
@@ -160,6 +172,21 @@ export const AdminCoursesPage: React.FC = () => {
 
 
   const teachers = useMemo(() => data?.teachers ?? [], [data?.teachers]);
+
+  const teacherOptions = useMemo<CustomSelectOption[]>(() => {
+    const defaultOption: CustomSelectOption = {
+      value: 'ALL',
+      label: teachers.length === 0 ? 'Tất cả giảng viên (Chưa có dữ liệu)' : 'Tất cả giảng viên',
+    };
+    return [
+      defaultOption,
+      ...teachers.map((t) => ({
+        value: t.id,
+        label: t.fullName,
+        icon: <Users size={14} />,
+      })),
+    ];
+  }, [teachers]);
   const totalInDb = data?.courses?.length ?? 0;
 
   return (
@@ -241,40 +268,26 @@ export const AdminCoursesPage: React.FC = () => {
             )}
           </div>
 
-          <div className="tku-courses-select-wrap">
-            <select
-              className="tku-courses-select"
-              value={teacherFilter}
-              onChange={(e) => setTeacherFilter(e.target.value)}
-              disabled={teachers.length === 0}
-            >
-              <option value="ALL">
-                {teachers.length === 0 ? 'Tất cả giảng viên (Chưa có dữ liệu)' : 'Tất cả giảng viên'}
-              </option>
-              {teachers.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.fullName}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={14} className="tku-courses-select-icon" />
-          </div>
+          <CustomSelect
+            value={teacherFilter}
+            onChange={setTeacherFilter}
+            options={teacherOptions}
+            icon={<Users size={14} />}
+            ariaLabel="Lọc theo giảng viên"
+            defaultValue="ALL"
+            disabled={teachers.length === 0}
+            className="tku-courses-custom-select"
+          />
 
-          <div className="tku-courses-select-wrap">
-            <select
-              className="tku-courses-select"
-              value={gradeFilter}
-              onChange={(e) => setGradeFilter(e.target.value)}
-            >
-              <option value="ALL">Tất cả khối lớp</option>
-              <option value="10">Hóa học Lớp 10</option>
-              <option value="11">Hóa học Lớp 11</option>
-              <option value="12">Hóa học Lớp 12</option>
-              <option value="exam">Luyện thi THPT & ĐGNL</option>
-              <option value="other">Chuyên đề khác</option>
-            </select>
-            <ChevronDown size={14} className="tku-courses-select-icon" />
-          </div>
+          <CustomSelect
+            value={gradeFilter}
+            onChange={setGradeFilter}
+            options={GRADE_OPTIONS}
+            icon={<BookOpen size={14} />}
+            ariaLabel="Lọc theo khối lớp"
+            defaultValue="ALL"
+            className="tku-courses-custom-select"
+          />
 
           {(searchKeyword || teacherFilter !== 'ALL' || gradeFilter !== 'ALL') && (
             <button

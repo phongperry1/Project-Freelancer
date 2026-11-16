@@ -154,6 +154,16 @@
   color: #0f172a;
 }
 
+.tku-courses-custom-select {
+  min-width: 185px;
+}
+
+.tku-courses-custom-select .tku-custom-select-trigger {
+  width: 100%;
+  height: 42px;
+  border-radius: 10px;
+}
+
 .tku-courses-select-wrap {
   position: relative;
   min-width: 175px;
